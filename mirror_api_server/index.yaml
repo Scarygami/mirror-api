@@ -1,0 +1,7 @@
+indexes:
+
+- kind: DBCard
+  properties:
+  - name: user
+  - name: when
+    direction: desc

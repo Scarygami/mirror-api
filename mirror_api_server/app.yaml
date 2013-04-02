@@ -1,0 +1,13 @@
+application: mirror-api
+version: 1
+runtime: python27
+threadsafe: true
+api_version: 1
+
+handlers:
+- url: /_ah/spi/.*
+  script: mirror_api.APPLICATION
+
+libraries:
+- name: pycrypto
+  version: latest
