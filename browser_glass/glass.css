@@ -1,0 +1,29 @@
+* {
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  background-color: black;
+  width: 100%;
+}
+
+.card {
+  display: inline-block;
+  margin-left: 10px;
+  margin-right: 10px;
+  width: 640px;
+  height: 480px;
+  background-color: #333;
+}
+
+#glass {
+  width: 100%;
+  max-width: 100%;
+  height: 700px;
+  overflow-x: scroll;
+  padding-top: 10px;
+  white-space: nowrap;
+}
