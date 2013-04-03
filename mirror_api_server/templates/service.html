@@ -19,7 +19,11 @@
       </button>
     </div>
     <div id="signout" style="display: none;">
-      
+      <button id="signout_button">Sign-out and disconnect</button>
+    </div>
+    <div id="glass" style="display: none;">
+      <ul id="cards"></ul>
+      <input type="text" id="new_card"> <button id="send_card">Send to glass</button>
     </div>
     <script type="text/javascript">
       (function(global) {
@@ -28,7 +32,7 @@
         po.src = 'https://plus.google.com/js/client:plusone.js';
         var s = document.getElementsByTagName('script')[0];
         s.parentNode.insertBefore(po, s);
-        
+
         global.mirrorService.setState("{{ state }}");
       })(this);
     </script>

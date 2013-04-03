@@ -184,6 +184,9 @@
       }, global.discoveryUrl);
     } else if (authResult.error) {
       console.log("There was an error: " + authResult.error);
+      doc.getElementById("signin").style.display = "block";
+      doc.getElementById("signout").style.display = "none";
+      doc.getElementById("glass").style.display = "none";
     }
   };
 

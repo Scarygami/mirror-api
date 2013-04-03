@@ -20,23 +20,21 @@ import os
 import webapp2
 import json
 
-from datetime import datetime
 from apiclient.discovery import build
-from apiclient.errors import HttpError
 from google.appengine.api import memcache
 from google.appengine.ext.webapp import template
 from webapp2_extras import sessions
 from webapp2_extras import sessions_memcache
 from google.appengine.api.app_identity import get_application_id
+from oauth2client.client import AccessTokenRefreshError
+from oauth2client.client import flow_from_clientsecrets
+from oauth2client.client import FlowExchangeError
+
 
 appname = get_application_id()
 # For local testing set base_url to http://localhost:8080
 base_url = "https://" + appname + ".appspot.com"
 discovery_url = base_url + "/_ah/api"
-
-http = httplib2.Http(memcache)
-userIp = os.environ["REMOTE_ADDR"]
-service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
 
 config = {}
 config["webapp2_extras.sessions"] = {
@@ -44,6 +42,14 @@ config["webapp2_extras.sessions"] = {
 }
 
 CLIENT_ID = json.loads(open("client_secrets.json", "r").read())["web"]["client_id"]
+
+
+def createError(code, message):
+    return json.dumps({"error": {"code": code, "message": message}})
+
+
+def createMessage(message):
+    return json.dumps({"message": message})
 
 
 class BaseHandler(webapp2.RequestHandler):
@@ -77,9 +83,160 @@ class GlassHandler(BaseHandler):
         self.response.out.write(template.render(path, {"client_id": CLIENT_ID, "discovery_url": discovery_url}))
 
 
+class ConnectHandler(BaseHandler):
+    def post(self):
+        """Exchange the one-time authorization code for a token and
+        store the token in the session."""
+
+        self.response.content_type = "application/json"
+
+        state = self.request.get("state")
+        gplus_id = self.request.get("gplus_id")
+        code = self.request.body
+
+        if state != self.session.get("state"):
+            self.response.status = 401
+            self.response.out.write(createError(401, "Invalid state parameter"))
+            return
+
+        try:
+            oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
+            oauth_flow.redirect_uri = 'postmessage'
+            credentials = oauth_flow.step2_exchange(code)
+        except FlowExchangeError:
+            self.response.status = 401
+            self.response.out.write(createError(401, "Failed to upgrade the authorization code."))
+            return
+
+        # Check that the access token is valid.
+        access_token = credentials.access_token
+        url = ("https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s" % access_token)
+        h = httplib2.Http()
+        result = json.loads(h.request(url, 'GET')[1])
+
+        # If there was an error in the access token info, abort.
+        if result.get("error") is not None:
+            self.response.status = 500
+            self.response.out.write(json.dumps(result.get("error")))
+            return
+
+        # Verify that the access token is used for the intended user.
+        if result["user_id"] != gplus_id:
+            self.response.status = 401
+            self.response.out.write(createError(401, "Token's user ID doesn't match given user ID."))
+            return
+
+        # Verify that the access token is valid for this app.
+        if result['issued_to'] != CLIENT_ID:
+            self.response.status = 401
+            self.response.out.write(createError(401, "Token's client ID does not match the app's client ID"))
+            return
+
+        stored_credentials = self.session.get("credentials")
+        stored_gplus_id = self.session.get("gplus_id")
+        if stored_credentials is not None and gplus_id == stored_gplus_id:
+            self.response.status = 200
+            self.response.out.write(createMessage("Current user is already connected."))
+            return
+
+        # Store the access token in the session for later use.
+        self.session["credentials"] = credentials
+        self.session["gplus_id"] = gplus_id
+        self.response.status = 200
+        self.response.out.write(createMessage("Successfully connected user."))
+
+
+class DisconnectHandler(BaseHandler):
+    def post(self):
+        """Revoke current user's token and reset their session."""
+
+        self.response.content_type = "application/json"
+
+        # Only disconnect a connected user.
+        credentials = self.session.get("credentials")
+        if credentials is None:
+            self.response.status = 401
+            self.response.out.write(createError(401, "Current user not connected."))
+            return
+
+        # Execute HTTP GET request to revoke current token.
+        access_token = credentials.access_token
+        url = "https://accounts.google.com/o/oauth2/revoke?token=%s" % access_token
+        h = httplib2.Http()
+        result = h.request(url, "GET")[0]
+
+        if result["status"] == "200":
+            # Reset the user's session.
+            del self.session["credentials"]
+            self.response.status = 200
+            self.response.out.write(createMessage("Successfully disconnected user."))
+        else:
+            # For whatever reason, the given token was invalid.
+            self.response.status = 400
+            self.response.out.write(createError(400, "Failed to revoke token for given user."))
+
+
+class ListHandler(BaseHandler):
+    def get(self):
+        """Retrieve timeline cards for the current user."""
+
+        self.response.content_type = "application/json"
+
+        credentials = self.session.get("credentials")
+        if credentials is None:
+            self.response.status = 401
+            self.response.out.write(createError(401, "Current user not connected."))
+            return
+        try:
+            # Create a new authorized API client.
+            http = httplib2.Http()
+            http = credentials.authorize(http)
+            service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
+
+            # Retrieve timeline cards and return as reponse
+            result = service.timeline().list().execute()
+            self.response.status = 200
+            self.response.out.write(json.dumps(result))
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(createError(500, "Failed to refresh access token."))
+
+
+class NewCardHandler(BaseHandler):
+    def post(self):
+        """Create a new timeline card for the current user."""
+
+        self.response.content_type = "application/json"
+
+        credentials = self.session.get("credentials")
+        if credentials is None:
+            self.response.status = 401
+            self.response.out.write(createError(401, "Current user not connected."))
+            return
+
+        text = self.request.body
+        try:
+            # Create a new authorized API client.
+            http = httplib2.Http()
+            http = credentials.authorize(http)
+            service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
+
+            # Retrieve timeline cards and return as reponse
+            result = service.timeline().insert(body={"text": text}).execute()
+            self.response.status = 200
+            self.response.out.write(json.dumps(result))
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(createError(500, "Failed to refresh access token."))
+
+
 app = webapp2.WSGIApplication(
     [
         ('/', IndexHandler),
-        ('/glass/', GlassHandler)
+        ('/glass/', GlassHandler),
+        ('/connect', ConnectHandler),
+        ('/disconnect', DisconnectHandler),
+        ('/list', ListHandler),
+        ('/new', NewCardHandler)
     ],
     debug=True, config=config)

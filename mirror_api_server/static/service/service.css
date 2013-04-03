@@ -8,3 +8,37 @@
 body {
   padding: 5px;
 }
+
+#signin, #signout {
+  padding: 5px;
+}
+
+#signout_button, #send_card {
+  display: inline-block;
+  text-align: left;
+  padding: 5px;
+  cursor: pointer;
+  line-height: 20px;
+  border-radius: 4px;
+  margin-top: 5px;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  background: #CCC;
+  border: 1px solid #999;
+  color: #333;
+}
+
+#new_card {
+  display: inline-block;
+  text-align: left;
+  padding: 5px;
+  line-height: 20px;
+  border-radius: 4px;
+  margin-top: 5px;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  background: white;
+  border: 1px solid #999;
+  color: black;
+  width: 500px;
+}
