@@ -10,7 +10,7 @@
     if (dif <= 1) { return "Just now"; }
     if (Math.round(dif) === 1) { return "a minute ago"; }
     if (dif < 60) { return Math.round(dif) + " minutes ago"; }
-    
+
     dif = Math.round(dif / 60);
     if (dif === 1) { return "an hour ago"; }
     if (dif <= 4) { return dif + " hours ago"; }
@@ -20,7 +20,7 @@
     d = this.getDate().toString();
     h = this.getHours().toString();
     min = this.getMinutes().toString();
-    
+
     if (this.getFullYear() === now.getFullYear() && this.getMonth() === now.getMonth() && this.getDate() === now.getDate()) {
       return (h[1] ? h : "0" + h[0]) + ":" + (min[1] ? min : "0" + min[0]);
     }
@@ -30,28 +30,28 @@
   function cardSort(a, b) {
     return a.date.getTime() - b.date.getTime();
   }
-  
+
   function Glass() {
     var
       cards = [],
       mirror = global.gapi.client.mirror,
       mainDiv = doc.getElementById("glass"),
       timer, running = false;
-    
+
     function Card(id, text, date) {
       var cardDiv, textDiv, dateDiv;
       this.id = id;
       this.text = text || "";
       this.date = new Date(date);
-      
+
       this.createDiv = function () {
         var tmpDiv;
         tmpDiv = doc.createElement("div");
         tmpDiv.classList.add("card");
         tmpDiv.id = "c" + id;
-        
+
         cardDiv = tmpDiv;
-        
+
         tmpDiv = doc.createElement("div");
         tmpDiv.classList.add("card_text");
         tmpDiv.appendChild(doc.createTextNode(this.text));
@@ -64,7 +64,7 @@
         cardDiv.appendChild(dateDiv);
         return cardDiv;
       };
-      
+
       this.updateText = function (text) {
         if (this.text !== text) {
           this.text = text || "";
@@ -74,7 +74,7 @@
         }
         return false;
       };
-      
+
       this.updateDate = function (date) {
         var tmpDate = new Date(date);
         if (this.date.getTime() !== tmpDate.getTime()) {
@@ -84,12 +84,12 @@
         }
         return false;
       };
-      
+
       this.updateDisplayDate = function () {
         dateDiv.innerHTML = "";
         dateDiv.appendChild(doc.createTextNode(this.date.niceDate()));
       };
-      
+
       this.getDiv = function () { return cardDiv; };
     }
 
@@ -103,7 +103,7 @@
       }
       return undefined;
     }
-    
+
     function findPosition(id) {
       var i, l;
       cards.sort(cardSort);
@@ -115,7 +115,7 @@
         }
       }
     }
-    
+
     function fetchCards() {
       timer = undefined;
       mirror.timeline.list().execute(function (result) {
@@ -163,16 +163,16 @@
       }
       running = false;
     };
-    
+
     this.start = function () {
-      if (running) return;
+      if (running) { return; }
       timer = global.setTimeout(fetchCards, 1);
       running = true;
     };
-    
-    mainDiv.innerHTML = "";    
+
+    mainDiv.innerHTML = "";
   }
-  
+
   global.onSignInCallback = function (authResult) {
     if (authResult.access_token) {
       global.gapi.client.load("mirror", "v1", function () {
@@ -186,23 +186,23 @@
       console.log("There was an error: " + authResult.error);
     }
   };
-  
+
   global.disconnectCallback = function (data) {
     console.log(data);
-  }
-  
-  global.onload = function() {
+  };
+
+  global.onload = function () {
     doc.getElementById("signout_button").onclick = function () {
       var script, token;
-      if (glass) glass.stop();
+      if (glass) { glass.stop(); }
       doc.getElementById("signin").style.display = "block";
       doc.getElementById("signout").style.display = "none";
       doc.getElementById("glass").style.display = "none";
-      
-      token = gapi.auth.getToken();
+
+      token = global.gapi.auth.getToken();
       if (token && token.access_token) {
         script = doc.createElement("script");
-        script.src = "https://accounts.google.com/o/oauth2/revoke?token=" + token.access_token + "&callback=disconnectCallback"
+        script.src = "https://accounts.google.com/o/oauth2/revoke?token=" + token.access_token + "&callback=disconnectCallback";
         doc.head.appendChild(script);
       }
     };
