@@ -5,9 +5,15 @@ threadsafe: true
 api_version: 1
 
 handlers:
-- url: /_ah/spi/.*
-  script: mirror_api.APPLICATION
+- url: /glass
+  static_dir: static/glass
 
+- url: /_ah/spi/.*
+  script: apis.ApiServer
+
+- url: .*
+  script: service.app
+  
 libraries:
 - name: pycrypto
   version: latest

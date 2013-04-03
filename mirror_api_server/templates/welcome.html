@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Mirror API Service</title>
+  </head>
+  <body>
+    <div id="signin">
+      <button class="g-signin"
+        data-scope="https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/userinfo.email"
+        data-clientId="379687573189.apps.googleusercontent.com"
+        data-callback="onSignInCallback"
+        data-redirecturi="postmessage"
+        data-accesstype="offline"
+        data-theme="dark"
+        data-cookiepolicy="single_host_origin">
+      </button>
+    </div>
+    <div id="signout" style="display: none;">
+      
+    </div>
+    <script type="text/javascript">
+      (function() {
+        var po = document.createElement('script');
+        po.type = 'text/javascript'; po.async = true;
+        po.src = 'https://plus.google.com/js/client:plusone.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(po, s);
+      })();
+    </script>
+  </body>
+</html>

@@ -84,6 +84,3 @@ class MirrorApi(remote.Service):
         """
         entity = DBCard.get_by_id(request.id)
         return entity.to_message()
-
-
-APPLICATION = endpoints.api_server([MirrorApi], restricted=False)
