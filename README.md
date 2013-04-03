@@ -30,6 +30,8 @@ Leave Redirect URIs empty but set Javascript origin to `https://yourapp.appspot.
 
 Include that file in `mirror_api_server` where the `app.yaml` is located.
 
+Change the name of the application in `app.yaml` to match your App Engine application.
+
 
 ### Limitations
 

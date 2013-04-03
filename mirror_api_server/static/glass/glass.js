@@ -181,7 +181,7 @@
         doc.getElementById("glass").style.display = "block";
         glass = glass || new Glass();
         glass.start();
-      }, "https://mirror-api.appspot.com/_ah/api");
+      }, global.discoveryUrl);
     } else if (authResult.error) {
       console.log("There was an error: " + authResult.error);
     }

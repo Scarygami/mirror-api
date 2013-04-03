@@ -27,10 +27,16 @@ from google.appengine.api import memcache
 from google.appengine.ext.webapp import template
 from webapp2_extras import sessions
 from webapp2_extras import sessions_memcache
+from google.appengine.api.app_identity import get_application_id
+
+appname = get_application_id()
+# For local testing set base_url to http://localhost:8080
+base_url = "https://" + appname + ".appspot.com"
+discovery_url = base_url + "/_ah/api"
 
 http = httplib2.Http(memcache)
 userIp = os.environ["REMOTE_ADDR"]
-service = build("mirror", "v1", discoveryServiceUrl="https://mirror-api.appspot.com/_ah/api/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
+service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
 
 config = {}
 config["webapp2_extras.sessions"] = {
@@ -68,7 +74,7 @@ class IndexHandler(BaseHandler):
 class GlassHandler(BaseHandler):
     def get(self):
         path = os.path.join(os.path.dirname(__file__), "templates/glass.html")
-        self.response.out.write(template.render(path, {"client_id": CLIENT_ID}))
+        self.response.out.write(template.render(path, {"client_id": CLIENT_ID, "discovery_url": discovery_url}))
 
 
 app = webapp2.WSGIApplication(
