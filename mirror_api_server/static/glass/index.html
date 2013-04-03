@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Glass</title>
     <link rel="stylesheet" type="text/css" href="glass.css">
+    <script src="glass.js"></script>
   </head>
   <body>
     <div id="signin">
@@ -16,14 +17,22 @@
       </button>
     </div>
     <div id="signout" style="display: none;">
-      
+      <button id="signout_button">Sign-out and disconnect</button>
     </div>
     <div id="glass" style="display: none;">
-      <div class="card"></div>
-      <div class="card"></div>
-      <div class="card"></div>
+      <div class="card">
+        <div class="card_text">Hello World!</div>
+        <div class="card_date">Just now</div>
+      </div>
+      <div class="card">
+        <div class="card_text">Test<br>Test</div>
+        <div class="card_date">5 minutes ago</div>
+      </div>
+      <div class="card">
+        <div class="card_text">Test</div>
+        <div class="card_date">13:12</div>
+      </div>
     </div>
-    <script src="glass.js"></script>
     <script type="text/javascript">
       (function() {
         var po = document.createElement('script');

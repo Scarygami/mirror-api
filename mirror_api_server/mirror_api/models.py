@@ -28,7 +28,7 @@ from google.appengine.ext import ndb
 from timeline import Card
 
 
-TIME_FORMAT_STRING = '%Y-%m-%d %H:%M'
+TIME_FORMAT_STRING = '%Y-%m-%dT%H:%M:%S.000Z'
 
 
 def get_endpoints_current_user(raise_unauthorized=True):
