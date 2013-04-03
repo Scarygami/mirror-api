@@ -5,9 +5,15 @@ threadsafe: true
 api_version: 1
 
 handlers:
-- url: /glass
-  static_dir: static/glass
 
+- url: /glass/
+  static_files: static/glass/index.html
+  upload: static/glass/index.html
+
+- url: /glass/(.*)
+  static_files: static/glass/\1
+  upload: static/glass/(.*)
+  
 - url: /_ah/spi/.*
   script: apis.ApiServer
 
