@@ -13,6 +13,14 @@ handlers:
 - url: /glass/(.*)
   static_files: static/glass/\1
   upload: static/glass/(.*)
+
+- url: /js/service\.js
+  static_files: static/service/service.js
+  upload: static/service/service\.js
+  
+- url: /css/service\.css
+  static_files: static/service/service.css
+  upload: static/service/service\.css
   
 - url: /_ah/spi/.*
   script: apis.ApiServer

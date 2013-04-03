@@ -13,11 +13,12 @@
 # limitations under the License.
 
 
+import random
+import string
 import httplib2
 import os
 import webapp2
 import json
-import difflib
 
 from datetime import datetime
 from apiclient.discovery import build
@@ -36,6 +37,7 @@ config["webapp2_extras.sessions"] = {
     "secret_key": "ajksdlj1029jlksndajsaskd7298hkajsbdkaukjassnkjankj",
 }
 
+client_id = "379687573189.apps.googleusercontent.com";
 
 class BaseHandler(webapp2.RequestHandler):
     def dispatch(self):
@@ -54,14 +56,16 @@ class BaseHandler(webapp2.RequestHandler):
         return self.session_store.get_session(name='mirror_session', factory=sessions_memcache.MemcacheSessionFactory)
 
 
-class WelcomeHandler(BaseHandler):
+class IndexHandler(BaseHandler):
     def get(self):
-        path = os.path.join(os.path.dirname(__file__), 'templates/welcome.html')
-        self.response.out.write(template.render(path, {}))
+        path = os.path.join(os.path.dirname(__file__), "templates/service.html")
+        state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+        self.session["state"] = state;
+        self.response.out.write(template.render(path, {"client_id": client_id, "state": state}))
 
 
 app = webapp2.WSGIApplication(
     [
-        ('/', WelcomeHandler)
+        ('/', IndexHandler)
     ],
     debug=True, config=config)
