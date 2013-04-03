@@ -4,17 +4,31 @@
 
 This is an attempt to recreate the behaviour of the Mirror API (based on public information available) to allow developers like me who aren't part of the Glass Explorer program, to test potential applications that could be feasible using Glass.
 
+
 ### Parts
 
 `mirror_api_server` is meant to be hosted on Google App Engine and includes several parts.
 
 `mirror_api` is an implementation of the Mirror API using Google Cloud Endpoints.
-You will have to change the Client ID in `mirror_api.py`
 
 `static/glass` contains a browser based emulator for Glass (can be accessed at `yourapp.appspot.com/glass/`).
-Again the Client ID needs to be updated.
 
 `service.py` is a dummy implementation for a Web Application that makes use of the Mirror API.
+
+
+### Setup
+
+Create a new project in the [Google APIs Console](https://code.google.com/apis/console/)
+
+Activate the Google+ API in `Services`
+
+Create a new Client ID for web applications in `API Access`
+
+Leave Redirect URIs empty but set Javascript origin to `https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
+
+`Download JSON` to get the `client_secrets.json` file.
+
+Include that file in `mirror_api_server` where the `app.yaml` is located.
 
 
 ### Limitations

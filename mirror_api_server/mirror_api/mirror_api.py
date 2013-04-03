@@ -17,6 +17,7 @@
 """Mirror API implemented using Google Cloud Endpoints."""
 
 
+import json
 from google.appengine.ext import endpoints
 from protorpc import remote
 
@@ -26,19 +27,18 @@ from timeline import CardRequest
 from timeline import CardListRequest
 from timeline import CardList
 
+CLIENT_ID = json.loads(open("client_secrets.json", "r").read())["web"]["client_id"]
 
-CLIENT_ID = '379687573189.apps.googleusercontent.com'
 
-
-@endpoints.api(name='mirror', version='v1',
-               description='Mirror API implemented using Google Cloud Endpoints for testing',
+@endpoints.api(name="mirror", version="v1",
+               description="Mirror API implemented using Google Cloud Endpoints for testing",
                allowed_client_ids=[CLIENT_ID, endpoints.API_EXPLORER_CLIENT_ID])
 class MirrorApi(remote.Service):
     """Class which defines Mirror API v1."""
 
     @endpoints.method(CardListRequest, CardList,
-                      path='timeline', http_method='GET',
-                      name='timeline.list')
+                      path="timeline", http_method="GET",
+                      name="timeline.list")
     def timeline_list(self, request):
         """List timeline cards for the current user.
 
@@ -55,8 +55,8 @@ class MirrorApi(remote.Service):
         return CardList(items=items)
 
     @endpoints.method(Card, Card,
-                      path='timeline', http_method='POST',
-                      name='timeline.insert')
+                      path="timeline", http_method="POST",
+                      name="timeline.insert")
     def timeline_insert(self, request):
         """Insert a card for the current user.
 
@@ -71,8 +71,8 @@ class MirrorApi(remote.Service):
         return entity.to_message()
 
     @endpoints.method(CardRequest, Card,
-                      path='timeline/{id}', http_method='GET',
-                      name='timeline.get')
+                      path="timeline/{id}", http_method="GET",
+                      name="timeline.get")
     def timeline_get(self, request):
         """Get card with ID for the current user
 
