@@ -13,7 +13,7 @@ This is an attempt to recreate the behaviour of the Mirror API (based on public 
 
 `static/glass` contains a browser based emulator for Glass (can be accessed at `yourapp.appspot.com/glass/`).
 
-`service.py` is a dummy implementation for a Web Application that makes use of the Mirror API.
+`service.py` is a simple playground implementation for a Web Application that makes use of the Mirror API.
 
 
 ### Setup
@@ -39,10 +39,14 @@ For simplification (and because it's easier to implement like this for Cloud end
 that there is only one application that uses the Mirror API, so you will have access to all timeline cards of a user,
 whereas in the real Mirror API you would only have access to cards created by or shared with your application.
 
+At the moment the only functionality is to use the web app hosted at `https://yourapp.appspot.com/` to send text-only cards
+to the Glass emulator available at `https://yourapp.appspot.com/glass/` but I'm planning to add more functionality
+that will be available in the Mirror API as far as we know.
+
 
 ### Disclaimer
 
-I'm not part of the Glass Explorer program so there are not guarantees that the final Mirror API
+I'm not part of the Glass Explorer program so there are no guarantees that the final Mirror API
 will work anything like I suppose it will in this demo implementation. The information is collected
 from the various public bits and pieces that have been published. Also see
 [my document about the topic](https://docs.google.com/document/d/1XgYDbWNKEDLfm-F44sZy0uSOQKton5ksg5pWdv9XCo0/edit).
