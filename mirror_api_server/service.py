@@ -21,7 +21,6 @@ import webapp2
 import json
 
 from apiclient.discovery import build
-from google.appengine.api import memcache
 from google.appengine.ext.webapp import template
 from webapp2_extras import sessions
 from webapp2_extras import sessions_memcache

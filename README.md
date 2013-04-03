@@ -4,6 +4,18 @@
 
 This is an attempt to recreate the behaviour of the Mirror API (based on public information available) to allow developers like me who aren't part of the Glass Explorer program, to test potential applications that could be feasible using Glass.
 
+And even if the real Mirror API turns out to be completely different from what I envision it to be you can use this as a learning place for different Google technologies:
+
+- Google Cloud Endpoints, with JavaScript and Python clients
+
+- Google+ Sign-in, client-side flow (Glass emulator)
+
+- Google+ Sign-in, server-side flow (Web app)
+
+- Google App Engine for Web applications in general
+
+- And how they all can work together
+
 
 ### Parts
 
