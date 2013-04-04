@@ -13,11 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 """ProtoRPC message class definitions for the Mirror API."""
 
-
 from protorpc import messages
+
+
+class CardAction(messages.Enum):
+    SHARE = 1
+    REPLY = 2
+
+
+class CardOption(messages.Message):
+    action = messages.EnumField(CardAction, 1)
 
 
 class Card(messages.Message):
@@ -26,6 +33,8 @@ class Card(messages.Message):
     when = messages.StringField(2)
     text = messages.StringField(3)
     html = messages.StringField(4)
+    image = messages.BytesField(5)
+    cardOptions = messages.MessageField(CardOption, 6, repeated=True)
 
 
 class CardRequest(messages.Message):

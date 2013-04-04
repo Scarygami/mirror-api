@@ -25,6 +25,8 @@ determined.
 from google.appengine.ext import endpoints
 from google.appengine.ext import ndb
 
+from timeline import CardAction
+from timeline import CardOption
 from timeline import Card
 
 
@@ -59,6 +61,8 @@ class DBCard(ndb.Model):
     html = ndb.StringProperty()
     when = ndb.DateTimeProperty(auto_now_add=True)
     user = ndb.UserProperty(required=True)
+    image = ndb.BlobProperty()
+    actions = ndb.IntegerProperty(repeated=True)
 
     @property
     def timestamp(self):
