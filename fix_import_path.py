@@ -1,3 +1,9 @@
+"""Fixes import path so this submodule can be imported correctly.
+
+This is because the actual library lives within the project as the
+directory endpoints_proto_datastore.
+"""
+
 import os
 import sys
 
