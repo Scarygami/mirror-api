@@ -18,6 +18,7 @@
 
 
 import json
+import os
 
 from google.appengine.ext import endpoints
 from protorpc import remote
@@ -25,7 +26,9 @@ from protorpc import remote
 from models import Card
 
 
-with open("client_secrets.json", "r") as fh:
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_SECRETS_PATH = os.path.join(_ROOT_DIR, "client_secrets.json")
+with open(_SECRETS_PATH, "r") as fh:
     CLIENT_ID = json.load(fh)["web"]["client_id"]
 API_DESCRIPTION = ("Mirror API implemented using Google Cloud "
                    "Endpoints for testing")
