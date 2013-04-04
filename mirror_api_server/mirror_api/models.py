@@ -24,6 +24,7 @@ determined.
 
 from google.appengine.ext import endpoints
 from google.appengine.ext import ndb
+from google.appengine.ext.ndb import msgprop
 
 from timeline import CardAction
 from timeline import CardOption
@@ -62,12 +63,7 @@ class DBCard(ndb.Model):
     when = ndb.DateTimeProperty(auto_now_add=True)
     user = ndb.UserProperty(required=True)
     image = ndb.BlobProperty()
-    actions = ndb.IntegerProperty(repeated=True)
-
-    @property
-    def timestamp(self):
-        """Property to format a datetime object to string."""
-        return self.when.strftime(TIME_FORMAT_STRING)
+    actions = msgprop.EnumProperty(CardAction, repeated=True)
 
     def to_message(self):
         """Turns the CardDB entity into a ProtoRPC object.
@@ -77,10 +73,18 @@ class DBCard(ndb.Model):
         Returns:
             An instance of Card with the ID set to the datastore ID of the current entity.
         """
+
+        options = []
+        if self.actions is not None:
+            for action in self.actions:
+                options.append(CardOption(action=action))
+
         return Card(id=self.key.id(),
-                    when=self.timestamp,
+                    when=self.when.strftime(TIME_FORMAT_STRING),
                     text=self.text,
-                    html=self.html)
+                    html=self.html,
+                    image=self.image,
+                    cardOptions=options)
 
     @classmethod
     def put_from_message(cls, message):
@@ -93,7 +97,12 @@ class DBCard(ndb.Model):
             The DBCard entity that was inserted.
         """
         current_user = get_endpoints_current_user()
-        entity = cls(text=message.text, html=message.html, user=current_user)
+        entity = cls(text=message.text, html=message.html, user=current_user, image=message.image)
+        actions = []
+        if message.cardOptions is not None:
+            for option in message.cardOptions:
+                actions.append(option.action)
+        entity.actions = actions
         entity.put()
         return entity
 

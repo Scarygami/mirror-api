@@ -22,8 +22,6 @@ from google.appengine.ext import endpoints
 from protorpc import remote
 
 from models import DBCard
-from timeline import CardAction
-from timeline import CardOption
 from timeline import Card
 from timeline import CardRequest
 from timeline import CardListRequest

@@ -31,7 +31,6 @@ from oauth2client.client import FlowExchangeError
 
 
 appname = get_application_id()
-# For local testing set base_url to http://localhost:8080
 base_url = "https://" + appname + ".appspot.com"
 discovery_url = base_url + "/_ah/api"
 
@@ -221,7 +220,7 @@ class NewCardHandler(BaseHandler):
             service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
 
             # Retrieve timeline cards and return as reponse
-            result = service.timeline().insert(body={"text": text}).execute()
+            result = service.timeline().insert(body={"text": text, "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}]}).execute()
             self.response.status = 200
             self.response.out.write(json.dumps(result))
         except AccessTokenRefreshError:
