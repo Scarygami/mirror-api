@@ -32,6 +32,7 @@ VALID_CLIENT = {
         'required': [
             'client_id',
             'client_secret',
+            'redirect_uris',
             'auth_uri',
             'token_uri',
         ],
