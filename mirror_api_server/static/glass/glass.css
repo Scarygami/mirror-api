@@ -36,7 +36,7 @@ body {
 .card_date {
 	bottom: 0;
   font-size: 1.5em;
-  padding: 40px;
+  padding: 15px 25px;
   position: absolute;
   text-align: right;
   width: 100%;
@@ -66,7 +66,6 @@ body {
 	background-image: -moz-linear-gradient(bottom, rgba(0,0,0,0.7), transparent 100%);
 	background-image: -webkit-linear-gradient(bottom, rgba(0,0,0,0.7), transparent 100%);
 	background-image: -ms-linear-gradient(bottom, rgba(0,0,0,0.7), transparent 100%);
-	padding: 15px 25px;
 }
 
 #signin, #signout {
