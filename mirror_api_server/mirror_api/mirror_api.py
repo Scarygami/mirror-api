@@ -18,70 +18,69 @@
 
 
 import json
+import os
+
 from google.appengine.ext import endpoints
 from protorpc import remote
+from models import Card
 
-from models import DBCard
-from timeline import Card
-from timeline import CardRequest
-from timeline import CardListRequest
-from timeline import CardList
-
-
-CLIENT_ID = json.loads(open("client_secrets.json", "r").read())["web"]["client_id"]
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_SECRETS_PATH = os.path.join(_ROOT_DIR, "client_secrets.json")
+with open(_SECRETS_PATH, "r") as fh:
+    CLIENT_ID = json.load(fh)["web"]["client_id"]
+API_DESCRIPTION = ("Mirror API implemented using Google Cloud "
+                   "Endpoints for testing")
 
 
 @endpoints.api(name="mirror", version="v1",
-               description="Mirror API implemented using Google Cloud Endpoints for testing",
+               description=API_DESCRIPTION,
                allowed_client_ids=[CLIENT_ID, endpoints.API_EXPLORER_CLIENT_ID])
 class MirrorApi(remote.Service):
     """Class which defines Mirror API v1."""
 
-    @endpoints.method(CardListRequest, CardList,
-                      path="timeline", http_method="GET",
-                      name="timeline.list")
-    def timeline_list(self, request):
+    @Card.query_method(query_fields=("limit", "pageToken"),
+                       user_required=True,
+                       path="timeline", name="timeline.list")
+    def timeline_list(self, query):
         """List timeline cards for the current user.
 
         Args:
-            request: An instance of CardListRequest parsed from the API request.
+            query: An ndb Query object for Cards.
 
         Returns:
-            An instance of CardList containing the cards for the
-            current user returned in the query.
+            An update ndb Query object for the current user.
         """
-        query = DBCard.query_current_user()
-        query = query.order(-DBCard.when)
-        items = [entity.to_message() for entity in query.fetch(request.limit)]
-        return CardList(items=items)
+        query = query.order(-Card.when)
+        return query.filter(Card.user == endpoints.get_current_user())
 
-    @endpoints.method(Card, Card,
-                      path="timeline", http_method="POST",
-                      name="timeline.insert")
-    def timeline_insert(self, request):
+    @Card.method(user_required=True,
+                 path="timeline", name="timeline.insert")
+    def timeline_insert(self, card):
         """Insert a card for the current user.
 
         Args:
-            request: An instance of Card parsed from the API request.
+            card: An instance of Card parsed from the API request.
 
         Returns:
             An instance of Card containing the information inserted,
             the time the card was inserted and the ID of the card.
         """
-        entity = DBCard.put_from_message(request)
-        return entity.to_message()
+        card.put()
+        return card
 
-    @endpoints.method(CardRequest, Card,
-                      path="timeline/{id}", http_method="GET",
-                      name="timeline.get")
-    def timeline_get(self, request):
+    @Card.method(request_fields=('id',),
+                 user_required=True,
+                 path="timeline/{id}", http_method="GET",
+                 name="timeline.get")
+    def timeline_get(self, card):
         """Get card with ID for the current user
 
         Args:
-            request: An instance of CardRequest parsed from the API request.
+            card: An instance of Card parsed from the API request.
 
         Returns:
             An instance of Card requested.
         """
-        entity = DBCard.get_by_id(request.id)
-        return entity.to_message()
+        if not card.from_datastore or card.user != endpoints.get_current_user():
+            raise endpoints.NotFoundException('Card not found.')
+        return card

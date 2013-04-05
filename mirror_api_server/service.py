@@ -39,7 +39,8 @@ config["webapp2_extras.sessions"] = {
     "secret_key": "ajksdlj1029jlksndajsaskd7298hkajsbdkaukjassnkjankj",
 }
 
-CLIENT_ID = json.loads(open("client_secrets.json", "r").read())["web"]["client_id"]
+with open("client_secrets.json", "r") as fh:
+    CLIENT_ID = json.load(fh)["web"]["client_id"]
 
 
 def createError(code, message):
