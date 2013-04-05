@@ -14,12 +14,7 @@
 # limitations under the License.
 
 
-"""Helper model class for the Mirror API.
-
-Defines models for persisting and querying score data on a per user basis and
-provides a method for returning a 401 Unauthorized when no current user can be
-determined.
-"""
+"""Model definition for the Mirror API."""
 
 
 from google.appengine.ext import ndb
@@ -29,10 +24,6 @@ from protorpc import messages
 from endpoints_proto_datastore.ndb import EndpointsDateTimeProperty
 from endpoints_proto_datastore.ndb import EndpointsModel
 from endpoints_proto_datastore.ndb import EndpointsUserProperty
-
-# Default used with endpoints_proto_datastore for ndb.DateTimeProperty
-# is                 '%Y-%m-%dT%H:%M:%S.%f'
-TIME_FORMAT_STRING = '%Y-%m-%dT%H:%M:%S.000Z'
 
 
 class CardAction(messages.Enum):
@@ -50,13 +41,10 @@ class Card(EndpointsModel):
     Since the when property is auto_now_add=True, Cards will document when
     they were inserted immediately after being stored.
     """
-    _message_fields_schema = ('id', 'when', 'text', 'html')
-    # Card message class also had image and cardOptions which was a silly
-    # message field, rather than an enum field
+    _message_fields_schema = ("id", "when", "text", "html", "image", "cardOptions")
     text = ndb.StringProperty()
     html = ndb.StringProperty()
-    when = EndpointsDateTimeProperty(string_format=TIME_FORMAT_STRING,
-                                     auto_now_add=True)
+    when = EndpointsDateTimeProperty(auto_now_add=True)
     user = EndpointsUserProperty(required=True, raise_unauthorized=True)
     image = ndb.BlobProperty()
     cardOptions = ndb.StructuredProperty(CardOption, repeated=True)

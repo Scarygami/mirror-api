@@ -1,6 +1,6 @@
 indexes:
 
-- kind: DBCard
+- kind: Card
   properties:
   - name: user
   - name: when
