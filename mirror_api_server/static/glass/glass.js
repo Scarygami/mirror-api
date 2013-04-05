@@ -107,7 +107,6 @@
           } else {
             this.image = undefined;
             cardDiv.style.backgroundImage = "none";
-            cardDiv.style.backgroundColor = "#CCC";
             textDiv.style.fontSize = "5em";
             textDiv.style.backgroundColor = "transparent";
             dateDiv.style.backgroundColor = "transparent";

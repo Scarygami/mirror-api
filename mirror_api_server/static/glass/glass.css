@@ -11,15 +11,16 @@ body {
 }
 
 .card {
-  font-family: Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif;
+  font-family: "Roboto", Arial, sans-serif;
+  font-weight: 300;
+  color: rgba(255,255,255,0.8);
   display: inline-block;
   margin-left: 10px;
   margin-right: 10px;
   width: 640px;
   height: 400px;
-  background-color: #333;
+  background-color: #444;
   position: relative;
-  color: #CCC;
   padding: 0;
   white-space: normal;
   overflow: hidden;
