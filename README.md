@@ -38,11 +38,11 @@ Create a new Client ID for web applications in `API Access`
 
 Leave Redirect URIs empty but set Javascript origin to `https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
 
-`Download JSON` to get the `client_secrets.json` file.
+Edit `mirror_api_server/client_secrets.json` to replace `YOUR_CLIENT_ID` and `YOUR_CLIENT_SECRET` with the information from the APIs Console.
 
-Include that file in `mirror_api_server` where the `app.yaml` is located.
+Important: Don't commit that file if you contribute to this project. One possible solution to prevent this: http://blog.bossylobster.com/2011/10/protecting.html
 
-Change the name of the application in `app.yaml` to match your App Engine application.
+Edit `mirror_api_server/app.yaml` to change the name of the application to match your App Engine application.
 
 
 ### Limitations
