@@ -45,38 +45,35 @@
       this.date = new Date(date);
       this.image = image;
 
-      function loadImage() {
-        cardDiv.style.backgroundImage = "url(" + image + ")";
-        cardDiv.style.backgroundSize = "640px";
-        textDiv.style.fontSize = "3em";
-        textDiv.style.backgroundColor = "rgba(0,0,0,0.3)";
-        dateDiv.style.backgroundColor = "rgba(0,0,0,0.3)";
+      this.loadImage = function () {
+        this.cardDiv.style.backgroundImage = "url(" + image + ")";
       }
-      
+
       this.createDiv = function () {
         var tmpDiv;
         tmpDiv = doc.createElement("div");
         tmpDiv.classList.add("card");
         tmpDiv.id = "c" + id;
 
-        cardDiv = tmpDiv;
+        this.cardDiv = tmpDiv;
 
         tmpDiv = doc.createElement("div");
         tmpDiv.classList.add("card_text");
         tmpDiv.appendChild(doc.createTextNode(this.text));
         textDiv = tmpDiv;
-        cardDiv.appendChild(textDiv);
+        this.cardDiv.appendChild(textDiv);
         tmpDiv = doc.createElement("div");
         tmpDiv.classList.add("card_date");
         tmpDiv.appendChild(doc.createTextNode(this.date.niceDate()));
         dateDiv = tmpDiv;
-        cardDiv.appendChild(dateDiv);
+        this.cardDiv.appendChild(dateDiv);
 
         if (this.image) {
-          loadImage();
+          this.loadImage();
         }
-        
-        return cardDiv;
+
+        this.updateCardType();
+        return this.cardDiv;
       };
 
       this.updateText = function (text) {
@@ -103,7 +100,7 @@
         if (this.image !== image) {
           if (image) {
             this.image = image;
-            loadImage();
+            this.loadImage();
           } else {
             this.image = undefined;
             cardDiv.style.backgroundImage = "none";
@@ -118,6 +115,18 @@
         dateDiv.innerHTML = "";
         dateDiv.appendChild(doc.createTextNode(this.date.niceDate()));
       };
+
+      this.updateCardType = function () {
+        // Reset type
+        this.cardDiv.className = 'card';
+
+        if (!!this.image) {
+          this.cardDiv.classList.add('card_type_image');
+        } else {
+          this.cardDiv.classList.add('card_type_text');
+          // And in the future possibly also card_type_html
+        }
+      }
 
       this.getDiv = function () { return cardDiv; };
     }
@@ -165,6 +174,7 @@
                 }
               }
               card.updateImage(result.items[i].image);
+              card.updateCardType();
             } else {
               card = new Card(result.items[i].id, result.items[i].text, result.items[i].when, result.items[i].image);
               cards.push(card);
