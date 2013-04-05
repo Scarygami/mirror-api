@@ -144,12 +144,24 @@
     };
 
     this.sendCard = function () {
-      var input, xhr, text;
+      var input, xhr, text, message;
       input = doc.getElementById("new_card");
       text = input.value;
 
+      message = {};
+      
       if (text) {
         input.value = "";
+        
+        message.text = text;
+        
+        input = doc.getElementById("new_image");
+        text = input.value;
+        input.value = "";
+        
+        if (text) {
+          message.image = text;
+        }
 
         xhr = new global.XMLHttpRequest();
         xhr.onreadystatechange = function () {
@@ -168,8 +180,8 @@
         };
 
         xhr.open("POST", "/new", true);
-        xhr.setRequestHeader("Content-Type", "application/octet-stream; charset=utf-8");
-        xhr.send(text);
+        xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        xhr.send(JSON.stringify(message));
       }
 
     };

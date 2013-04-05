@@ -63,7 +63,7 @@ NDB_PROPERTY_TO_PROTO = {
     ndb.PickleProperty: messages.BytesField,
     ndb.Property: RaiseNotImplementedMethod(ndb.Property),
     ndb.StringProperty: messages.StringField,
-    ndb.TextProperty: messages.BytesField,  # No concept of compressed here
+    ndb.TextProperty: messages.StringField,
     ndb.TimeProperty: messages.StringField,
 }
 

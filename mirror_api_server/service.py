@@ -29,6 +29,8 @@ from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 
+import logging
+
 
 appname = get_application_id()
 base_url = "https://" + appname + ".appspot.com"
@@ -164,9 +166,10 @@ class DisconnectHandler(BaseHandler):
         h = httplib2.Http()
         result = h.request(url, "GET")[0]
 
+        del self.session["credentials"]
+
         if result["status"] == "200":
             # Reset the user's session.
-            del self.session["credentials"]
             self.response.status = 200
             self.response.out.write(createMessage("Successfully disconnected user."))
         else:
@@ -213,7 +216,21 @@ class NewCardHandler(BaseHandler):
             self.response.out.write(createError(401, "Current user not connected."))
             return
 
-        text = self.request.body
+        message = self.request.body
+        
+        logging.info(message)
+
+        data = json.loads(message)
+        
+        logging.info(data["text"])
+        
+        body = {}
+        body["text"] = data["text"]
+        if "image" in data:
+            body["image"] = data["image"]
+            logging.info(data["image"])
+        body["cardOptions"] = [{"action": "SHARE"}, {"action": "REPLY"}]
+        
         try:
             # Create a new authorized API client.
             http = httplib2.Http()
@@ -221,7 +238,7 @@ class NewCardHandler(BaseHandler):
             service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
 
             # Retrieve timeline cards and return as reponse
-            result = service.timeline().insert(body={"text": text, "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}]}).execute()
+            result = service.timeline().insert(body=body).execute()
             self.response.status = 200
             self.response.out.write(json.dumps(result))
         except AccessTokenRefreshError:

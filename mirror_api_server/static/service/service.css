@@ -28,7 +28,7 @@ body {
   color: #333;
 }
 
-#new_card {
+#glass input {
   display: inline-block;
   text-align: left;
   padding: 5px;

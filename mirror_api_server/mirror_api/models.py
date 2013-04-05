@@ -46,5 +46,5 @@ class Card(EndpointsModel):
     html = ndb.StringProperty()
     when = EndpointsDateTimeProperty(auto_now_add=True)
     user = EndpointsUserProperty(required=True, raise_unauthorized=True)
-    image = ndb.BlobProperty()
+    image = ndb.TextProperty()
     cardOptions = ndb.StructuredProperty(CardOption, repeated=True)
