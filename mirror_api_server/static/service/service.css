@@ -28,8 +28,7 @@ body {
   color: #333;
 }
 
-#glass input {
-  display: inline-block;
+#glass input, #glass textarea {
   text-align: left;
   padding: 5px;
   line-height: 20px;

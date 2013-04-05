@@ -51,7 +51,12 @@ For simplification (and because it's easier to implement like this for Cloud end
 that there is only one application that uses the Mirror API, so you will have access to all timeline cards of a user,
 whereas in the real Mirror API you would only have access to cards created by or shared with your application.
 
-At the moment the only functionality is to use the web app hosted at `https://yourapp.appspot.com/` to send text-only cards
+The real Mirror API supports Multipart-bodies to attach images to cards. Since I couldn't figure out
+(not sure if it is even possible) how to use multipart-bodies in Google Cloud Endpoints, I went for a different solution
+with an `image` field inside of a card which takes any image URL. Also works with Data-URIs if the image isn't available online,
+which will be the case mostly when uploading images from Glass itself.
+
+At the moment the only functionality is to use the web app hosted at `https://yourapp.appspot.com/` to send text and image cards
 to the Glass emulator available at `https://yourapp.appspot.com/glass/` but I'm planning to add more functionality
 that will be available in the Mirror API as far as we know.
 
