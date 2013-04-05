@@ -6,22 +6,23 @@
 }
 
 body {
-  background-color: black;
+  background-color: #222;
   width: 100%;
 }
 
 .card {
   font-family: "Roboto", Arial, sans-serif;
-  font-weight: 300;
+  font-weight: 100;
   color: rgba(255,255,255,0.8);
   display: inline-block;
   margin-left: 10px;
   margin-right: 10px;
   width: 640px;
-  height: 400px;
-  background-color: #444;
+  height: 360px;
+  background-color: #000;
   position: relative;
   padding: 0;
+  text-shadow: 0 1px 0px rgba(0,0,0,0.8);
   white-space: normal;
   overflow: hidden;
 }
@@ -29,13 +30,43 @@ body {
 .card_text {
   position: absolute;
   top: 10px; left: 20px;
-  font-size: 5em;
+  font-size: 4.5em;
 }
 
 .card_date {
+	bottom: 0;
+  font-size: 1.5em;
+  padding: 40px;
   position: absolute;
-  font-size: 2em;
-  bottom: 10px; right: 10px;
+  text-align: right;
+  width: 100%;
+}
+
+
+/** Card-type-specific Styles */
+
+.card_type_image {
+	background-size: cover;
+}
+
+.card_type_image > .card_text {
+	background-color: rgba(0,0,0,0.4);
+	font-size: 2.4em;
+	font-style: italic;
+	height: 100%;
+	left: 0;
+	padding: 10px 20px;
+	top: 0;
+	width: 100%;
+}
+
+.card_type_image > .card_date {
+	background-image: linear-gradient(bottom, rgba(0,0,0,0.7), transparent 100%);
+	background-image: -o-linear-gradient(bottom, rgba(0,0,0,0.7), transparent 100%);
+	background-image: -moz-linear-gradient(bottom, rgba(0,0,0,0.7), transparent 100%);
+	background-image: -webkit-linear-gradient(bottom, rgba(0,0,0,0.7), transparent 100%);
+	background-image: -ms-linear-gradient(bottom, rgba(0,0,0,0.7), transparent 100%);
+	padding: 15px 25px;
 }
 
 #signin, #signout {
