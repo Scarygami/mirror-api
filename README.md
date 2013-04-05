@@ -28,6 +28,29 @@ And even if the real Mirror API turns out to be completely different from what I
 `service.py` is a simple playground implementation for a Web Application that makes use of the Mirror API.
 
 
+### Repo-Setup
+
+1) Fetch the endpoints_proto_datastore repository:
+
+`git submodule init`
+
+`git submodule update`
+
+2) Create symlink `mirror_api_server/endpoints_proto_datastore` to `endpoints-proto-datastore/endpoints_proto_datastore`
+
+Linux/Unix-based systems:
+```
+cd mirror_api_server
+ln -s ../endpoints-proto-datastore/endpoints_proto_datastore/ endpoints_proto_datastore
+```
+
+Windows systems: (run cmd as Administrator)
+```
+cd mirror_api_server
+mklink /D endpoints_proto_datastore ..\endpoints-proto-datastore\endpoints_proto_datastore\
+```
+
+
 ### Setup
 
 Create a new project in the [Google APIs Console](https://code.google.com/apis/console/)
