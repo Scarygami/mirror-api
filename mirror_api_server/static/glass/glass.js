@@ -6,23 +6,23 @@
     "items": [
       {
         "text": "Also works with Data-URIs!",
-        "image": "http://farm5.staticflickr.com/4122/4784220578_2ce8d9fac3_b.jpg",
+        "image": "https://lh5.googleusercontent.com/-L7PvYS3WeJQ/TvqB-VcRklI/AAAAAAAAP9U/eEBCbBNS9bY/s1012/IMG_0135-2.jpg",
         "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
         "when": "2013-04-05T12:36:52.755260",
-        "id": 19001
+        "id": 1
       },
       {
         "text": "Hello World!",
         "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
         "when": "2013-04-05T12:26:55.837450",
-        "id": 18001
+        "id": 2
       },
       {
         "text": "What a nice photo!",
         "image": "http://farm5.staticflickr.com/4122/4784220578_2ce8d9fac3_b.jpg",
         "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
         "when": "2013-04-05T11:32:19.603850",
-        "id": 10002
+        "id": 3
       }
     ]
   };
@@ -70,7 +70,7 @@
       CONTENT_CARD = 1,
       START_CARD = 2,
       CLOCK_CARD = 3,
-      UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4;
+      CLICK = 0, UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4;
 
     if (!global.glassDemoMode) {
       mirror = global.gapi.client.mirror;
@@ -110,7 +110,7 @@
       var tmp;
       if (dx * dx + dy * dy < 3000) {
         // move too short
-        return 0;
+        return CLICK;
       }
 
       if (dx === 0) {
@@ -122,7 +122,7 @@
       tmp = Math.abs(dx / dy);
       if (tmp >= 0.5 && tmp <= 1.5) {
         // direction too diagonal, not distinct enough
-        return 0;
+        return CLICK;
       }
 
       if (tmp > 1.5) {
@@ -135,7 +135,7 @@
     }
 
     function Card(type, id, text, date, image) {
-      var cardDiv, textDiv, dateDiv, interfaceDiv, mouseX, mouseY, ignoreClick, that = this;
+      var cardDiv, textDiv, dateDiv, interfaceDiv, mouseX, mouseY, ignoreClick = false, that = this;
       this.id = id;
       this.text = text || "";
       this.type = type;
@@ -156,7 +156,6 @@
         switch (type) {
         case CONTENT_CARD:
           tmpDiv = doc.createElement("div");
-          tmpDiv.classList.add("card");
           tmpDiv.id = "c" + id;
 
           cardDiv = tmpDiv;
@@ -181,15 +180,12 @@
         case START_CARD:
           this.id = "start";
           tmpDiv = doc.createElement("div");
-          tmpDiv.classList.add("card");
           tmpDiv.id = "c" + id;
-          tmpDiv.style.zIndex = 1;
           cardDiv = tmpDiv;
           break;
         case CLOCK_CARD:
           this.id = "clock";
           tmpDiv = doc.createElement("div");
-          tmpDiv.classList.add("card");
           tmpDiv.id = "c" + id;
           cardDiv = tmpDiv;
 
@@ -209,7 +205,7 @@
           break;
         }
 
-        this.updateCardType();
+        this.updateCardStyle();
 
         tmpDiv = doc.createElement("div");
         tmpDiv.classList.add("card_interface");
@@ -268,11 +264,14 @@
         }
       };
 
-      this.updateCardType = function () {
+      this.updateCardStyle = function () {
         // Reset type
         cardDiv.className = "card";
 
         switch (type) {
+        case START_CARD:
+          cardDiv.classList.add("shadow_up");
+          break;
         case CLOCK_CARD:
           cardDiv.classList.add("card_type_clock");
           break;
@@ -292,6 +291,7 @@
       function up() {
         switch (type) {
         case START_CARD:
+          that.hide();
           findCard("clock").show();
           break;
         }
@@ -302,6 +302,7 @@
         case CONTENT_CARD:
         case CLOCK_CARD:
           that.hide();
+          findCard("start").show();
           break;
         }
       }
@@ -331,14 +332,7 @@
         }
       }
 
-      function onClick(e) {
-        var x, y;
-        if (ignoreClick) {
-          ignoreClick = false;
-          return;
-        }
-        x = e.offsetX || e.layerX || 0;
-        y = e.offsetY || e.layerY || 0;
+      function click(x, y) {
         if (x < 30) {
           right();
           return;
@@ -369,22 +363,26 @@
       }
 
       function onMouseDown(e) {
-        mouseX = e.offsetX || e.layerX || 0;
-        mouseY = e.offsetY || e.layerY || 0;
+        mouseX = e.pageX - cardDiv.offsetLeft;
+        mouseY = e.pageY - cardDiv.offsetTop;
       }
 
-      function onMouseUp(e) {
-        var x, y, dir;
-
-        x = e.offsetX || e.layerX || 0;
-        y = e.offsetY || e.layerY || 0;
-
-        dir = getDirection(x - mouseX, y - mouseY);
-
-        if (dir !== 0) {
-          ignoreClick = true;
+      function onTouchStart(e) {
+        if (e.changedTouches && e.changedTouches.length > 0) {
+          e.preventDefault();
+          mouseX = e.changedTouches[0].pageX - cardDiv.offsetLeft;
+          mouseY = e.changedTouches[0].pageY - cardDiv.offsetTop;
         }
+      }
+
+      function makeMove(x1, y1, x2, y2) {
+        var dir;
+        dir = getDirection(x2 - x1, y2 - y1);
+
         switch (dir) {
+        case CLICK:
+          click(x2, y2);
+          break;
         case RIGHT:
           right();
           break;
@@ -400,8 +398,27 @@
         }
       }
 
+      function onTouchEnd(e) {
+        var x, y;
+        if (e.changedTouches && e.changedTouches.length > 0) {
+          e.preventDefault();
+          x = e.changedTouches[0].pageX - cardDiv.offsetLeft;
+          y = e.changedTouches[0].pageY - cardDiv.offsetTop;
+          makeMove(mouseX, mouseY, x, y);
+        }
+      }
+
+      function onMouseUp(e) {
+        var x, y;
+        x = e.pageX - cardDiv.offsetLeft;
+        y = e.pageY - cardDiv.offsetTop;
+
+        makeMove(mouseX, mouseY, x, y);
+      }
+
       this.show = function () {
         cardDiv.style.display = "block";
+        this.updateCardStyle();
       };
 
       this.hide = function () {
@@ -409,13 +426,13 @@
       };
 
       this.setupEvents = function () {
-        interfaceDiv.onclick = onClick;
-        interfaceDiv.onmousedown = onMouseDown;
-        interfaceDiv.onmouseup = onMouseUp;
-        /*
-          cardDiv.addEventListener("touchstart", card.touchstart, false);
-          cardDiv.addEventListener("touchend", card.touchend, false);
-        */
+        if ("ontouchstart" in global) {
+          interfaceDiv.addEventListener("touchstart", onTouchStart, false);
+          interfaceDiv.addEventListener("touchend", onTouchEnd, false);
+        } else {
+          interfaceDiv.onmousedown = onMouseDown;
+          interfaceDiv.onmouseup = onMouseUp;
+        }
         cardDiv.onselectstart = function () { return false; };
       };
     }
@@ -430,7 +447,7 @@
             card.updateText(result.items[i].text);
             card.updateDate(result.items[i].when);
             card.updateImage(result.items[i].image);
-            card.updateCardType();
+            card.updateCardStyle();
           } else {
             card = new Card(CONTENT_CARD, result.items[i].id, result.items[i].text, result.items[i].when, result.items[i].image);
             cards.push(card);
@@ -486,7 +503,7 @@
       mainDiv.appendChild(cardDiv);
       card.setupEvents();
 
-      if (glassDemoMode) {
+      if (global.glassDemoMode) {
         handleCards(demoCards);
       }
     }

@@ -32,7 +32,6 @@ body {
   -ms-user-select: none;
   user-select: none;
   cursor: pointer;
-  z-index: 10;
 }
 
 .card_interface {
@@ -67,6 +66,60 @@ body {
   z-index: 20;
 }
 
+
+.shadow_up {
+  -webkit-box-shadow: 0px -10px 10px -10px white;
+  -moz-box-shadow: 0px -10px 10px -10px white;
+  box-shadow: 0px -10px 10px -10px white;
+}
+
+.shadow_down {
+  -webkit-box-shadow: 0px 10px 10px -10px white;
+  -moz-box-shadow: 0px 10px 10px -10px white;
+  box-shadow: 0px 10px 10px -10px white;
+}
+
+.shadow_down_up {
+  -webkit-box-shadow: 0px 10px 10px -10px white, 0px -10px 10px -10px white;
+  -moz-box-shadow: 0px 10px 10px -10px white, 0px -10px 10px -10px white;
+  box-shadow: 0px 10px 10px -10px white, 0px -10px 10px -10px white;
+}
+
+.shadow_down_left {
+  -webkit-box-shadow: 0px 10px 10px -10px white, -10px 0px 10px -10px white;
+  -moz-box-shadow: 0px 10px 10px -10px white, -10px 0px 10px -10px white;
+  box-shadow: 0px 10px 10px -10px white, -10px 0px 10px -10px white;
+}
+
+.shadow_down_right {
+  -webkit-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white;
+  -moz-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white;
+  box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white;
+}
+
+.shadow_down_left_right {
+  -webkit-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white;
+  -moz-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white;
+  box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white;
+}
+
+.shadow_down_left_up {
+  -webkit-box-shadow: 0px 10px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
+  -moz-box-shadow: 0px 10px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
+  box-shadow: 0px 10px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
+}
+
+.shadow_down_right_up {
+  -webkit-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, 0px -10px 10px -10px white;
+  -moz-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, 0px -10px 10px -10px white;
+  box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, 0px -10px 10px -10px white;
+}
+
+.shadow_down_left_right_up {
+  -webkit-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
+  -moz-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
+  box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
+}
 
 /** Card-type-specific Styles */
 
@@ -123,9 +176,7 @@ body {
   position: absolute;
   top: 0;
   width: 100%;
-  max-width: 100%;
   padding: 10px;
-  height: 500px;
 }
 
 ::-webkit-scrollbar {background: transparent; height: 10px; width: 10px;}
