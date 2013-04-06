@@ -1,6 +1,31 @@
 (function (global) {
   "use strict";
-  var doc = global.document, console = global.console;
+  var doc = global.document, console = global.console, demoCards;
+
+  demoCards = {
+    "items": [
+      {
+        "text": "Also works with Data-URIs!",
+        "image": "http://farm5.staticflickr.com/4122/4784220578_2ce8d9fac3_b.jpg",
+        "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
+        "when": "2013-04-05T12:36:52.755260",
+        "id": 19001
+      },
+      {
+        "text": "Hello World!",
+        "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
+        "when": "2013-04-05T12:26:55.837450",
+        "id": 18001
+      },
+      {
+        "text": "What a nice photo!",
+        "image": "http://farm5.staticflickr.com/4122/4784220578_2ce8d9fac3_b.jpg",
+        "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
+        "when": "2013-04-05T11:32:19.603850",
+        "id": 10002
+      }
+    ]
+  };
 
   Date.prototype.niceDate = function () {
     var y, m, d, h, min, dif, now;
@@ -39,13 +64,17 @@
   function Glass() {
     var
       cards = [],
-      mirror = global.gapi.client.mirror,
+      mirror,
       mainDiv = doc.getElementById("glass"),
       timer, running = false,
       CONTENT_CARD = 1,
       START_CARD = 2,
       CLOCK_CARD = 3,
       UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4;
+
+    if (!global.glassDemoMode) {
+      mirror = global.gapi.client.mirror;
+    }
 
     function cardSort(a, b) {
       if (a.type === START_CARD) { return -1; }
@@ -391,34 +420,37 @@
       };
     }
 
+    function handleCards(result) {
+      var i, l, card, cardDiv;
+      if (result && result.items) {
+        l = result.items.length;
+        for (i = 0; i < l; i++) {
+          card = findCard(result.items[i].id);
+          if (card) {
+            card.updateText(result.items[i].text);
+            card.updateDate(result.items[i].when);
+            card.updateImage(result.items[i].image);
+            card.updateCardType();
+          } else {
+            card = new Card(CONTENT_CARD, result.items[i].id, result.items[i].text, result.items[i].when, result.items[i].image);
+            cards.push(card);
+            cardDiv = card.createDiv();
+            mainDiv.appendChild(cardDiv);
+            card.setupEvents();
+          }
+        }
+      }
+      l = cards.length;
+      for (i = 0; i < l; i++) {
+        cards[i].updateDisplayDate();
+      }
+    }
 
 
     function fetchCards() {
       timer = undefined;
       mirror.timeline.list().execute(function (result) {
-        var i, l, card, cardDiv;
-        if (result && result.items) {
-          l = result.items.length;
-          for (i = 0; i < l; i++) {
-            card = findCard(result.items[i].id);
-            if (card) {
-              card.updateText(result.items[i].text);
-              card.updateDate(result.items[i].when);
-              card.updateImage(result.items[i].image);
-              card.updateCardType();
-            } else {
-              card = new Card(CONTENT_CARD, result.items[i].id, result.items[i].text, result.items[i].when, result.items[i].image);
-              cards.push(card);
-              cardDiv = card.createDiv();
-              mainDiv.appendChild(cardDiv);
-              card.setupEvents();
-            }
-          }
-        }
-        l = cards.length;
-        for (i = 0; i < l; i++) {
-          cards[i].updateDisplayDate();
-        }
+        handleCards(result);
         timer = global.setTimeout(fetchCards, 30000);
       });
     }
@@ -432,7 +464,7 @@
     };
 
     this.start = function () {
-      if (running) { return; }
+      if (running || global.glassDemoMode) { return; }
       timer = global.setTimeout(fetchCards, 1);
       running = true;
     };
@@ -453,6 +485,10 @@
       cardDiv = card.createDiv();
       mainDiv.appendChild(cardDiv);
       card.setupEvents();
+
+      if (glassDemoMode) {
+        handleCards(demoCards);
+      }
     }
 
     // Some debug functions, should be removed for real use
@@ -483,6 +519,10 @@
   };
 
   global.onload = function () {
+    if (global.glassDemoMode) {
+      global.glassapp = global.glassapp || new Glass();
+      return;
+    }
     doc.getElementById("signout_button").onclick = function () {
       var script, token;
       if (global.glassapp) { global.glassapp.stop(); }

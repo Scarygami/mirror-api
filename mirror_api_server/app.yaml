@@ -6,13 +6,9 @@ api_version: 1
 
 handlers:
 
-- url: /glass/glass\.js
-  static_files: static/glass/glass.js
-  upload: static/glass/glass\.js
-
-- url: /glass/glass\.css
-  static_files: static/glass/glass.css
-  upload: static/glass/glass\.css
+- url: /glass/(.*\.(html|css|js))
+  static_files: static/glass/\1
+  upload: static/glass/(.*\.(html|css|js))
 
 - url: /js/service\.js
   static_files: static/service/service.js

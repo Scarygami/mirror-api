@@ -217,20 +217,20 @@ class NewCardHandler(BaseHandler):
             return
 
         message = self.request.body
-        
+
         logging.info(message)
 
         data = json.loads(message)
-        
+
         logging.info(data["text"])
-        
+
         body = {}
         body["text"] = data["text"]
         if "image" in data:
             body["image"] = data["image"]
             logging.info(data["image"])
         body["cardOptions"] = [{"action": "SHARE"}, {"action": "REPLY"}]
-        
+
         try:
             # Create a new authorized API client.
             http = httplib2.Http()
