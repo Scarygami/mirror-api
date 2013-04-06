@@ -1,6 +1,6 @@
 (function (global) {
   "use strict";
-  var doc = global.document, console = global.console, demoCards;
+  var doc = global.document, console = global.console, demoCards, templates;
 
   demoCards = {
     "items": [
@@ -26,6 +26,13 @@
       }
     ]
   };
+
+  templates = {
+    "start": "<div class=\"card_interface\"></div>",
+    "normal": "<div class=\"card_text\"></div><div class=\"card_date\"></div><div class=\"card_interface\"></div>",
+    "action": "<div class=\"card_text\"></div><div class=\"card_interface\"></div>"
+  };
+
 
   Date.prototype.niceDate = function () {
     var y, m, d, h, min, dif, now;
@@ -63,14 +70,14 @@
 
   function Glass() {
     var
-      cards = [],
+      startCard,
       mirror,
       mainDiv = doc.getElementById("glass"),
       timer, running = false,
       CONTENT_CARD = 1,
       START_CARD = 2,
       CLOCK_CARD = 3,
-      CLICK = 0, UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4;
+      UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4;
 
     if (!global.glassDemoMode) {
       mirror = global.gapi.client.mirror;
@@ -84,33 +91,21 @@
       return b.date.getTime() - a.date.getTime();
     }
 
-    function findCard(id) {
-      var i, l;
-      l = cards.length;
-      for (i = 0; i < l; i++) {
-        if (cards[i].id === id) {
-          return cards[i];
-        }
-      }
-      return undefined;
+    function getClickDirection(x, y) {
+      if (x < 30) { return RIGHT; }
+      if (x > 610) { return LEFT; }
+      if (y < 30) { return DOWN; }
+      if (y > 330) { return UP; }
+      return UP;
     }
 
-    function findPosition(id) {
-      var i, l;
-      cards.sort(cardSort);
-      l = cards.length;
-      for (i = 0; i < l; i++) {
-        if (cards[i].id === id) {
-          return i;
-        }
-      }
-    }
-
-    function getDirection(dx, dy) {
-      var tmp;
+    function getDirection(x1, y1, x2, y2) {
+      var tmp, dx, dy;
+      dx = x2 - x1;
+      dy = y2 - y1;
       if (dx * dx + dy * dy < 3000) {
         // move too short
-        return CLICK;
+        return getClickDirection(x2, y2);
       }
 
       if (dx === 0) {
@@ -122,7 +117,7 @@
       tmp = Math.abs(dx / dy);
       if (tmp >= 0.5 && tmp <= 1.5) {
         // direction too diagonal, not distinct enough
-        return CLICK;
+        return getClickDirection(x2, y2);
       }
 
       if (tmp > 1.5) {
@@ -134,8 +129,8 @@
       return (dy > 0) ? DOWN : UP;
     }
 
-    function Card(type, id, text, date, image) {
-      var cardDiv, textDiv, dateDiv, interfaceDiv, mouseX, mouseY, ignoreClick = false, that = this;
+    function Card(type, id, parent, text, date, image) {
+      var cardDiv, textDiv, dateDiv, interfaceDiv, mouseX, mouseY, ignoreClick = false, that = this, cards = [];
       this.id = id;
       this.text = text || "";
       this.type = type;
@@ -147,218 +142,51 @@
       this.image = image;
       type = type || CONTENT_CARD;
 
-      this.loadImage = function () {
-        cardDiv.style.backgroundImage = "url(" + image + ")";
+      this.cardCount = function () {
+        return cards.length;
       };
 
-      this.createDiv = function () {
-        var tmpDiv;
-        switch (type) {
-        case CONTENT_CARD:
-          tmpDiv = doc.createElement("div");
-          tmpDiv.id = "c" + id;
-
-          cardDiv = tmpDiv;
-
-          tmpDiv = doc.createElement("div");
-          tmpDiv.classList.add("card_text");
-          tmpDiv.appendChild(doc.createTextNode(this.text));
-          textDiv = tmpDiv;
-          cardDiv.appendChild(textDiv);
-          tmpDiv = doc.createElement("div");
-          tmpDiv.classList.add("card_date");
-          tmpDiv.appendChild(doc.createTextNode(this.date.niceDate()));
-          dateDiv = tmpDiv;
-          cardDiv.appendChild(dateDiv);
-
-          if (this.image) {
-            this.loadImage();
-          }
-
-          cardDiv.style.display = "none";
-          break;
-        case START_CARD:
-          this.id = "start";
-          tmpDiv = doc.createElement("div");
-          tmpDiv.id = "c" + id;
-          cardDiv = tmpDiv;
-          break;
-        case CLOCK_CARD:
-          this.id = "clock";
-          tmpDiv = doc.createElement("div");
-          tmpDiv.id = "c" + id;
-          cardDiv = tmpDiv;
-
-          tmpDiv = doc.createElement("div");
-          tmpDiv.classList.add("card_text");
-          tmpDiv.appendChild(doc.createTextNode("\"ok glass\""));
-          textDiv = tmpDiv;
-          cardDiv.appendChild(textDiv);
-
-          tmpDiv = doc.createElement("div");
-          tmpDiv.classList.add("card_date");
-          tmpDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
-          dateDiv = tmpDiv;
-          cardDiv.appendChild(dateDiv);
-
-          cardDiv.style.display = "none";
-          break;
-        }
-
-        this.updateCardStyle();
-
-        tmpDiv = doc.createElement("div");
-        tmpDiv.classList.add("card_interface");
-        interfaceDiv = tmpDiv;
-        cardDiv.appendChild(interfaceDiv);
-        return cardDiv;
+      this.showCard = function (pos) {
+        cards[pos].show();
       };
 
-      this.updateText = function (text) {
-        if (this.text !== text) {
-          this.text = text || "";
-          textDiv.innerHTML = "";
-          textDiv.appendChild(doc.createTextNode(this.text));
-          return true;
-        }
-        return false;
-      };
-
-      this.updateDate = function (date) {
-        var tmpDate = new Date(date);
-        if (this.date.getTime() !== tmpDate.getTime()) {
-          this.date = tmpDate;
-          this.updateDisplayDate();
-          return true;
-        }
-        return false;
-      };
-
-      this.updateImage = function (image) {
-        if (this.image !== image) {
-          if (image) {
-            this.image = image;
-            this.loadImage();
-          } else {
-            this.image = undefined;
-            cardDiv.style.backgroundImage = "none";
-            textDiv.style.fontSize = "5em";
-            textDiv.style.backgroundColor = "transparent";
-            dateDiv.style.backgroundColor = "transparent";
-          }
-        }
-      };
-
-      this.updateDisplayDate = function () {
-        switch (type) {
-        case START_CARD:
-          return;
-        case CLOCK_CARD:
-          dateDiv.innerHTML = "";
-          dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
-          break;
-        case CONTENT_CARD:
-          dateDiv.innerHTML = "";
-          dateDiv.appendChild(doc.createTextNode(this.date.niceDate()));
-          break;
-        }
-      };
-
-      this.updateCardStyle = function () {
-        // Reset type
-        cardDiv.className = "card";
-
-        switch (type) {
-        case START_CARD:
-          cardDiv.classList.add("shadow_up");
-          break;
-        case CLOCK_CARD:
-          cardDiv.classList.add("card_type_clock");
-          break;
-        case CONTENT_CARD:
-          if (!!this.image) {
-            cardDiv.classList.add("card_type_image");
-          } else {
-            cardDiv.classList.add("card_type_text");
-            // And in the future possibly also card_type_html
-          }
-          break;
-        }
-      };
-
-      this.getDiv = function () { return cardDiv; };
+      function loadImage() {
+        cardDiv.style.backgroundImage = "url(" + that.image + ")";
+      }
 
       function up() {
-        switch (type) {
-        case START_CARD:
-          that.hide();
-          findCard("clock").show();
-          break;
+        if (cards && cards.length > 0) {
+          cards[0].show();
+          if (type === START_CARD) { that.hide(); }
         }
       }
 
       function down() {
-        switch (type) {
-        case CONTENT_CARD:
-        case CLOCK_CARD:
+        if (!!parent) {
           that.hide();
-          findCard("start").show();
-          break;
+          parent.show();
         }
       }
 
       function left() {
         var pos;
-        switch (type) {
-        case CONTENT_CARD:
-        case CLOCK_CARD:
-          pos = findPosition(that.id);
-          if (pos < cards.length - 1) {
+        if (!!parent) {
+          pos = parent.findPosition(that.id);
+          if (pos < parent.cardCount() - 1) {
             that.hide();
-            cards[pos + 1].show();
+            parent.showCard(pos + 1);
           }
-          break;
         }
       }
 
       function right() {
         var pos;
-        switch (type) {
-        case CONTENT_CARD:
-          pos = findPosition(that.id);
-          that.hide();
-          cards[pos - 1].show();
-          break;
-        }
-      }
-
-      function click(x, y) {
-        if (x < 30) {
-          right();
-          return;
-        }
-        if (x > 610) {
-          left();
-          return;
-        }
-        if (y < 30) {
-          up();
-          return;
-        }
-        if (y > 330) {
-          down();
-          return;
-        }
-        switch (type) {
-        case CONTENT_CARD:
-          // TODO: check and display possible actions
-          break;
-        case START_CARD:
-          findCard("clock").show();
-          break;
-        case CLOCK_CARD:
-          // Nothing to do here so far
-          break;
+        if (!!parent) {
+          pos = parent.findPosition(that.id);
+          if (pos > 0) {
+            that.hide();
+            parent.showCard(pos - 1);
+          }
         }
       }
 
@@ -377,12 +205,9 @@
 
       function makeMove(x1, y1, x2, y2) {
         var dir;
-        dir = getDirection(x2 - x1, y2 - y1);
+        dir = getDirection(x1, y1, x2, y2);
 
         switch (dir) {
-        case CLICK:
-          click(x2, y2);
-          break;
         case RIGHT:
           right();
           break;
@@ -410,10 +235,12 @@
 
       function onMouseUp(e) {
         var x, y;
-        x = e.pageX - cardDiv.offsetLeft;
-        y = e.pageY - cardDiv.offsetTop;
+        if (e.which !== 2 && e.button !== 2) {
+          x = e.pageX - cardDiv.offsetLeft;
+          y = e.pageY - cardDiv.offsetTop;
 
-        makeMove(mouseX, mouseY, x, y);
+          makeMove(mouseX, mouseY, x, y);
+        }
       }
 
       this.show = function () {
@@ -425,8 +252,8 @@
         cardDiv.style.display = "none";
       };
 
-      this.setupEvents = function () {
-        if ("ontouchstart" in global) {
+      function setupEvents() {
+        if (global.ontouchstart !== undefined) {
           interfaceDiv.addEventListener("touchstart", onTouchStart, false);
           interfaceDiv.addEventListener("touchend", onTouchEnd, false);
         } else {
@@ -434,6 +261,167 @@
           interfaceDiv.onmouseup = onMouseUp;
         }
         cardDiv.onselectstart = function () { return false; };
+      }
+
+      this.createDiv = function () {
+        var tmpDiv;
+        switch (type) {
+        case CONTENT_CARD:
+          cardDiv = doc.createElement("div");
+          cardDiv.id = "c" + id;
+          cardDiv.innerHTML = templates.normal;
+          mainDiv.appendChild(cardDiv);
+          textDiv = doc.querySelector("#" + cardDiv.id + " .card_text");
+          textDiv.appendChild(doc.createTextNode(this.text));
+          dateDiv = doc.querySelector("#" + cardDiv.id + " .card_date");
+          dateDiv.appendChild(doc.createTextNode(this.date.niceDate()));
+          if (this.image) {
+            loadImage();
+          }
+          break;
+        case START_CARD:
+          cardDiv = doc.createElement("div");
+          cardDiv.id = "c" + id;
+          cardDiv.innerHTML = templates.start;
+          mainDiv.appendChild(cardDiv);
+          break;
+        case CLOCK_CARD:
+          cardDiv = doc.createElement("div");
+          cardDiv.id = "c" + id;
+          cardDiv.innerHTML = templates.normal;
+          mainDiv.appendChild(cardDiv);
+          textDiv = doc.querySelector("#" + cardDiv.id + " .card_text");
+          textDiv.appendChild(doc.createTextNode("\"ok glass\""));
+          dateDiv = doc.querySelector("#" + cardDiv.id + " .card_date");
+          dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+          break;
+        }
+
+        interfaceDiv = doc.querySelector("#" + cardDiv.id + " .card_interface");
+        this.updateCardStyle();
+        setupEvents();
+        this.hide();
+      };
+
+      this.updateText = function (text) {
+        if (this.text !== text) {
+          this.text = text || "";
+          textDiv.innerHTML = "";
+          textDiv.appendChild(doc.createTextNode(this.text));
+          return true;
+        }
+        return false;
+      };
+
+      this.updateDate = function (date) {
+        var tmpDate = new Date(date);
+        if (this.date.getTime() !== tmpDate.getTime()) {
+          this.date = tmpDate;
+          this.updateDisplayDate();
+          return true;
+        }
+        return false;
+      };
+
+      this.updateImage = function (image) {
+        if (this.image !== image) {
+          if (image) {
+            this.image = image;
+            loadImage();
+          } else {
+            this.image = undefined;
+            cardDiv.style.backgroundImage = "none";
+          }
+          this.updateCardStyle();
+        }
+      };
+
+      this.updateDisplayDate = function () {
+        var i, l;
+        switch (type) {
+        case START_CARD:
+          return;
+        case CLOCK_CARD:
+          dateDiv.innerHTML = "";
+          dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+          break;
+        case CONTENT_CARD:
+          dateDiv.innerHTML = "";
+          dateDiv.appendChild(doc.createTextNode(this.date.niceDate()));
+          break;
+        }
+        l = cards.length;
+        for (i = 0; i < l; i++) {
+          cards[i].updateDisplayDate();
+        }
+      };
+
+      this.updateCardStyle = function () {
+        var shadow = "", pos, last;
+        cardDiv.className = "card";
+
+        if (cards && cards.length > 0) {
+          shadow += "_down";
+        }
+
+        if (!!parent) {
+          pos = parent.findPosition(this.id);
+          last = parent.cardCount() - 1;
+          if (pos > 0) {
+            shadow += "_left";
+          }
+          if (pos < last) {
+            shadow += "_right";
+          }
+          shadow += "_up";
+        }
+
+        if (shadow !== "") {
+          cardDiv.classList.add("shadow" + shadow);
+        }
+        switch (type) {
+        case START_CARD:
+          break;
+        case CLOCK_CARD:
+          cardDiv.classList.add("card_type_clock");
+          break;
+        case CONTENT_CARD:
+          if (!!this.image) {
+            cardDiv.classList.add("card_type_image");
+          } else {
+            cardDiv.classList.add("card_type_text");
+            // And in the future possibly also card_type_html
+          }
+          break;
+        }
+      };
+
+      this.getDiv = function () { return cardDiv; };
+
+      this.findCard = function (id) {
+        var i, l;
+        l = cards.length;
+        for (i = 0; i < l; i++) {
+          if (cards[i].id === id) {
+            return cards[i];
+          }
+        }
+        return undefined;
+      };
+
+      this.findPosition = function (id) {
+        var i, l;
+        cards.sort(cardSort);
+        l = cards.length;
+        for (i = 0; i < l; i++) {
+          if (cards[i].id === id) {
+            return i;
+          }
+        }
+      };
+
+      this.addCard = function (card) {
+        cards.push(card);
       };
     }
 
@@ -442,25 +430,20 @@
       if (result && result.items) {
         l = result.items.length;
         for (i = 0; i < l; i++) {
-          card = findCard(result.items[i].id);
+          card = startCard.findCard(result.items[i].id);
           if (card) {
             card.updateText(result.items[i].text);
             card.updateDate(result.items[i].when);
             card.updateImage(result.items[i].image);
             card.updateCardStyle();
           } else {
-            card = new Card(CONTENT_CARD, result.items[i].id, result.items[i].text, result.items[i].when, result.items[i].image);
-            cards.push(card);
-            cardDiv = card.createDiv();
-            mainDiv.appendChild(cardDiv);
-            card.setupEvents();
+            card = new Card(CONTENT_CARD, result.items[i].id, startCard, result.items[i].text, result.items[i].when, result.items[i].image);
+            card.createDiv();
+            startCard.addCard(card);
           }
         }
       }
-      l = cards.length;
-      for (i = 0; i < l; i++) {
-        cards[i].updateDisplayDate();
-      }
+      startCard.updateDisplayDate();
     }
 
 
@@ -487,29 +470,23 @@
     };
 
     function initialize() {
-      var card, cardDiv;
+      var card;
 
       mainDiv.innerHTML = "";
 
-      card = new Card(START_CARD, "start");
-      cards.push(card);
-      cardDiv = card.createDiv();
-      mainDiv.appendChild(cardDiv);
-      card.setupEvents();
+      startCard = new Card(START_CARD, "start");
+      startCard.createDiv();
 
-      card = new Card(CLOCK_CARD, "clock");
-      cards.push(card);
-      cardDiv = card.createDiv();
-      mainDiv.appendChild(cardDiv);
-      card.setupEvents();
+      card = new Card(CLOCK_CARD, "clock", startCard);
+      card.createDiv();
+      startCard.addCard(card);
 
       if (global.glassDemoMode) {
         handleCards(demoCards);
       }
-    }
 
-    // Some debug functions, should be removed for real use
-    this.getCards = function () { return cards; };
+      startCard.show();
+    }
 
     initialize();
   }
