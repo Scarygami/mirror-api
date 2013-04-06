@@ -6,6 +6,9 @@ api_version: 1
 
 handlers:
 
+- url: /images
+  static_dir: static/images
+
 - url: /glass/(.*\.(html|css|js))
   static_files: static/glass/\1
   upload: static/glass/(.*\.(html|css|js))

@@ -1,6 +1,6 @@
 (function (global) {
   "use strict";
-  var doc = global.document, console = global.console, demoCards, templates;
+  var doc = global.document, console = global.console, demoCards, templates, actions;
 
   demoCards = {
     "items": [
@@ -13,7 +13,7 @@
       },
       {
         "text": "Hello World!",
-        "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
+        "cardOptions": [{"action": "READ_ALOUD"}],
         "when": "2013-04-05T12:26:55.837450",
         "id": 2
       },
@@ -27,10 +27,38 @@
     ]
   };
 
+  // Predefined actions
+  actions = {
+    "SHARE": {
+      "action": "SHARE",
+      "id": "SHARE",
+      "values": [{
+        "displayName": "Share",
+        "iconUrl": "https://mirror-api.appspot.com/images/share.png"
+      }]
+    },
+    "REPLY": {
+      "action": "REPLY",
+      "id": "REPLY",
+      "values": [{
+        "displayName": "Reply",
+        "iconUrl": "https://mirror-api.appspot.com/images/reply.png"
+      }]
+    },
+    "READ_ALOUD": {
+      "action": "READ_ALOUD",
+      "id": "READ_ALOUD",
+      "values": [{
+        "displayName": "Read aloud",
+        "iconUrl": "https://mirror-api.appspot.com/images/read_aloud.png"
+      }]
+    }
+  };
+
   templates = {
     "start": "<div class=\"card_interface\"></div>",
     "normal": "<div class=\"card_text\"></div><div class=\"card_date\"></div><div class=\"card_interface\"></div>",
-    "action": "<div class=\"card_text\"></div><div class=\"card_interface\"></div>"
+    "action": "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div><div class=\"card_interface\"></div>"
   };
 
 
@@ -74,9 +102,7 @@
       mirror,
       mainDiv = doc.getElementById("glass"),
       timer, running = false,
-      CONTENT_CARD = 1,
-      START_CARD = 2,
-      CLOCK_CARD = 3,
+      START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4,
       UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4;
 
     if (!global.glassDemoMode) {
@@ -84,8 +110,6 @@
     }
 
     function cardSort(a, b) {
-      if (a.type === START_CARD) { return -1; }
-      if (b.type === START_CARD) { return 1; }
       if (a.type === CLOCK_CARD) { return -1; }
       if (b.type === CLOCK_CARD) { return 1; }
       return b.date.getTime() - a.date.getTime();
@@ -129,17 +153,19 @@
       return (dy > 0) ? DOWN : UP;
     }
 
-    function Card(type, id, parent, text, date, image) {
+    function Card(type, id, parent, data) {
       var cardDiv, textDiv, dateDiv, interfaceDiv, mouseX, mouseY, ignoreClick = false, that = this, cards = [];
+      data = data || {};
       this.id = id;
-      this.text = text || "";
+      this.text = data.text || "";
+      this.action = data.action || "";
       this.type = type;
-      if (date) {
-        this.date = new Date(date);
+      if (data.when) {
+        this.date = new Date(data.when);
       } else {
         this.date = new Date();
       }
-      this.image = image;
+      this.image = data.image;
       type = type || CONTENT_CARD;
 
       this.cardCount = function () {
@@ -157,7 +183,7 @@
       function up() {
         if (cards && cards.length > 0) {
           cards[0].show();
-          if (type === START_CARD) { that.hide(); }
+          that.hide(type === CONTENT_CARD);
         }
       }
 
@@ -248,59 +274,12 @@
         this.updateCardStyle();
       };
 
-      this.hide = function () {
-        cardDiv.style.display = "none";
-      };
-
-      function setupEvents() {
-        if (global.ontouchstart !== undefined) {
-          interfaceDiv.addEventListener("touchstart", onTouchStart, false);
-          interfaceDiv.addEventListener("touchend", onTouchEnd, false);
+      this.hide = function (shadowOnly) {
+        if (shadowOnly) {
+          this.updateCardStyle(true);
         } else {
-          interfaceDiv.onmousedown = onMouseDown;
-          interfaceDiv.onmouseup = onMouseUp;
+          cardDiv.style.display = "none";
         }
-        cardDiv.onselectstart = function () { return false; };
-      }
-
-      this.createDiv = function () {
-        var tmpDiv;
-        switch (type) {
-        case CONTENT_CARD:
-          cardDiv = doc.createElement("div");
-          cardDiv.id = "c" + id;
-          cardDiv.innerHTML = templates.normal;
-          mainDiv.appendChild(cardDiv);
-          textDiv = doc.querySelector("#" + cardDiv.id + " .card_text");
-          textDiv.appendChild(doc.createTextNode(this.text));
-          dateDiv = doc.querySelector("#" + cardDiv.id + " .card_date");
-          dateDiv.appendChild(doc.createTextNode(this.date.niceDate()));
-          if (this.image) {
-            loadImage();
-          }
-          break;
-        case START_CARD:
-          cardDiv = doc.createElement("div");
-          cardDiv.id = "c" + id;
-          cardDiv.innerHTML = templates.start;
-          mainDiv.appendChild(cardDiv);
-          break;
-        case CLOCK_CARD:
-          cardDiv = doc.createElement("div");
-          cardDiv.id = "c" + id;
-          cardDiv.innerHTML = templates.normal;
-          mainDiv.appendChild(cardDiv);
-          textDiv = doc.querySelector("#" + cardDiv.id + " .card_text");
-          textDiv.appendChild(doc.createTextNode("\"ok glass\""));
-          dateDiv = doc.querySelector("#" + cardDiv.id + " .card_date");
-          dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
-          break;
-        }
-
-        interfaceDiv = doc.querySelector("#" + cardDiv.id + " .card_interface");
-        this.updateCardStyle();
-        setupEvents();
-        this.hide();
       };
 
       this.updateText = function (text) {
@@ -356,29 +335,32 @@
         }
       };
 
-      this.updateCardStyle = function () {
+      this.updateCardStyle = function (noShadow) {
         var shadow = "", pos, last;
         cardDiv.className = "card";
 
-        if (cards && cards.length > 0) {
-          shadow += "_down";
+        if (!noShadow) {
+          if (cards && cards.length > 0) {
+            shadow += "_down";
+          }
+
+          if (!!parent) {
+            pos = parent.findPosition(this.id);
+            last = parent.cardCount() - 1;
+            if (pos > 0) {
+              shadow += "_left";
+            }
+            if (pos < last) {
+              shadow += "_right";
+            }
+            shadow += "_up";
+          }
+
+          if (shadow !== "") {
+            cardDiv.classList.add("shadow" + shadow);
+          }
         }
 
-        if (!!parent) {
-          pos = parent.findPosition(this.id);
-          last = parent.cardCount() - 1;
-          if (pos > 0) {
-            shadow += "_left";
-          }
-          if (pos < last) {
-            shadow += "_right";
-          }
-          shadow += "_up";
-        }
-
-        if (shadow !== "") {
-          cardDiv.classList.add("shadow" + shadow);
-        }
         switch (type) {
         case START_CARD:
           break;
@@ -392,6 +374,9 @@
             cardDiv.classList.add("card_type_text");
             // And in the future possibly also card_type_html
           }
+          break;
+        case ACTION_CARD:
+          cardDiv.classList.add("card_type_action");
           break;
         }
       };
@@ -423,6 +408,86 @@
       this.addCard = function (card) {
         cards.push(card);
       };
+
+      function setupEvents() {
+        if (global.ontouchstart !== undefined) {
+          interfaceDiv.addEventListener("touchstart", onTouchStart, false);
+          interfaceDiv.addEventListener("touchend", onTouchEnd, false);
+        } else {
+          interfaceDiv.onmousedown = onMouseDown;
+          interfaceDiv.onmouseup = onMouseUp;
+        }
+        cardDiv.onselectstart = function () { return false; };
+      }
+
+      function createDiv() {
+        var tmpDiv;
+        switch (type) {
+        case START_CARD:
+          cardDiv = doc.createElement("div");
+          cardDiv.id = "c" + id;
+          cardDiv.innerHTML = templates.start;
+          mainDiv.appendChild(cardDiv);
+          break;
+        case CLOCK_CARD:
+          cardDiv = doc.createElement("div");
+          cardDiv.id = "c" + id;
+          cardDiv.innerHTML = templates.normal;
+          mainDiv.appendChild(cardDiv);
+          textDiv = doc.querySelector("#" + cardDiv.id + " .card_text");
+          textDiv.appendChild(doc.createTextNode("\"ok glass\""));
+          dateDiv = doc.querySelector("#" + cardDiv.id + " .card_date");
+          dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+          break;
+        case CONTENT_CARD:
+          cardDiv = doc.createElement("div");
+          cardDiv.id = "c" + id;
+          cardDiv.innerHTML = templates.normal;
+          mainDiv.appendChild(cardDiv);
+          textDiv = doc.querySelector("#" + cardDiv.id + " .card_text");
+          textDiv.appendChild(doc.createTextNode(that.text));
+          dateDiv = doc.querySelector("#" + cardDiv.id + " .card_date");
+          dateDiv.appendChild(doc.createTextNode(that.date.niceDate()));
+          if (that.image) {
+            loadImage();
+          }
+          break;
+        case ACTION_CARD:
+          cardDiv = doc.createElement("div");
+          cardDiv.id = "c" + id;
+          cardDiv.innerHTML = templates.action;
+          mainDiv.appendChild(cardDiv);
+          textDiv = doc.querySelector("#" + cardDiv.id + " .card_text");
+          if (!!actions[that.action]) {
+            textDiv.appendChild(doc.createTextNode(actions[that.action].values[0].displayName));
+            doc.querySelector("#" + cardDiv.id + " .card_icon").src = actions[that.action].values[0].iconUrl;
+          } else {
+            textDiv.appendChild(doc.createTextNode(that.action));
+            doc.querySelector("#" + cardDiv.id + " .card_icon").src = data.values[0].iconUrl;
+          }
+          break;
+        }
+
+        interfaceDiv = doc.querySelector("#" + cardDiv.id + " .card_interface");
+        that.updateCardStyle();
+        that.hide();
+      }
+
+      function createActionCards() {
+        var i, l;
+        l = data.cardOptions.length;
+        for (i = 0; i < l; i++) {
+          if (data.cardOptions[i].action) {
+            cards.push(new Card(ACTION_CARD, that.id + "_" + data.cardOptions[i].action, that, data.cardOptions[i]));
+          }
+        }
+      }
+
+      createDiv();
+      setupEvents();
+      if (data.cardOptions && data.cardOptions.length > 0) {
+        createActionCards();
+      }
     }
 
     function handleCards(result) {
@@ -437,8 +502,7 @@
             card.updateImage(result.items[i].image);
             card.updateCardStyle();
           } else {
-            card = new Card(CONTENT_CARD, result.items[i].id, startCard, result.items[i].text, result.items[i].when, result.items[i].image);
-            card.createDiv();
+            card = new Card(CONTENT_CARD, result.items[i].id, startCard, result.items[i]);
             startCard.addCard(card);
           }
         }
@@ -475,10 +539,8 @@
       mainDiv.innerHTML = "";
 
       startCard = new Card(START_CARD, "start");
-      startCard.createDiv();
 
       card = new Card(CLOCK_CARD, "clock", startCard);
-      card.createDiv();
       startCard.addCard(card);
 
       if (global.glassDemoMode) {

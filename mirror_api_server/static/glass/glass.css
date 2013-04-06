@@ -68,57 +68,57 @@ body {
 
 
 .shadow_up {
-  -webkit-box-shadow: 0px -10px 10px -10px white;
-  -moz-box-shadow: 0px -10px 10px -10px white;
-  box-shadow: 0px -10px 10px -10px white;
+  -webkit-box-shadow: 0px -10px 10px -10px #555;
+  -moz-box-shadow: 0px -10px 10px -10px #555;
+  box-shadow: 0px -10px 10px -10px #555;
 }
 
 .shadow_down {
-  -webkit-box-shadow: 0px 10px 10px -10px white;
-  -moz-box-shadow: 0px 10px 10px -10px white;
-  box-shadow: 0px 10px 10px -10px white;
+  -webkit-box-shadow: 0px 10px 10px -10px #555;
+  -moz-box-shadow: 0px 10px 10px -10px #555;
+  box-shadow: 0px 10px 10px -10px #555;
 }
 
 .shadow_down_up {
-  -webkit-box-shadow: 0px 10px 10px -10px white, 0px -10px 10px -10px white;
-  -moz-box-shadow: 0px 10px 10px -10px white, 0px -10px 10px -10px white;
-  box-shadow: 0px 10px 10px -10px white, 0px -10px 10px -10px white;
+  -webkit-box-shadow: 0px 10px 10px -10px #555, 0px -10px 10px -10px #555;
+  -moz-box-shadow: 0px 10px 10px -10px #555, 0px -10px 10px -10px #555;
+  box-shadow: 0px 10px 10px -10px #555, 0px -10px 10px -10px #555;
 }
 
 .shadow_left_up {
-  -webkit-box-shadow: 0px -10px 10px -10px white, -10px 0px 10px -10px white;
-  -moz-box-shadow: 0px -10px 10px -10px white, -10px 0px 10px -10px white;
-  box-shadow: 0px -10px 10px -10px white, -10px 0px 10px -10px white;
+  -webkit-box-shadow: 0px -10px 10px -10px #555, -10px 0px 10px -10px #555;
+  -moz-box-shadow: 0px -10px 10px -10px #555, -10px 0px 10px -10px #555;
+  box-shadow: 0px -10px 10px -10px #555, -10px 0px 10px -10px #555;
 }
 
 .shadow_right_up {
-  -webkit-box-shadow: 0px -10px 10px -10px white, 10px 0px 10px -10px white;
-  -moz-box-shadow: 0px -10px 10px -10px white, 10px 0px 10px -10px white;
-  box-shadow: 0px -10px 10px -10px white, 10px 0px 10px -10px white;
+  -webkit-box-shadow: 0px -10px 10px -10px #555, 10px 0px 10px -10px #555;
+  -moz-box-shadow: 0px -10px 10px -10px #555, 10px 0px 10px -10px #555;
+  box-shadow: 0px -10px 10px -10px #555, 10px 0px 10px -10px #555;
 }
 
 .shadow_left_right_up {
-  -webkit-box-shadow: 0px -10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white;
-  -moz-box-shadow: 0px -10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white;
-  box-shadow: 0px -10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white;
+  -webkit-box-shadow: 0px -10px 10px -10px #555, 10px 0px 10px -10px #555, -10px 0px 10px -10px #555;
+  -moz-box-shadow: 0px -10px 10px -10px #555, 10px 0px 10px -10px #555, -10px 0px 10px -10px #555;
+  box-shadow: 0px -10px 10px -10px #555, 10px 0px 10px -10px #555, -10px 0px 10px -10px #555;
 }
 
 .shadow_down_left_up {
-  -webkit-box-shadow: 0px 10px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
-  -moz-box-shadow: 0px 10px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
-  box-shadow: 0px 10px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
+  -webkit-box-shadow: 0px 10px 10px -10px #555, -10px 0px 10px -10px #555, 0px -10px 10px -10px #555;
+  -moz-box-shadow: 0px 10px 10px -10px #555, -10px 0px 10px -10px #555, 0px -10px 10px -10px #555;
+  box-shadow: 0px 10px 10px -10px #555, -10px 0px 10px -10px #555, 0px -10px 10px -10px #555;
 }
 
 .shadow_down_right_up {
-  -webkit-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, 0px -10px 10px -10px white;
-  -moz-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, 0px -10px 10px -10px white;
-  box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, 0px -10px 10px -10px white;
+  -webkit-box-shadow: 0px 10px 10px -10px #555, 10px 0px 10px -10px #555, 0px -10px 10px -10px #555;
+  -moz-box-shadow: 0px 10px 10px -10px #555, 10px 0px 10px -10px #555, 0px -10px 10px -10px #555;
+  box-shadow: 0px 10px 10px -10px #555, 10px 0px 10px -10px #555, 0px -10px 10px -10px #555;
 }
 
 .shadow_down_left_right_up {
-  -webkit-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
-  -moz-box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
-  box-shadow: 0px 10px 10px -10px white, 10px 0px 10px -10px white, -10px 0px 10px -10px white, 0px -10px 10px -10px white;
+  -webkit-box-shadow: 0px 10px 10px -10px #555, 10px 0px 10px -10px #555, -10px 0px 10px -10px #555, 0px -10px 10px -10px #555;
+  -moz-box-shadow: 0px 10px 10px -10px #555, 10px 0px 10px -10px #555, -10px 0px 10px -10px #555, 0px -10px 10px -10px #555;
+  box-shadow: 0px 10px 10px -10px #555, 10px 0px 10px -10px #555, -10px 0px 10px -10px #555, 0px -10px 10px -10px #555;
 }
 
 /** Card-type-specific Styles */
@@ -131,6 +131,39 @@ body {
   background-color: rgba(0,0,0,0.4);
   font-size: 2.4em;
   font-style: italic;
+}
+
+.card_type_action {
+  background-color: rgba(0,0,0,0.7);
+  z-index: 150;
+}
+
+.card_type_action > .card_interface {
+  z-index: 200;
+}
+
+.card_type_action > .card_action {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  top: 130px;
+  padding: 0;
+}
+
+.card_type_action > .card_action > .card_text {
+  position: static;
+  display: inline-block;
+  color: white;
+  font-size: 75px;
+  font-weight: 100;
+  padding: 0;
+  width: auto;
+  height: auto;
+}
+
+.card_type_action > .card_action > .card_icon {
+  height: 50px;
+  margin-right: 10px;
 }
 
 .card_type_clock > .card_text {
