@@ -33,7 +33,7 @@
     h = this.getHours().toString();
     min = this.getMinutes().toString();
 
-    return (h[1] ? h : "0" + h[0]) + ":" + (min[1] ? min : "0" + min[0]);
+    return h + ":" + (min[1] ? min : "0" + min[0]);
   };
 
   function Glass() {

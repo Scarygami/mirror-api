@@ -83,18 +83,21 @@ body {
 .card_type_clock > .card_text {
   text-align: center;
   width: 100%;
-  font-size: 2em;
-  font-style: italic;
-  top: 230px;
+  font-size: 40px;
+  font-weight: 300;
+  top: 280px;
   padding: 0;
+  height: auto;
+  color: rgba(255,255,255,0.5);
 }
 
 .card_type_clock > .card_date {
   text-align: center;
-  font-size: 4.5em;
-  font-weight: 300;
-  top: 125px;
+  font-size: 115px;
+  font-weight: 100;
+  top: 100px;
   padding: 0;
+  bottom: auto;
 }
 
 #signin, #signout {
