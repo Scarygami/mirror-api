@@ -434,54 +434,50 @@
       }
 
       function createDiv() {
-        var tmpDiv;
+        cardDiv = doc.createElement("div");
+        cardDiv.id = "c" + id;
+
         switch (type) {
         case START_CARD:
-          cardDiv = doc.createElement("div");
-          cardDiv.id = "c" + id;
           cardDiv.innerHTML = templates.start;
           mainDiv.appendChild(cardDiv);
           break;
         case CLOCK_CARD:
-          cardDiv = doc.createElement("div");
-          cardDiv.id = "c" + id;
           cardDiv.innerHTML = templates.normal;
           mainDiv.appendChild(cardDiv);
           textDiv = doc.querySelector("#" + cardDiv.id + " .card_text");
+          textDiv = cardDiv.querySelector(".card_text");
           textDiv.appendChild(doc.createTextNode("\"ok glass\""));
           dateDiv = doc.querySelector("#" + cardDiv.id + " .card_date");
+          dateDiv = cardDiv.querySelector(".card_date");
           dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
           break;
         case CONTENT_CARD:
-          cardDiv = doc.createElement("div");
-          cardDiv.id = "c" + id;
           cardDiv.innerHTML = templates.normal;
           mainDiv.appendChild(cardDiv);
-          textDiv = doc.querySelector("#" + cardDiv.id + " .card_text");
+          textDiv = cardDiv.querySelector(".card_text");
           textDiv.appendChild(doc.createTextNode(that.text));
-          dateDiv = doc.querySelector("#" + cardDiv.id + " .card_date");
+          dateDiv = cardDiv.querySelector(".card_date");
           dateDiv.appendChild(doc.createTextNode(that.date.niceDate()));
           if (that.image) {
             loadImage();
           }
           break;
         case ACTION_CARD:
-          cardDiv = doc.createElement("div");
-          cardDiv.id = "c" + id;
           cardDiv.innerHTML = templates.action;
           mainDiv.appendChild(cardDiv);
-          textDiv = doc.querySelector("#" + cardDiv.id + " .card_text");
+          textDiv = cardDiv.querySelector(".card_text");
           if (!!actions[that.action]) {
             textDiv.appendChild(doc.createTextNode(actions[that.action].values[0].displayName));
-            doc.querySelector("#" + cardDiv.id + " .card_icon").src = actions[that.action].values[0].iconUrl;
+            cardDiv.querySelector(".card_icon").src = actions[that.action].values[0].iconUrl;
           } else {
             textDiv.appendChild(doc.createTextNode(data.values[0].displayName));
-            doc.querySelector("#" + cardDiv.id + " .card_icon").src = data.values[0].iconUrl;
+            cardDiv.querySelector(".card_icon").src = data.values[0].iconUrl;
           }
           break;
         }
 
-        interfaceDiv = doc.querySelector("#" + cardDiv.id + " .card_interface");
+        interfaceDiv = cardDiv.querySelector(".card_interface");
         that.updateCardStyle();
         that.hide();
       }
