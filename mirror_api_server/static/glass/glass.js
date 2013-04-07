@@ -318,8 +318,6 @@
       this.updateDisplayDate = function () {
         var i, l;
         switch (type) {
-        case START_CARD:
-          return;
         case CLOCK_CARD:
           dateDiv.innerHTML = "";
           dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
@@ -514,6 +512,7 @@
     function fetchCards() {
       timer = undefined;
       mirror.timeline.list().execute(function (result) {
+        console.log(result);
         handleCards(result);
         timer = global.setTimeout(fetchCards, 30000);
       });
