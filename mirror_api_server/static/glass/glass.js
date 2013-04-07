@@ -23,6 +23,23 @@
         "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
         "when": "2013-04-05T11:32:19.603850",
         "id": 3
+      },
+      {
+       "text": "Awesome!",
+       "cardOptions": [
+        {
+         "action": "CUSTOM",
+         "values": [
+          {
+           "iconUrl": "http://cdn4.iconfinder.com/data/icons/gnome-desktop-icons-png/PNG/48/Gnome-Face-Smile-48.png",
+           "displayName": "Smile"
+          }
+         ],
+         "id": "smile"
+        }
+       ],
+       "when": "2013-04-07T12:45:41.841880",
+       "id": 4,
       }
     ]
   };
@@ -270,6 +287,8 @@
       }
 
       this.show = function () {
+        // Update timestamp
+        this.updateDisplayDate();
         cardDiv.style.display = "block";
         this.updateCardStyle();
       };
@@ -326,10 +345,6 @@
           dateDiv.innerHTML = "";
           dateDiv.appendChild(doc.createTextNode(this.date.niceDate()));
           break;
-        }
-        l = cards.length;
-        for (i = 0; i < l; i++) {
-          cards[i].updateDisplayDate();
         }
       };
 
@@ -505,7 +520,6 @@
           }
         }
       }
-      startCard.updateDisplayDate();
     }
 
 
