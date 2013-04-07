@@ -9,9 +9,9 @@ handlers:
 - url: /images
   static_dir: static/images
 
-- url: /glass/(.*\.(html|css|js))
+- url: /glass/(.*\.(html|css|js|grxml))
   static_files: static/glass/\1
-  upload: static/glass/(.*\.(html|css|js))
+  upload: static/glass/(.*\.(html|css|js|grxml))
 
 - url: /js/service\.js
   static_files: static/service/service.js

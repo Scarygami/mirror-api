@@ -25,21 +25,21 @@
         "id": 3
       },
       {
-       "text": "Awesome!",
-       "cardOptions": [
-        {
-         "action": "CUSTOM",
-         "values": [
+        "text": "Awesome!",
+        "cardOptions": [
           {
-           "iconUrl": "http://cdn4.iconfinder.com/data/icons/gnome-desktop-icons-png/PNG/48/Gnome-Face-Smile-48.png",
-           "displayName": "Smile"
+            "action": "CUSTOM",
+            "values": [
+              {
+                "iconUrl": "http://cdn4.iconfinder.com/data/icons/gnome-desktop-icons-png/PNG/48/Gnome-Face-Smile-48.png",
+                "displayName": "Smile"
+              }
+            ],
+            "id": "smile"
           }
-         ],
-         "id": "smile"
-        }
-       ],
-       "when": "2013-04-07T12:45:41.841880",
-       "id": 4,
+        ],
+        "when": "2013-04-07T12:45:41.841880",
+        "id": 4
       }
     ]
   };
@@ -120,10 +120,19 @@
       mainDiv = doc.getElementById("glass"),
       timer, running = false,
       START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4,
-      UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4;
+      UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4,
+      recognition;
 
     if (!global.glassDemoMode) {
       mirror = global.gapi.client.mirror;
+    }
+
+    if (global.webkitSpeechRecognition) {
+      recognition = new global.webkitSpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+      recognition.grammars.addFromUri("grammar.grxml", 10);
     }
 
     function cardSort(a, b) {
@@ -291,6 +300,33 @@
         this.updateDisplayDate();
         cardDiv.style.display = "block";
         this.updateCardStyle();
+
+        if (that.type === CLOCK_CARD && recognition) {
+          recognition.onstart = function (e) {
+            console.log(e);
+          };
+          recognition.onresult = function (e) {
+            var i, interim = "";
+            for (i = e.resultIndex; i < e.results.length; i++) {
+              if (e.results[i].isFinal) {
+                that.speech_result += e.results[i][0].transcript;
+              } else {
+                interim += e.results[i][0].transcript;
+              }
+            }
+            console.log("Final: " + that.speech_result);
+            console.log("Interim: " + interim);
+          };
+          recognition.onerror = function (e) {
+            console.log(e);
+          };
+          recognition.onend = function (e) {
+            console.log(e);
+          };
+          this.speech_result = "";
+          recognition.start();
+
+        }
       };
 
       this.hide = function (shadowOnly) {
@@ -298,6 +334,9 @@
           this.updateCardStyle(true);
         } else {
           cardDiv.style.display = "none";
+        }
+        if (that.type === CLOCK_CARD && recognition) {
+          recognition.stop();
         }
       };
 
