@@ -29,10 +29,19 @@ from endpoints_proto_datastore.ndb import EndpointsUserProperty
 class CardAction(messages.Enum):
     SHARE = 1
     REPLY = 2
+    READ_ALOUD = 3
+    CUSTOM = 4
+
+
+class CardOptionValue(EndpointsModel):
+    displayName = ndb.StringProperty()
+    iconUrl = ndb.StringProperty()
 
 
 class CardOption(EndpointsModel):
-    action = msgprop.EnumProperty(CardAction)
+    action = msgprop.EnumProperty(CardAction, required=True)
+    id = ndb.StringProperty()
+    values = ndb.LocalStructuredProperty(CardOptionValue, repeated=True)
 
 
 class Card(EndpointsModel):
@@ -47,4 +56,4 @@ class Card(EndpointsModel):
     when = EndpointsDateTimeProperty(auto_now_add=True)
     user = EndpointsUserProperty(required=True, raise_unauthorized=True)
     image = ndb.TextProperty()
-    cardOptions = ndb.StructuredProperty(CardOption, repeated=True)
+    cardOptions = ndb.LocalStructuredProperty(CardOption, repeated=True)
