@@ -34,8 +34,8 @@ class CardAction(messages.Enum):
 
 
 class CardOptionValue(EndpointsModel):
-    displayName = ndb.StringProperty()
-    iconUrl = ndb.StringProperty()
+    displayName = ndb.StringProperty(required=True)
+    iconUrl = ndb.StringProperty(required=True)
 
 
 class CardOption(EndpointsModel):

@@ -460,7 +460,7 @@
             textDiv.appendChild(doc.createTextNode(actions[that.action].values[0].displayName));
             doc.querySelector("#" + cardDiv.id + " .card_icon").src = actions[that.action].values[0].iconUrl;
           } else {
-            textDiv.appendChild(doc.createTextNode(that.action));
+            textDiv.appendChild(doc.createTextNode(data.values[0].displayName));
             doc.querySelector("#" + cardDiv.id + " .card_icon").src = data.values[0].iconUrl;
           }
           break;

@@ -23,6 +23,8 @@ import os
 from google.appengine.ext import endpoints
 from protorpc import remote
 from models import Card
+from models import CardAction
+
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _SECRETS_PATH = os.path.join(_ROOT_DIR, "client_secrets.json")
@@ -65,6 +67,18 @@ class MirrorApi(remote.Service):
             An instance of Card containing the information inserted,
             the time the card was inserted and the ID of the card.
         """
+
+        if card.cardOptions is not None:
+            for cardOption in card.cardOptions:
+                if cardOption.action == CardAction.CUSTOM:
+                    if cardOption.id is None:
+                        raise endpoints.BadRequestException('For custom actions id needs to be provided.')
+                    if cardOption.values is None or len(cardOption.values) == 0:
+                        raise endpoints.BadRequestException('For custom actions at least one value needs to be provided.')
+                    for value in cardOption.values:
+                        if value.displayName is None or value.iconUrl is None:
+                            raise endpoints.BadRequestException('Each value needs to contain displayName and iconUrl.')
+
         card.put()
         return card
 
