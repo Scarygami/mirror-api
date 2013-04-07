@@ -445,10 +445,8 @@
         case CLOCK_CARD:
           cardDiv.innerHTML = templates.normal;
           mainDiv.appendChild(cardDiv);
-          textDiv = doc.querySelector("#" + cardDiv.id + " .card_text");
           textDiv = cardDiv.querySelector(".card_text");
           textDiv.appendChild(doc.createTextNode("\"ok glass\""));
-          dateDiv = doc.querySelector("#" + cardDiv.id + " .card_date");
           dateDiv = cardDiv.querySelector(".card_date");
           dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
           break;
