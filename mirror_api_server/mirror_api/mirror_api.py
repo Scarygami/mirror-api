@@ -24,6 +24,7 @@ from google.appengine.ext import endpoints
 from protorpc import remote
 from models import Card
 from models import CardAction
+from models import ShareEntity
 
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -72,17 +73,17 @@ class MirrorApi(remote.Service):
             for cardOption in card.cardOptions:
                 if cardOption.action == CardAction.CUSTOM:
                     if cardOption.id is None:
-                        raise endpoints.BadRequestException('For custom actions id needs to be provided.')
+                        raise endpoints.BadRequestException("For custom actions id needs to be provided.")
                     if cardOption.values is None or len(cardOption.values) == 0:
-                        raise endpoints.BadRequestException('For custom actions at least one value needs to be provided.')
+                        raise endpoints.BadRequestException("For custom actions at least one value needs to be provided.")
                     for value in cardOption.values:
                         if value.displayName is None or value.iconUrl is None:
-                            raise endpoints.BadRequestException('Each value needs to contain displayName and iconUrl.')
+                            raise endpoints.BadRequestException("Each value needs to contain displayName and iconUrl.")
 
         card.put()
         return card
 
-    @Card.method(request_fields=('id',),
+    @Card.method(request_fields=("id",),
                  user_required=True,
                  path="timeline/{id}", http_method="GET",
                  name="timeline.get")
@@ -96,5 +97,49 @@ class MirrorApi(remote.Service):
             An instance of Card requested.
         """
         if not card.from_datastore or card.user != endpoints.get_current_user():
-            raise endpoints.NotFoundException('Card not found.')
+            raise endpoints.NotFoundException("Card not found.")
         return card
+
+    @ShareEntity.query_method(query_fields=("limit", "pageToken"),
+                              user_required=True,
+                              path="shareEntities", name="shareEntitites.list")
+    def shareEntities_list(self, query):
+        """List all Share entities registered for the current user.
+
+        This isn't part of the actual Mirror API but necessary for the emulator part
+        to be able to display relevant Share options.
+
+        Args:
+            query: An ndb Query object for ShareEntities.
+
+        Returns:
+            An update ndb Query object for the current user.
+        """
+
+        return query.filter(ShareEntity.user == endpoints.get_current_user())
+
+    @ShareEntity.method(user_required=True,
+                        path="shareEntities", name="shareEntities.insert")
+    def shareEntities_insert(self, shareEntity):
+        """Insert a new ShareEntity for the current user.
+
+        Args:
+            shareEntity: An instance of ShareEntity parsed from the API request.
+
+        Returns:
+            An instance of ShareEntity containing the information inserted.
+        """
+
+        if shareEntity.id is None:
+            raise endpoints.BadRequestException("ID needs to be provided.")
+        if shareEntity.displayName is None:
+            raise endpoints.BadRequestException("displayName needs to be provided.")
+        if shareEntity.imageUrls is None or len(shareEntity.imageUrls) == 0:
+            raise endpoints.BadRequestException("At least one imageUrl needs to be provided.")
+
+        if shareEntity.from_datastore:
+            name = shareEntity.key.string_id()
+            raise endpoints.BadRequestException("ShareEntity with name %s already exists." % name)
+
+        shareEntity.put()
+        return shareEntity

@@ -24,6 +24,7 @@ from protorpc import messages
 from endpoints_proto_datastore.ndb import EndpointsDateTimeProperty
 from endpoints_proto_datastore.ndb import EndpointsModel
 from endpoints_proto_datastore.ndb import EndpointsUserProperty
+from endpoints_proto_datastore.ndb import EndpointsAliasProperty
 
 
 class CardAction(messages.Enum):
@@ -45,7 +46,7 @@ class CardOption(EndpointsModel):
 
 
 class Card(EndpointsModel):
-    """Model to timeline cards.
+    """Model for timeline cards.
 
     Since the when property is auto_now_add=True, Cards will document when
     they were inserted immediately after being stored.
@@ -57,3 +58,24 @@ class Card(EndpointsModel):
     user = EndpointsUserProperty(required=True, raise_unauthorized=True)
     image = ndb.TextProperty()
     cardOptions = ndb.LocalStructuredProperty(CardOption, repeated=True)
+
+
+class ShareEntity(EndpointsModel):
+    """Model for share entities"""
+
+    _message_fields_schema = ("id", "displayName", "imageUrls")
+
+    displayName = ndb.StringProperty(required=True)
+    imageUrls = ndb.StringProperty(repeated=True)
+    user = EndpointsUserProperty(required=True, raise_unauthorized=True)
+
+    def IdSet(self, value):
+        if not isinstance(value, basestring):
+            raise TypeError("ID must be a string.")
+
+        self.UpdateFromKey(ndb.Key(ShareEntity, value))
+
+    @EndpointsAliasProperty(setter=IdSet, required=True)
+    def id(self):
+        if self.key is not None:
+            return self.key.string_id()
