@@ -38,12 +38,12 @@
 
   function Glass() {
     var
-      startCard,
-      demoCards, templates, actions,
+      startCard, shareCards = [],
+      demoCards, demoShareEntities, templates, actions,
       mirror,
       mainDiv = doc.getElementById("glass"),
       timer, running = false,
-      START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4,
+      START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4, SHARE_CARD = 5,
       UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4,
       recognition;
 
@@ -89,6 +89,21 @@
       ]
     };
 
+    demoShareEntities = {
+      "items": [
+        {
+          "imageUrls": ["https://lh6.googleusercontent.com/-bD-d-9gNj9Q/UUsPXCGLkzI/AAAAAAAAAB0/UTJcoCOobuY/s980/drawhere.PNG"],
+          "displayName": "Drawing",
+          "id": "drawing"
+        },
+        {
+          "imageUrls": ["https://lh5.googleusercontent.com/-RbOUc7DuD_w/UUib23VOU_I/AAAAAAAAEEU/eNn61vUxjfI/s250/Drive_logo+%281%29.jpg"],
+          "displayName": "Drive",
+          "id": "drive"
+        }
+      ]
+    };
+
     // Predefined actions
     actions = {
       "SHARE": {
@@ -122,6 +137,7 @@
     templates[CLOCK_CARD] = "<div class=\"card_date\"></div><div class=\"card_text\"></div><div class=\"card_interface\"></div>";
     templates[CONTENT_CARD] = "<div class=\"card_text\"></div><div class=\"card_date\"></div><div class=\"card_interface\"></div>";
     templates[ACTION_CARD] = "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div><div class=\"card_interface\"></div>";
+    templates[SHARE_CARD] = "<div class=\"card_text\"></div><div class=\"card_interface\"></div>";
 
 
     if (!global.glassDemoMode) {
@@ -184,7 +200,7 @@
       var cardDiv, textDiv, dateDiv, interfaceDiv, mouseX, mouseY, ignoreClick = false, that = this, cards = [];
       data = data || {};
       this.id = id;
-      this.text = data.text || "";
+      this.text = data.text || data.displayName || "";
       this.action = data.action || "";
       this.type = type;
       if (data.when) {
@@ -193,18 +209,30 @@
         this.date = new Date();
       }
       this.image = data.image;
+      if (data.imageUrls && data.imageUrls.length > 0) {
+        this.image = data.imageUrls[0];
+      }
       type = type || CONTENT_CARD;
 
-      this.cardCount = function () {
-        return cards.length;
-      };
-
       this.showCard = function (pos) {
-        cards[pos].show();
+        if (type === ACTION_CARD && that.action === "SHARE") {
+          shareCards[pos].show();
+        } else {
+          cards[pos].show();
+        }
       };
 
       function up() {
-        if (cards && cards.length > 0) {
+        var i, l;
+        if (type === ACTION_CARD && that.action === "SHARE") {
+          l = shareCards.length;
+          if (l === 0) { return; }
+          for (i = 0; i < l; i++) {
+            shareCards[i].setParent(that);
+          }
+          shareCards[0].show();
+          that.hide();
+        } else if (cards && cards.length > 0) {
           cards[0].show();
           that.hide(type === CONTENT_CARD);
         }
@@ -389,7 +417,7 @@
         cardDiv.className = "card";
 
         if (!noShadow) {
-          if (cards && cards.length > 0) {
+          if ((cards && cards.length > 0) || this.action === "SHARE") {
             shadow += "_down";
           }
 
@@ -427,6 +455,9 @@
         case ACTION_CARD:
           cardDiv.classList.add("card_type_action");
           break;
+        case SHARE_CARD:
+          cardDiv.classList.add("card_type_share");
+          break;
         }
       };
 
@@ -443,12 +474,29 @@
         return undefined;
       };
 
+      this.cardCount = function () {
+        var array;
+        if (this.type === ACTION_CARD && this.action === "SHARE") {
+          array = shareCards;
+        } else {
+          array = cards;
+        }
+        return array.length;
+      };
+
       this.findPosition = function (id) {
-        var i, l;
-        cards.sort(cardSort);
-        l = cards.length;
+        var i, l, array;
+        if (this.type === ACTION_CARD && this.action === "SHARE") {
+          array = shareCards;
+        } else {
+          array = cards;
+        }
+        if (this.type === START_CARD) {
+          array.sort(cardSort);
+        }
+        l = array.length;
         for (i = 0; i < l; i++) {
-          if (cards[i].id === id) {
+          if (array[i].id === id) {
             return i;
           }
         }
@@ -456,6 +504,12 @@
 
       this.addCard = function (card) {
         cards.push(card);
+      };
+
+      this.setParent = function (card) {
+        if (this.type === SHARE_CARD) {
+          parent = card;
+        }
       };
 
       function setupEvents() {
@@ -498,6 +552,10 @@
             cardDiv.querySelector(".card_icon").src = data.values[0].iconUrl;
           }
           break;
+        case SHARE_CARD:
+          textDiv.appendChild(doc.createTextNode(that.text));
+          cardDiv.style.backgroundImage = "url(" + that.image + ")";
+          break;
         }
         that.updateCardStyle();
         that.hide();
@@ -521,7 +579,7 @@
     }
 
     function handleCards(result) {
-      var i, l, card, cardDiv;
+      var i, l, card;
       if (result && result.items) {
         l = result.items.length;
         for (i = 0; i < l; i++) {
@@ -539,13 +597,29 @@
       }
     }
 
-
     function fetchCards() {
       timer = undefined;
       mirror.timeline.list().execute(function (result) {
         console.log(result);
         handleCards(result);
         timer = global.setTimeout(fetchCards, 30000);
+      });
+    }
+
+    function handleShareEntities(result) {
+      var i, l, share;
+      if (result && result.items) {
+        l = result.items.length;
+        for (i = 0; i < l; i++) {
+          shareCards.push(new Card(SHARE_CARD, result.items[i].id, undefined, result.items[i]));
+        }
+      }
+    }
+
+    function fetchShareEntities() {
+      mirror.shareEntities.list().execute(function (result) {
+        console.log(result);
+        handleShareEntities(result);
       });
     }
 
@@ -574,7 +648,10 @@
       startCard.addCard(card);
 
       if (global.glassDemoMode) {
+        handleShareEntities(demoShareEntities);
         handleCards(demoCards);
+      } else {
+        fetchShareEntities();
       }
 
       startCard.show();

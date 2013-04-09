@@ -134,6 +134,26 @@ body {
   font-style: italic;
 }
 
+.card_type_share {
+  background-size: cover;
+  z-index: 250;
+}
+
+.card_type_share > .card_text {
+  text-align: center;
+  width: 100%;
+  font-size: 40px;
+  font-weight: 300;
+  top: 280px;
+  padding: 0;
+  height: auto;
+  color: rgba(255,255,255,0.5);
+}
+
+.card_type_share > .card_interface {
+  z-index: 300;
+}
+
 .card_type_action {
   background-color: rgba(0,0,0,0.7);
   z-index: 150;

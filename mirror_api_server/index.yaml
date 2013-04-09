@@ -5,7 +5,3 @@ indexes:
   - name: user
   - name: when
     direction: desc
-
-- kind: ShareEntity
-  properties:
-  - name: user

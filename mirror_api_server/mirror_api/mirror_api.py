@@ -102,7 +102,7 @@ class MirrorApi(remote.Service):
 
     @ShareEntity.query_method(query_fields=("limit", "pageToken"),
                               user_required=True,
-                              path="shareEntities", name="shareEntitites.list")
+                              path="shareEntities", name="shareEntities.list")
     def shareEntities_list(self, query):
         """List all Share entities registered for the current user.
 
