@@ -73,9 +73,9 @@ class ShareEntity(EndpointsModel):
         if not isinstance(value, basestring):
             raise TypeError("ID must be a string.")
 
-        self.UpdateFromKey(ndb.Key(ShareEntity, value))
+        self.UpdateFromKey(ndb.Key("User", self.user.email(), ShareEntity, value))
 
     @EndpointsAliasProperty(setter=IdSet, required=True)
     def id(self):
         if self.key is not None:
-            return self.key.string_id()
+            return self.key.pairs()[1][1]
