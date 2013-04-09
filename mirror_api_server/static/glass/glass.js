@@ -1,83 +1,6 @@
 (function (global) {
   "use strict";
-  var doc = global.document, console = global.console, demoCards, templates, actions;
-
-  demoCards = {
-    "items": [
-      {
-        "text": "Also works with Data-URIs!",
-        "image": "https://lh5.googleusercontent.com/-L7PvYS3WeJQ/TvqB-VcRklI/AAAAAAAAP9U/eEBCbBNS9bY/s1012/IMG_0135-2.jpg",
-        "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
-        "when": "2013-04-05T12:36:52.755260",
-        "id": 1
-      },
-      {
-        "text": "Hello World!",
-        "cardOptions": [{"action": "READ_ALOUD"}],
-        "when": "2013-04-05T12:26:55.837450",
-        "id": 2
-      },
-      {
-        "text": "What a nice photo!",
-        "image": "http://farm5.staticflickr.com/4122/4784220578_2ce8d9fac3_b.jpg",
-        "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
-        "when": "2013-04-05T11:32:19.603850",
-        "id": 3
-      },
-      {
-        "text": "Awesome!",
-        "cardOptions": [
-          {
-            "action": "CUSTOM",
-            "values": [
-              {
-                "iconUrl": "http://cdn4.iconfinder.com/data/icons/gnome-desktop-icons-png/PNG/48/Gnome-Face-Smile-48.png",
-                "displayName": "Smile"
-              }
-            ],
-            "id": "smile"
-          }
-        ],
-        "when": "2013-04-07T12:45:41.841880",
-        "id": 4
-      }
-    ]
-  };
-
-  // Predefined actions
-  actions = {
-    "SHARE": {
-      "action": "SHARE",
-      "id": "SHARE",
-      "values": [{
-        "displayName": "Share",
-        "iconUrl": "https://mirror-api.appspot.com/images/share.png"
-      }]
-    },
-    "REPLY": {
-      "action": "REPLY",
-      "id": "REPLY",
-      "values": [{
-        "displayName": "Reply",
-        "iconUrl": "https://mirror-api.appspot.com/images/reply.png"
-      }]
-    },
-    "READ_ALOUD": {
-      "action": "READ_ALOUD",
-      "id": "READ_ALOUD",
-      "values": [{
-        "displayName": "Read aloud",
-        "iconUrl": "https://mirror-api.appspot.com/images/read_aloud.png"
-      }]
-    }
-  };
-
-  templates = {
-    "start": "<div class=\"card_interface\"></div>",
-    "normal": "<div class=\"card_text\"></div><div class=\"card_date\"></div><div class=\"card_interface\"></div>",
-    "action": "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div><div class=\"card_interface\"></div>"
-  };
-
+  var doc = global.document, console = global.console;
 
   Date.prototype.niceDate = function () {
     var y, m, d, h, min, dif, now;
@@ -116,12 +39,90 @@
   function Glass() {
     var
       startCard,
+      demoCards, templates, actions,
       mirror,
       mainDiv = doc.getElementById("glass"),
       timer, running = false,
       START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4,
       UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4,
       recognition;
+
+    demoCards = {
+      "items": [
+        {
+          "text": "Also works with Data-URIs!",
+          "image": "https://lh5.googleusercontent.com/-L7PvYS3WeJQ/TvqB-VcRklI/AAAAAAAAP9U/eEBCbBNS9bY/s1012/IMG_0135-2.jpg",
+          "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
+          "when": "2013-04-05T12:36:52.755260",
+          "id": 1
+        },
+        {
+          "text": "Hello World!",
+          "cardOptions": [{"action": "READ_ALOUD"}],
+          "when": "2013-04-05T12:26:55.837450",
+          "id": 2
+        },
+        {
+          "text": "What a nice photo!",
+          "image": "http://farm5.staticflickr.com/4122/4784220578_2ce8d9fac3_b.jpg",
+          "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
+          "when": "2013-04-05T11:32:19.603850",
+          "id": 3
+        },
+        {
+          "text": "Awesome!",
+          "cardOptions": [
+            {
+              "action": "CUSTOM",
+              "values": [
+                {
+                  "iconUrl": "http://cdn4.iconfinder.com/data/icons/gnome-desktop-icons-png/PNG/48/Gnome-Face-Smile-48.png",
+                  "displayName": "Smile"
+                }
+              ],
+              "id": "smile"
+            }
+          ],
+          "when": "2013-04-07T12:45:41.841880",
+          "id": 4
+        }
+      ]
+    };
+
+    // Predefined actions
+    actions = {
+      "SHARE": {
+        "action": "SHARE",
+        "id": "SHARE",
+        "values": [{
+          "displayName": "Share",
+          "iconUrl": "https://mirror-api.appspot.com/images/share.png"
+        }]
+      },
+      "REPLY": {
+        "action": "REPLY",
+        "id": "REPLY",
+        "values": [{
+          "displayName": "Reply",
+          "iconUrl": "https://mirror-api.appspot.com/images/reply.png"
+        }]
+      },
+      "READ_ALOUD": {
+        "action": "READ_ALOUD",
+        "id": "READ_ALOUD",
+        "values": [{
+          "displayName": "Read aloud",
+          "iconUrl": "https://mirror-api.appspot.com/images/read_aloud.png"
+        }]
+      }
+    };
+
+    templates = [];
+    templates[START_CARD] = "<div class=\"card_interface\"></div>";
+    templates[CLOCK_CARD] = "<div class=\"card_date\"></div><div class=\"card_text\"></div><div class=\"card_interface\"></div>";
+    templates[CONTENT_CARD] = "<div class=\"card_text\"></div><div class=\"card_date\"></div><div class=\"card_interface\"></div>";
+    templates[ACTION_CARD] = "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div><div class=\"card_interface\"></div>";
+
 
     if (!global.glassDemoMode) {
       mirror = global.gapi.client.mirror;
@@ -201,10 +202,6 @@
       this.showCard = function (pos) {
         cards[pos].show();
       };
-
-      function loadImage() {
-        cardDiv.style.backgroundImage = "url(" + that.image + ")";
-      }
 
       function up() {
         if (cards && cards.length > 0) {
@@ -364,7 +361,7 @@
         if (this.image !== image) {
           if (image) {
             this.image = image;
-            loadImage();
+            cardDiv.style.backgroundImage = "url(" + that.image + ")";
           } else {
             this.image = undefined;
             cardDiv.style.backgroundImage = "none";
@@ -475,35 +472,24 @@
       function createDiv() {
         cardDiv = doc.createElement("div");
         cardDiv.id = "c" + id;
-
+        cardDiv.innerHTML = templates[type];
+        mainDiv.appendChild(cardDiv);
+        textDiv = cardDiv.querySelector(".card_text");
+        dateDiv = cardDiv.querySelector(".card_date");
+        interfaceDiv = cardDiv.querySelector(".card_interface");
         switch (type) {
-        case START_CARD:
-          cardDiv.innerHTML = templates.start;
-          mainDiv.appendChild(cardDiv);
-          break;
         case CLOCK_CARD:
-          cardDiv.innerHTML = templates.normal;
-          mainDiv.appendChild(cardDiv);
-          textDiv = cardDiv.querySelector(".card_text");
-          textDiv.appendChild(doc.createTextNode("\"ok glass\""));
-          dateDiv = cardDiv.querySelector(".card_date");
           dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+          textDiv.appendChild(doc.createTextNode("\"ok glass\""));
           break;
         case CONTENT_CARD:
-          cardDiv.innerHTML = templates.normal;
-          mainDiv.appendChild(cardDiv);
-          textDiv = cardDiv.querySelector(".card_text");
           textDiv.appendChild(doc.createTextNode(that.text));
-          dateDiv = cardDiv.querySelector(".card_date");
           dateDiv.appendChild(doc.createTextNode(that.date.niceDate()));
           if (that.image) {
-            loadImage();
+            cardDiv.style.backgroundImage = "url(" + that.image + ")";
           }
           break;
         case ACTION_CARD:
-          cardDiv.innerHTML = templates.action;
-          mainDiv.appendChild(cardDiv);
-          textDiv = cardDiv.querySelector(".card_text");
           if (!!actions[that.action]) {
             textDiv.appendChild(doc.createTextNode(actions[that.action].values[0].displayName));
             cardDiv.querySelector(".card_icon").src = actions[that.action].values[0].iconUrl;
@@ -513,8 +499,6 @@
           }
           break;
         }
-
-        interfaceDiv = cardDiv.querySelector(".card_interface");
         that.updateCardStyle();
         that.hide();
       }
