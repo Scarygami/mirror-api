@@ -30,3 +30,6 @@ handlers:
 libraries:
 - name: pycrypto
   version: latest
+
+- name: jinja2
+  version: latest

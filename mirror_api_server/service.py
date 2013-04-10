@@ -19,11 +19,11 @@ import httplib2
 import os
 import webapp2
 import json
+import jinja2
 
 from apiclient.discovery import build
-from google.appengine.ext.webapp import template
 from webapp2_extras import sessions
-from webapp2_extras import sessions_memcache
+from webapp2_extras.appengine import sessions_memcache
 from google.appengine.api.app_identity import get_application_id
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import flow_from_clientsecrets
@@ -31,6 +31,7 @@ from oauth2client.client import FlowExchangeError
 
 import logging
 
+JINJA = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
 appname = get_application_id()
 base_url = "https://" + appname + ".appspot.com"
@@ -72,16 +73,16 @@ class BaseHandler(webapp2.RequestHandler):
 
 class IndexHandler(BaseHandler):
     def get(self):
-        path = os.path.join(os.path.dirname(__file__), "templates/service.html")
+        template = JINJA.get_template("templates/service.html")
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
         self.session["state"] = state
-        self.response.out.write(template.render(path, {"client_id": CLIENT_ID, "state": state}))
+        self.response.out.write(template.render({"client_id": CLIENT_ID, "state": state}))
 
 
 class GlassHandler(BaseHandler):
     def get(self):
-        path = os.path.join(os.path.dirname(__file__), "templates/glass.html")
-        self.response.out.write(template.render(path, {"client_id": CLIENT_ID, "discovery_url": discovery_url}))
+        template = JINJA.get_template("templates/glass.html")
+        self.response.out.write(template.render({"client_id": CLIENT_ID, "discovery_url": discovery_url}))
 
 
 class ConnectHandler(BaseHandler):
