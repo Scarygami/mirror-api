@@ -51,7 +51,7 @@ class Card(EndpointsModel):
     Since the when property is auto_now_add=True, Cards will document when
     they were inserted immediately after being stored.
     """
-    _message_fields_schema = ("id", "when", "text", "html", "htmlPages", "bundleId", "image", "cardOptions", )
+    _message_fields_schema = ("id", "when", "text", "html", "htmlPages", "bundleId", "image", "cardOptions")
     text = ndb.StringProperty()
     html = ndb.TextProperty()
     htmlPages = ndb.TextProperty(repeated=True)
