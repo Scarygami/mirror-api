@@ -50,30 +50,18 @@ class MirrorApi(remote.Service):
                        user_required=True,
                        path="timeline", name="timeline.list")
     def timeline_list(self, query):
-        """List timeline cards for the current user.
+        """List timeline cards for the current user."""
 
-        Args:
-            query: An ndb Query object for Cards.
-
-        Returns:
-            An update ndb Query object for the current user.
-        """
         query = query.order(-Card.when)
         return query.filter(Card.user == endpoints.get_current_user())
 
-    @Card.method(request_fields=("when", "text", "html", "image", "cardOptions"),
-                 user_required=True, http_method="POST",
+    @Card.method(user_required=True, http_method="POST",
                  path="timeline", name="timeline.insert")
     def timeline_insert(self, card):
-        """Insert a card for the current user.
+        """Insert a card for the current user."""
 
-        Args:
-            card: An instance of Card parsed from the API request.
-
-        Returns:
-            An instance of Card containing the information inserted,
-            the time the card was inserted and the ID of the card.
-        """
+        if card.id is not None:
+            raise endpoints.BadRequestException("ID is not allowed in request body.")
 
         if card.cardOptions is not None:
             for cardOption in card.cardOptions:
@@ -94,16 +82,22 @@ class MirrorApi(remote.Service):
                  path="timeline/{id}", http_method="GET",
                  name="timeline.get")
     def timeline_get(self, card):
-        """Get card with ID for the current user
+        """Get card with ID for the current user"""
 
-        Args:
-            card: An instance of Card parsed from the API request.
-
-        Returns:
-            An instance of Card requested.
-        """
         if not card.from_datastore or card.user != endpoints.get_current_user():
             raise endpoints.NotFoundException("Card not found.")
+        return card
+
+    @Card.method(user_required=True,
+                 path="timeline/{id}", http_method="PUT",
+                 name="timeline.update")
+    def timeline_update(self, card):
+        """Update card with ID for the current user"""
+
+        if not card.from_datastore or card.user != endpoints.get_current_user():
+            raise endpoints.NotFoundException("Card not found.")
+
+        card.put()
         return card
 
     @ShareEntity.query_method(query_fields=("limit", "pageToken"),
@@ -114,12 +108,6 @@ class MirrorApi(remote.Service):
 
         This isn't part of the actual Mirror API but necessary for the emulator part
         to be able to display relevant Share options.
-
-        Args:
-            query: An ndb Query object for ShareEntities.
-
-        Returns:
-            An update ndb Query object for the current user.
         """
 
         return query.filter(ShareEntity.user == endpoints.get_current_user())
@@ -127,14 +115,7 @@ class MirrorApi(remote.Service):
     @ShareEntity.method(user_required=True,
                         path="shareEntities", name="shareEntities.insert")
     def shareEntities_insert(self, shareEntity):
-        """Insert a new ShareEntity for the current user.
-
-        Args:
-            shareEntity: An instance of ShareEntity parsed from the API request.
-
-        Returns:
-            An instance of ShareEntity containing the information inserted.
-        """
+        """Insert a new ShareEntity for the current user."""
 
         if shareEntity.id is None:
             raise endpoints.BadRequestException("ID needs to be provided.")
@@ -150,16 +131,50 @@ class MirrorApi(remote.Service):
         shareEntity.put()
         return shareEntity
 
-    @Subscription.method(request_fields=("collection", "userToken", "verifyToken", "operation", "callbackUrl"),
-                         user_required=True, http_method="POST",
+    @ShareEntity.method(request_fields=("id",),
+                        response_fields=("id",),
+                        user_required=True,
+                        path="shareEntities/{id}", http_method="DELETE",
+                        name="shareEntities.delete")
+    def shareEntities_delete(self, shareEntity):
+        """Remove an existing ShareEntity for the current user."""
+
+        if not shareEntity.from_datastore or shareEntity.user != endpoints.get_current_user():
+            raise endpoints.NotFoundException("shareEntity not found.")
+
+        shareEntity.key.delete()
+
+        # TODO: Check if a success HTTP code can be returned with an empty body
+        return shareEntity
+
+    @Subscription.method(user_required=True, http_method="POST",
                          path="subscriptions", name="subscriptions.insert")
     def subscription_insert(self, subscription):
         """Insert a new subscription for the current user."""
+
+        if subscription.id is not None:
+            raise endpoints.BadRequestException("ID is not allowed in request body.")
 
         if subscription.operation is None or len(subscription.operation) == 0:
             raise endpoints.BadRequestException("At least one operation needs to be provided.")
 
         subscription.put()
+        return subscription
+
+    @Subscription.method(request_fields=("id",),
+                         response_fields=("id",),
+                         user_required=True,
+                         path="subscriptions/{id}", http_method="DELETE",
+                         name="subscriptions.delete")
+    def subscription_delete(self, subscription):
+        """Remove an existing subscription for the current user."""
+
+        if not subscription.from_datastore or subscription.user != endpoints.get_current_user():
+            raise endpoints.NotFoundException("Card not found.")
+
+        subscription.key.delete()
+
+        # TODO: Check if a success HTTP code can be returned with an empty body
         return subscription
 
     @endpoints.method(Action, ActionResponse,
@@ -171,11 +186,7 @@ class MirrorApi(remote.Service):
         This isn't part of the actual Mirror API but necessary for the emulator
         to send actions to the subscribed services.
 
-        Args:
-            action: An instance of Action parsed from the API request.
-
-        Returns:
-            Just a simple response
+        Returns just a simple success message
         """
 
         current_user = endpoints.get_current_user()
