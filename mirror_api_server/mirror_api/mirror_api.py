@@ -19,12 +19,16 @@
 
 import json
 import os
+import logging
 
 from google.appengine.ext import endpoints
 from protorpc import remote
 from models import Card
 from models import CardAction
 from models import ShareEntity
+from models import Subscription
+from models import Action
+from models import ActionResponse
 
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -56,7 +60,7 @@ class MirrorApi(remote.Service):
         query = query.order(-Card.when)
         return query.filter(Card.user == endpoints.get_current_user())
 
-    @Card.method(user_required=True,
+    @Card.method(user_required=True, http_method="POST",
                  path="timeline", name="timeline.insert")
     def timeline_insert(self, card):
         """Insert a card for the current user.
@@ -143,3 +147,30 @@ class MirrorApi(remote.Service):
 
         shareEntity.put()
         return shareEntity
+
+    @endpoints.method(Action, ActionResponse,
+                      path='actions', http_method='POST',
+                      name='actions.insert')
+    def action_insert(self, action):
+        """Perform an action on a timeline card for the current user.
+
+        This isn't part of the actual Mirror API but necessary for the emulator
+        to send actions to the subscribed services.
+
+        Args:
+            action: An instance of Action parsed from the API request.
+
+        Returns:
+            Just a simple response
+        """
+
+        current_user = endpoints.get_current_user()
+        if current_user is None:
+            raise endpoints.UnauthorizedException('Authentication required.')
+
+        query = Subscription.query().filter(Subscription.user == current_user).filter(Subscription.operation == action.operation)
+        for subscription in query.fetch():
+            logging.debug(subscription.callbackUrl)
+            # TODO: send POST messages with the action to all retrieved subscriptions
+
+        return ActionResponse(success=True)

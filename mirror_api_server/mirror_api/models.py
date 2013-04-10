@@ -79,3 +79,36 @@ class ShareEntity(EndpointsModel):
     def id(self):
         if self.key is not None:
             return self.key.pairs()[1][1]
+
+
+class Subscription(EndpointsModel):
+    """Model for subscriptions"""
+
+    _message_fields_schema = ("id", "collection", "userToken", "verifyToken", "operation", "callbackUrl")
+
+    user = EndpointsUserProperty(required=True, raise_unauthorized=True)
+    collection = ndb.StringProperty(default="timeline")
+    userToken = ndb.StringProperty()
+    verifyToken = ndb.StringProperty()
+    operation = msgprop.EnumProperty(CardAction, repeated=True)
+    callbackUrl = ndb.StringProperty()
+
+
+class Action(messages.Message):
+    """
+        ProtoRPC Message Class for actions performed on timeline cards
+        Since those actions are directly forwarded to subscriptions they
+        don't need to be saved to the data store, hence no EndpointsModel class
+    """
+
+    collection = messages.StringField(1, default="timeline")
+    itemId = messages.IntegerField(2, required=True)
+    operation = messages.EnumField(CardAction, 3, required=True)
+    value = messages.StringField(4)
+
+
+class ActionResponse(messages.Message):
+    """
+        Simple response to actions send to the Mirror API
+    """
+    success = messages.BooleanField(1, default=True)
