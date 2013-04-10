@@ -20,6 +20,7 @@
 import json
 import os
 import logging
+import urllib2
 
 from google.appengine.ext import endpoints
 from protorpc import remote
@@ -60,7 +61,8 @@ class MirrorApi(remote.Service):
         query = query.order(-Card.when)
         return query.filter(Card.user == endpoints.get_current_user())
 
-    @Card.method(user_required=True, http_method="POST",
+    @Card.method(request_fields=("when", "text", "html", "image", "cardOptions"),
+                 user_required=True, http_method="POST",
                  path="timeline", name="timeline.insert")
     def timeline_insert(self, card):
         """Insert a card for the current user.
@@ -148,6 +150,18 @@ class MirrorApi(remote.Service):
         shareEntity.put()
         return shareEntity
 
+    @Subscription.method(request_fields=("collection", "userToken", "verifyToken", "operation", "callbackUrl"),
+                         user_required=True, http_method="POST",
+                         path="subscriptions", name="subscriptions.insert")
+    def subscription_insert(self, subscription):
+        """Insert a new subscription for the current user."""
+
+        if subscription.operation is None or len(subscription.operation) == 0:
+            raise endpoints.BadRequestException("At least one operation needs to be provided.")
+
+        subscription.put()
+        return subscription
+
     @endpoints.method(Action, ActionResponse,
                       path='actions', http_method='POST',
                       name='actions.insert')
@@ -168,9 +182,25 @@ class MirrorApi(remote.Service):
         if current_user is None:
             raise endpoints.UnauthorizedException('Authentication required.')
 
+        # TODO: check if card exists and belongs to the user
+
+        data = {}
+        data["collection"] = action.collection
+        data["operation"] = action.operation.name
+        data["itemId"] = action.itemId
+        data["value"] = action.value
+
+        header = {"Content-type": "application/json"}
+
         query = Subscription.query().filter(Subscription.user == current_user).filter(Subscription.operation == action.operation)
         for subscription in query.fetch():
-            logging.debug(subscription.callbackUrl)
-            # TODO: send POST messages with the action to all retrieved subscriptions
+            data["userToken"] = subscription.userToken
+            data["verifyToken"] = subscription.verifyToken
+
+            req = urllib2.Request(subscription.callbackUrl, json.dumps(data), header)
+            try:
+                urllib2.urlopen(req)
+            except urllib2.URLError as e:
+                logging.error(e)
 
         return ActionResponse(success=True)

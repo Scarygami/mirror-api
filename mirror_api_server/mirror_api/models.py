@@ -88,17 +88,17 @@ class Subscription(EndpointsModel):
 
     user = EndpointsUserProperty(required=True, raise_unauthorized=True)
     collection = ndb.StringProperty(default="timeline")
-    userToken = ndb.StringProperty()
-    verifyToken = ndb.StringProperty()
+    userToken = ndb.StringProperty(required=True)
+    verifyToken = ndb.StringProperty(required=True)
     operation = msgprop.EnumProperty(CardAction, repeated=True)
-    callbackUrl = ndb.StringProperty()
+    callbackUrl = ndb.StringProperty(required=True)
 
 
 class Action(messages.Message):
-    """
-        ProtoRPC Message Class for actions performed on timeline cards
-        Since those actions are directly forwarded to subscriptions they
-        don't need to be saved to the data store, hence no EndpointsModel class
+    """ProtoRPC Message Class for actions performed on timeline cards
+
+    Since those actions are directly forwarded to subscriptions they
+    don't need to be saved to the data store, hence no EndpointsModel class
     """
 
     collection = messages.StringField(1, default="timeline")
@@ -108,7 +108,5 @@ class Action(messages.Message):
 
 
 class ActionResponse(messages.Message):
-    """
-        Simple response to actions send to the Mirror API
-    """
+    """Simple response to actions send to the Mirror API"""
     success = messages.BooleanField(1, default=True)
