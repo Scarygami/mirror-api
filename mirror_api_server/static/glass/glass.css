@@ -10,6 +10,31 @@ body {
   width: 100%;
 }
 
+body.inner {
+  background-color: transparent;
+}
+
+#html {
+  position: absolute;
+  width: 640px; height: 360px;
+  left: 0; top: 0;
+  padding: 10px 20px;
+  font-size: 70px;
+  overflow: hidden;
+  background-color: transparent;
+  color: rgba(255,255,255,0.8);
+  text-shadow: 0 1px 0px rgba(0,0,0,0.8);
+  font-family: "Roboto", Arial, sans-serif;
+  font-weight: 100;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: pointer;
+}
+
 .card {
   display: block;
   position: absolute;
@@ -47,8 +72,18 @@ body {
   height: 100%; width: 100%;
   left: 0; top: 0;
   padding: 10px 20px;
-  font-size: 4.5em;
+  font-size: 70px;
   z-index: 10;
+}
+
+.card_iframe {
+  background-color: transparent;
+  border: 0px none transparent;
+  padding: 0px;
+  overflow: hidden;
+  position: absolute;
+  height: 100%; width: 100%;
+  left: 0; top: 0;
 }
 
 .card_date {
@@ -124,8 +159,20 @@ body {
 
 /** Card-type-specific Styles */
 
+.card_type_text > .card_iframe {
+  display: none;
+}
+
 .card_type_image {
   background-size: cover;
+}
+
+.card_type_image > .card_iframe {
+  display: none;
+}
+
+.card_type_html > .card_text {
+  display: none;
 }
 
 .card_type_image > .card_text {
