@@ -92,14 +92,14 @@
     demoShareEntities = {
       "items": [
         {
-          "imageUrls": ["https://lh6.googleusercontent.com/-bD-d-9gNj9Q/UUsPXCGLkzI/AAAAAAAAAB0/UTJcoCOobuY/s980/drawhere.PNG"],
-          "displayName": "Drawing",
-          "id": "drawing"
+          "imageUrls": ["https://lh3.googleusercontent.com/-ZO4sujjRC-A/UOIniBoro3I/AAAAAAAAx8s/HQ5EhSH8YuA/s1013/IMG_1720.jpg"],
+          "displayName": "Fireworks",
+          "id": "fireworks"
         },
         {
-          "imageUrls": ["https://lh5.googleusercontent.com/-RbOUc7DuD_w/UUib23VOU_I/AAAAAAAAEEU/eNn61vUxjfI/s250/Drive_logo+%281%29.jpg"],
-          "displayName": "Drive",
-          "id": "drive"
+          "imageUrls": ["https://lh4.googleusercontent.com/-qmJ8gxQYMkc/T0v4Ker0nRI/AAAAAAAATME/CzdYK65ZSuc/s1013/IMG_7706.JPG"],
+          "displayName": "Android",
+          "id": "android"
         }
       ]
     };
