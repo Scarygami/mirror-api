@@ -38,12 +38,12 @@
 
   function Glass() {
     var
-      startCard, shareCards = [],
+      startCard, shareCards = [], replyCard,
       demoCards, demoShareEntities, templates, actions,
       mirror,
       mainDiv = doc.getElementById("glass"),
       timer, running = false,
-      START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4, SHARE_CARD = 5,
+      START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4, SHARE_CARD = 5, REPLY_CARD = 6,
       UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4,
       recognition;
 
@@ -152,6 +152,12 @@
       "<div class=\"card card_type_progress\" style=\"display: none\">" +
       "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"https://mirror-api.appspot.com/images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
       "</div>";
+    templates[REPLY_CARD] =
+      "<div class=\"card_text\"></div>" +
+      "<img class=\"card_icon\" src=\"https://mirror-api.appspot.com/images/talk.png\">" +
+      "<div class=\"card card_type_progress\" style=\"display: none\">" +
+      "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"https://mirror-api.appspot.com/images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
+      "</div>";
 
     if (!global.glassDemoMode) {
       mirror = global.gapi.client.mirror;
@@ -211,7 +217,7 @@
 
     function Card(type, id, parent, data) {
       var
-        cardDiv, textDiv, dateDiv, interfaceDiv, iconDiv, progressDiv, progressTextDiv, mouseX, mouseY,
+        cardDiv, textDiv, dateDiv, interfaceDiv, iconDiv, progressDiv, progressIconDiv, progressTextDiv, mouseX, mouseY,
         ignoreClick = false, that = this, cards = [];
       data = data || {};
       this.id = id;
@@ -232,14 +238,6 @@
       }
       type = type || CONTENT_CARD;
 
-      this.showCard = function (pos) {
-        if (type === ACTION_CARD && that.action === "SHARE") {
-          shareCards[pos].show();
-        } else {
-          cards[pos].show();
-        }
-      };
-
       function shareCard() {
         var data;
 
@@ -253,19 +251,19 @@
         }
 
         function onSuccess() {
-          iconDiv.src = "https://mirror-api.appspot.com/images/success.png";
+          progressIconDiv.src = "https://mirror-api.appspot.com/images/success.png";
           progressTextDiv.innerHTML = "Shared";
           global.setTimeout(closeShare, 2000);
         }
 
         function onError() {
-          iconDiv.src = "https://mirror-api.appspot.com/images/error.png";
+          progressIconDiv.src = "https://mirror-api.appspot.com/images/error.png";
           progressTextDiv.innerHTML = "Failed";
           global.setTimeout(closeShare, 2000);
         }
 
         that.hide(true);
-        iconDiv.src = "https://mirror-api.appspot.com/images/share.png";
+        progressIconDiv.src = "https://mirror-api.appspot.com/images/share.png";
         progressTextDiv.innerHTML = "Sharing";
         progressDiv.style.display = "block";
         if (global.glassDemoMode) {
@@ -277,6 +275,7 @@
           data.operation = "SHARE";
           data.value = that.id;
           mirror.actions.insert({"resource": data}).execute(function (resp) {
+            console.log(resp);
             if (resp.success) {
               onSuccess();
             } else {
@@ -289,7 +288,7 @@
       function sendCustomAction() {
         var data;
 
-        if (type !== ACTION_CARD && that.action !== CUSTOM) { return; }
+        if (type !== ACTION_CARD || that.action !== "CUSTOM") { return; }
 
         function closeAction() {
           that.hide();
@@ -320,6 +319,7 @@
           data.operation = "CUSTOM";
           data.value = that.actionId;
           mirror.actions.insert({"resource": data}).execute(function (resp) {
+            console.log(resp);
             if (resp.success) {
               onSuccess();
             } else {
@@ -327,6 +327,105 @@
             }
           });
         }
+      }
+
+      function sendReply() {
+        var result = "";
+        if (type !== REPLY_CARD) { return; }
+        textDiv.classList.remove("real_input");
+        textDiv.innerHTML = "Speak your message";
+        progressDiv.style.display = "none";
+
+        function closeReply() {
+          progressDiv.style.display = "none";
+          that.hide();
+          that.parent.hide();
+          that.parent.parent.show();
+        }
+
+        function onSuccess() {
+          progressIconDiv.src = "https://mirror-api.appspot.com/images/success.png";
+          progressTextDiv.innerHTML = "Sent";
+          progressDiv.style.display = "block";
+          global.setTimeout(closeReply, 2000);
+        }
+
+        function onError() {
+          progressIconDiv.src = "https://mirror-api.appspot.com/images/error.png";
+          progressTextDiv.innerHTML = "Failed";
+          progressDiv.style.display = "block";
+          global.setTimeout(closeReply, 2000);
+        }
+
+        if (recognition) {
+          recognition.interimResults = true;
+          recognition.continuous = false;
+          recognition.onstart = function (e) {
+            result = "";
+          };
+          recognition.onresult = function (e) {
+            var i;
+            console.log(e);
+            for (i = e.resultIndex; i < e.results.length; i++) {
+              if (e.results[i].isFinal) {
+                result += e.results[i][0].transcript;
+              }
+            }
+            textDiv.innerHTML = result;
+            textDiv.classList.add("real_input");
+          };
+          recognition.onerror = onError;
+          recognition.onend = function () {
+            var data;
+            if (result !== "") {
+              progressIconDiv.src = "https://mirror-api.appspot.com/images/reply.png";
+              progressTextDiv.innerHTML = "Sending";
+              progressDiv.style.display = "block";
+              if (global.glassDemoMode) {
+                global.setTimeout(onSuccess, 2000);
+              } else {
+                // create Timeline Card with reply text
+                data = {};
+                data.text = result;
+                mirror.timeline.insert({"resource": data}).execute(function (resp) {
+                  var action;
+                  console.log(resp);
+                  if (resp.id) {
+                    // Send action with reply card id and ID of original card
+                    action = {};
+                    action.collection = "timeline";
+                    action.itemId = resp.id;
+                    action.operation = "REPLY";
+                    action.value = that.parent.parent.id.toString();
+                    mirror.actions.insert({"resource": action}).execute(function (actionResp) {
+                      console.log(actionResp);
+                      if (actionResp.success) {
+                        onSuccess();
+                      } else {
+                        onError();
+                      }
+                    });
+                  } else {
+                    onError();
+                  }
+                });
+              }
+            } else {
+              onError();
+            }
+          };
+          recognition.start();
+        }
+      }
+
+      function startReply() {
+        var data;
+
+        if (type !== ACTION_CARD || that.action !== "REPLY") { return; }
+
+        that.hide();
+        replyCard.parent = that;
+        replyCard.show();
       }
 
       function up() {
@@ -348,7 +447,7 @@
 
         if (type === ACTION_CARD) {
           if (that.action === "REPLY") {
-
+            startReply();
             return;
           }
           if (that.action === "CUSTOM") {
@@ -477,6 +576,10 @@
           recognition.start();
         }
 
+        if (that.type === REPLY_CARD && that.parent) {
+          sendReply();
+        }
+
         if (that.type === ACTION_CARD) {
           textDiv.innerHTML = "";
           if (!!actions[that.action]) {
@@ -577,6 +680,9 @@
         switch (type) {
         case START_CARD:
           break;
+        case REPLY_CARD:
+          cardDiv.classList.add("card_type_reply");
+          break;
         case CLOCK_CARD:
           cardDiv.classList.add("card_type_clock");
           break;
@@ -638,20 +744,17 @@
         }
       };
 
+      this.showCard = function (pos) {
+        if (type === ACTION_CARD && that.action === "SHARE") {
+          shareCards[pos].show();
+        } else {
+          cards[pos].show();
+        }
+      };
+
       this.addCard = function (card) {
         cards.push(card);
       };
-
-      function setupEvents() {
-        if (global.ontouchstart !== undefined) {
-          interfaceDiv.addEventListener("touchstart", onTouchStart, false);
-          interfaceDiv.addEventListener("touchend", onTouchEnd, false);
-        } else {
-          interfaceDiv.onmousedown = onMouseDown;
-          interfaceDiv.onmouseup = onMouseUp;
-        }
-        cardDiv.onselectstart = function () { return false; };
-      }
 
       function createDiv() {
         cardDiv = doc.createElement("div");
@@ -661,8 +764,9 @@
         textDiv = cardDiv.querySelector(".card_text");
         dateDiv = cardDiv.querySelector(".card_date");
         interfaceDiv = cardDiv.querySelector(".card_interface");
-        iconDiv = cardDiv.querySelector(".card_icon") || cardDiv.querySelector(".card_progress_icon");
+        iconDiv = cardDiv.querySelector(".card_icon");
         progressDiv = cardDiv.querySelector(".card_type_progress");
+        progressIconDiv = cardDiv.querySelector(".card_progress_icon");
         progressTextDiv = cardDiv.querySelector(".card_progress_text");
         switch (type) {
         case CLOCK_CARD:
@@ -689,6 +793,9 @@
           textDiv.appendChild(doc.createTextNode(that.text));
           cardDiv.style.backgroundImage = "url(" + that.image + ")";
           break;
+        case REPLY_CARD:
+          textDiv.innerHTML = "Speak your message";
+          break;
         }
         that.updateCardStyle();
         that.hide();
@@ -702,6 +809,18 @@
             cards.push(new Card(ACTION_CARD, that.id + "_" + data.cardOptions[i].action, that, data.cardOptions[i]));
           }
         }
+      }
+
+      function setupEvents() {
+        if (!interfaceDiv) { return; }
+        if (global.ontouchstart !== undefined) {
+          interfaceDiv.addEventListener("touchstart", onTouchStart, false);
+          interfaceDiv.addEventListener("touchend", onTouchEnd, false);
+        } else {
+          interfaceDiv.onmousedown = onMouseDown;
+          interfaceDiv.onmouseup = onMouseUp;
+        }
+        cardDiv.onselectstart = function () { return false; };
       }
 
       createDiv();
@@ -776,6 +895,8 @@
       mainDiv.innerHTML = "";
 
       startCard = new Card(START_CARD, "start");
+
+      replyCard = new Card(REPLY_CARD, "reply");
 
       card = new Card(CLOCK_CARD, "clock", startCard);
       startCard.addCard(card);

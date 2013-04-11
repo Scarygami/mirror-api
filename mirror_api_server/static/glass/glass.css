@@ -134,6 +134,30 @@ body {
   font-style: italic;
 }
 
+.card_type_reply {
+  z-index: 250;
+}
+
+.card_type_reply > .card_text {
+  color: rgba(255,255,255,0.5);
+  font-size: 45px;
+}
+
+.card_type_reply > .card_text.real_input {
+  color: rgba(255,255,255,0.8);
+}
+
+.card_type_reply > .card_icon {
+  position: absolute;
+  height: 100px;
+  width: 100px;
+  left: 270px;
+  background-color: rgba(255,255,255,0.5);
+  padding: 20px;
+  border-radius: 50px;
+  bottom: 20px;
+}
+
 .card_type_share {
   background-size: cover;
   z-index: 250;
@@ -239,8 +263,3 @@ body {
   width: 100%;
   padding: 10px;
 }
-
-::-webkit-scrollbar {background: transparent; height: 10px; width: 10px;}
-::-webkit-scrollbar-corner {background: transparent;}
-::-webkit-scrollbar-thumb {background-color: #333; border: solid #333 2px;}
-::-webkit-scrollbar-thumb:hover {background-color: #999; border: solid #999 2px;}
