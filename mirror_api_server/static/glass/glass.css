@@ -159,11 +159,18 @@ body {
   z-index: 150;
 }
 
+.card_type_progress {
+  background-color: rgba(0,0,0,0.7);
+  z-index: 350;
+  top: 0;
+  right: 0;
+}
+
 .card_type_action > .card_interface {
   z-index: 200;
 }
 
-.card_type_action > .card_action {
+.card_type_action > .card_action, .card_progress {
   position: absolute;
   width: 100%;
   text-align: center;
@@ -171,7 +178,7 @@ body {
   padding: 0;
 }
 
-.card_type_action > .card_action > .card_text {
+.card_type_action > .card_action > .card_text, .card_progress_text  {
   position: static;
   display: inline-block;
   color: white;
@@ -182,7 +189,7 @@ body {
   height: auto;
 }
 
-.card_type_action > .card_action > .card_icon {
+.card_type_action > .card_action > .card_icon, .card_progress_icon {
   height: 50px;
   margin-right: 10px;
 }

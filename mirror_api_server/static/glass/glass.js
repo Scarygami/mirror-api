@@ -133,12 +133,25 @@
     };
 
     templates = [];
-    templates[START_CARD] = "<div class=\"card_interface\"></div>";
-    templates[CLOCK_CARD] = "<div class=\"card_date\"></div><div class=\"card_text\"></div><div class=\"card_interface\"></div>";
-    templates[CONTENT_CARD] = "<div class=\"card_text\"></div><div class=\"card_date\"></div><div class=\"card_interface\"></div>";
-    templates[ACTION_CARD] = "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div><div class=\"card_interface\"></div>";
-    templates[SHARE_CARD] = "<div class=\"card_text\"></div><div class=\"card_interface\"></div>";
-
+    templates[START_CARD] =
+      "<div class=\"card_interface\"></div>";
+    templates[CLOCK_CARD] =
+      "<div class=\"card_date\"></div>" +
+      "<div class=\"card_text\"></div>" +
+      "<div class=\"card_interface\"></div>";
+    templates[CONTENT_CARD] =
+      "<div class=\"card_text\"></div>" +
+      "<div class=\"card_date\"></div>" +
+      "<div class=\"card_interface\"></div>";
+    templates[ACTION_CARD] =
+      "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div>" +
+      "<div class=\"card_interface\"></div>";
+    templates[SHARE_CARD] =
+      "<div class=\"card_text\"></div>" +
+      "<div class=\"card_interface\"></div>" +
+      "<div class=\"card card_type_progress\" style=\"display: none\">" +
+      "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"https://mirror-api.appspot.com/images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
+      "</div>";
 
     if (!global.glassDemoMode) {
       mirror = global.gapi.client.mirror;
@@ -197,12 +210,17 @@
     }
 
     function Card(type, id, parent, data) {
-      var cardDiv, textDiv, dateDiv, interfaceDiv, mouseX, mouseY, ignoreClick = false, that = this, cards = [];
+      var
+        cardDiv, textDiv, dateDiv, interfaceDiv, iconDiv, progressDiv, progressTextDiv, mouseX, mouseY,
+        ignoreClick = false, that = this, cards = [];
       data = data || {};
       this.id = id;
       this.text = data.text || data.displayName || "";
       this.action = data.action || "";
+      this.actionId = data.id || "";
       this.type = type;
+      this.active = false;
+      this.parent = parent;
       if (data.when) {
         this.date = new Date(data.when);
       } else {
@@ -222,47 +240,154 @@
         }
       };
 
+      function shareCard() {
+        var data;
+
+        if (type !== SHARE_CARD) { return; }
+
+        function closeShare() {
+          progressDiv.style.display = "none";
+          that.hide();
+          that.parent.hide();
+          that.parent.parent.show();
+        }
+
+        function onSuccess() {
+          iconDiv.src = "https://mirror-api.appspot.com/images/success.png";
+          progressTextDiv.innerHTML = "Shared";
+          global.setTimeout(closeShare, 2000);
+        }
+
+        function onError() {
+          iconDiv.src = "https://mirror-api.appspot.com/images/error.png";
+          progressTextDiv.innerHTML = "Failed";
+          global.setTimeout(closeShare, 2000);
+        }
+
+        that.hide(true);
+        iconDiv.src = "https://mirror-api.appspot.com/images/share.png";
+        progressTextDiv.innerHTML = "Sharing";
+        progressDiv.style.display = "block";
+        if (global.glassDemoMode) {
+          global.setTimeout(onSuccess, 2000);
+        } else {
+          data = {};
+          data.collection = "timeline";
+          data.itemId = that.parent.parent.id;
+          data.operation = "SHARE";
+          data.value = that.id;
+          mirror.actions.insert({"resource": data}).execute(function (resp) {
+            if (resp.success) {
+              onSuccess();
+            } else {
+              onError();
+            }
+          });
+        }
+      }
+
+      function sendCustomAction() {
+        var data;
+
+        if (type !== ACTION_CARD && that.action !== CUSTOM) { return; }
+
+        function closeAction() {
+          that.hide();
+          that.parent.show();
+        }
+
+        function onSuccess() {
+          iconDiv.src = "https://mirror-api.appspot.com/images/success.png";
+          textDiv.innerHTML = "Sent";
+          global.setTimeout(closeAction, 2000);
+        }
+
+        function onError() {
+          iconDiv.src = "https://mirror-api.appspot.com/images/error.png";
+          textDiv.innerHTML = "Failed";
+          global.setTimeout(closeAction, 2000);
+        }
+
+        that.hide(true);
+        iconDiv.src = "https://mirror-api.appspot.com/images/share.png";
+        textDiv.innerHTML = "Sending";
+        if (global.glassDemoMode) {
+          global.setTimeout(onSuccess, 2000);
+        } else {
+          data = {};
+          data.collection = "timeline";
+          data.itemId = that.parent.id;
+          data.operation = "CUSTOM";
+          data.value = that.actionId;
+          mirror.actions.insert({"resource": data}).execute(function (resp) {
+            if (resp.success) {
+              onSuccess();
+            } else {
+              onError();
+            }
+          });
+        }
+      }
+
       function up() {
         var i, l;
         if (type === ACTION_CARD && that.action === "SHARE") {
           l = shareCards.length;
           if (l === 0) { return; }
           for (i = 0; i < l; i++) {
-            shareCards[i].setParent(that);
+            shareCards[i].parent = that;
           }
           shareCards[0].show();
           that.hide();
-        } else if (cards && cards.length > 0) {
+          return;
+        }
+        if (type === SHARE_CARD) {
+          shareCard();
+          return;
+        }
+
+        if (type === ACTION_CARD) {
+          if (that.action === "REPLY") {
+
+            return;
+          }
+          if (that.action === "CUSTOM") {
+            sendCustomAction();
+            return;
+          }
+        }
+
+        if (cards && cards.length > 0) {
           cards[0].show();
           that.hide(type === CONTENT_CARD);
         }
       }
 
       function down() {
-        if (!!parent) {
+        if (!!that.parent) {
           that.hide();
-          parent.show();
+          that.parent.show();
         }
       }
 
       function left() {
         var pos;
-        if (!!parent) {
-          pos = parent.findPosition(that.id);
-          if (pos < parent.cardCount() - 1) {
+        if (!!that.parent) {
+          pos = that.parent.findPosition(that.id);
+          if (pos < that.parent.cardCount() - 1) {
             that.hide();
-            parent.showCard(pos + 1);
+            that.parent.showCard(pos + 1);
           }
         }
       }
 
       function right() {
         var pos;
-        if (!!parent) {
-          pos = parent.findPosition(that.id);
+        if (!!that.parent) {
+          pos = that.parent.findPosition(that.id);
           if (pos > 0) {
             that.hide();
-            parent.showCard(pos - 1);
+            that.parent.showCard(pos - 1);
           }
         }
       }
@@ -321,7 +446,7 @@
       }
 
       this.show = function () {
-        // Update timestamp
+        this.active = true;
         this.updateDisplayDate();
         cardDiv.style.display = "block";
         this.updateCardStyle();
@@ -350,13 +475,24 @@
           };
           this.speech_result = "";
           recognition.start();
+        }
 
+        if (that.type === ACTION_CARD) {
+          textDiv.innerHTML = "";
+          if (!!actions[that.action]) {
+            textDiv.appendChild(doc.createTextNode(actions[that.action].values[0].displayName));
+            iconDiv.src = actions[that.action].values[0].iconUrl;
+          } else {
+            textDiv.appendChild(doc.createTextNode(data.values[0].displayName));
+            iconDiv.src = data.values[0].iconUrl;
+          }
         }
       };
 
       this.hide = function (shadowOnly) {
+        this.active = false;
         if (shadowOnly) {
-          this.updateCardStyle(true);
+          this.updateCardStyle();
         } else {
           cardDiv.style.display = "none";
         }
@@ -412,18 +548,18 @@
         }
       };
 
-      this.updateCardStyle = function (noShadow) {
+      this.updateCardStyle = function () {
         var shadow = "", pos, last;
         cardDiv.className = "card";
 
-        if (!noShadow) {
+        if (this.active) {
           if ((cards && cards.length > 0) || this.action === "SHARE") {
             shadow += "_down";
           }
 
-          if (!!parent) {
-            pos = parent.findPosition(this.id);
-            last = parent.cardCount() - 1;
+          if (!!that.parent) {
+            pos = that.parent.findPosition(this.id);
+            last = that.parent.cardCount() - 1;
             if (pos > 0) {
               shadow += "_left";
             }
@@ -506,12 +642,6 @@
         cards.push(card);
       };
 
-      this.setParent = function (card) {
-        if (this.type === SHARE_CARD) {
-          parent = card;
-        }
-      };
-
       function setupEvents() {
         if (global.ontouchstart !== undefined) {
           interfaceDiv.addEventListener("touchstart", onTouchStart, false);
@@ -531,6 +661,9 @@
         textDiv = cardDiv.querySelector(".card_text");
         dateDiv = cardDiv.querySelector(".card_date");
         interfaceDiv = cardDiv.querySelector(".card_interface");
+        iconDiv = cardDiv.querySelector(".card_icon") || cardDiv.querySelector(".card_progress_icon");
+        progressDiv = cardDiv.querySelector(".card_type_progress");
+        progressTextDiv = cardDiv.querySelector(".card_progress_text");
         switch (type) {
         case CLOCK_CARD:
           dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
@@ -546,10 +679,10 @@
         case ACTION_CARD:
           if (!!actions[that.action]) {
             textDiv.appendChild(doc.createTextNode(actions[that.action].values[0].displayName));
-            cardDiv.querySelector(".card_icon").src = actions[that.action].values[0].iconUrl;
+            iconDiv.src = actions[that.action].values[0].iconUrl;
           } else {
             textDiv.appendChild(doc.createTextNode(data.values[0].displayName));
-            cardDiv.querySelector(".card_icon").src = data.values[0].iconUrl;
+            iconDiv.src = data.values[0].iconUrl;
           }
           break;
         case SHARE_CARD:
