@@ -102,7 +102,7 @@
           ],
           "cardOptions": [{"action": "SHARE"}],
           "when": "2013-04-12T08:00:41.841880",
-          "id": 5
+          "id": 6
         }
       ]
     };
@@ -244,11 +244,15 @@
     function Card(type, id, parent, data) {
       var
         cardDiv, textDiv, htmlFrame, htmlDiv, dateDiv, interfaceDiv, iconDiv, progressDiv, progressIconDiv, progressTextDiv, mouseX, mouseY,
-        that = this, cards = [];
+        that = this, cards = [], actionCards = [];
       data = data || {};
       this.id = id;
       this.text = data.text || data.displayName || "";
       this.html = data.html || "";
+      this.htmlPages = data.htmlPages || [];
+      if (this.htmlPages && this.htmlPages.length > 0) {
+        type = HTML_BUNDLE_CARD;
+      }
       this.action = data.action || "";
       this.actionId = data.id || "";
       this.type = type;
@@ -257,7 +261,7 @@
       if (data.when) {
         this.date = new Date(data.when);
       } else {
-        this.date = new Date();
+        this.date = undefined;
       }
       this.image = data.image;
       if (data.imageUrls && data.imageUrls.length > 0) {
@@ -458,7 +462,7 @@
         replyCard.show();
       }
 
-      function up() {
+      function up(action) {
         var i, l;
         if (type === ACTION_CARD && that.action === "SHARE") {
           l = shareCards.length;
@@ -486,9 +490,23 @@
           }
         }
 
+        if (type === CONTENT_CARD && that.parent.type === HTML_BUNDLE_CARD && that.parent.hasActions()) {
+          that.parent.showActions();
+          that.hide();
+        }
+        
+        if (type === CONTENT_CARD || action) {
+          if (actionCards && actionCards.length > 0) {
+            actionCards[0].show();
+            that.hide(true);
+            return;
+          }
+        }
+
         if (cards && cards.length > 0) {
           cards[0].show();
-          that.hide(type === CONTENT_CARD);
+          that.hide();
+          return;
         }
       }
 
@@ -502,10 +520,10 @@
       function left() {
         var pos;
         if (!!that.parent) {
-          pos = that.parent.findPosition(that.id);
-          if (pos < that.parent.cardCount() - 1) {
+          pos = that.parent.findPosition(that.id, type === ACTION_CARD);
+          if (pos < that.parent.cardCount(type === ACTION_CARD) - 1) {
             that.hide();
-            that.parent.showCard(pos + 1);
+            that.parent.showCard(pos + 1, type === ACTION_CARD);
           }
         }
       }
@@ -513,10 +531,10 @@
       function right() {
         var pos;
         if (!!that.parent) {
-          pos = that.parent.findPosition(that.id);
+          pos = that.parent.findPosition(that.id, type === ACTION_CARD);
           if (pos > 0) {
             that.hide();
-            that.parent.showCard(pos - 1);
+            that.parent.showCard(pos - 1, type === ACTION_CARD);
           }
         }
       }
@@ -584,7 +602,7 @@
         case HTML_BUNDLE_CARD:
         case CARD_BUNDLE_CARD:
           dateDiv.innerHTML = "";
-          dateDiv.appendChild(doc.createTextNode(that.date.niceDate()));
+          if (that.date) { dateDiv.appendChild(doc.createTextNode(that.date.niceDate())); }
           break;
         }
       }
@@ -594,13 +612,18 @@
         cardDiv.className = "card";
 
         if (that.active) {
-          if ((cards && cards.length > 0) || that.action === "SHARE") {
+          if (
+            (cards && cards.length > 0)
+              || that.action === "SHARE"
+              || (actionCards && actionCards.length > 0)
+              || (that.parent || that.parent.hasActions())
+          ) {
             shadow += "_down";
           }
 
           if (!!that.parent) {
-            pos = that.parent.findPosition(that.id);
-            last = that.parent.cardCount() - 1;
+            pos = that.parent.findPosition(that.id, type === ACTION_CARD);
+            last = that.parent.cardCount(type === ACTION_CARD) - 1;
             if (pos > 0) {
               shadow += "_left";
             }
@@ -618,7 +641,7 @@
         if (type === HTML_BUNDLE_CARD || type === CARD_BUNDLE_CARD) {
           cardDiv.classList.add("card_type_bundle");
         }
-        
+
         switch (type) {
         case START_CARD:
           break;
@@ -749,35 +772,45 @@
       };
 
       this.findCard = function (id) {
-        var i, l;
+        var i, l, card;
         l = cards.length;
         for (i = 0; i < l; i++) {
           if (cards[i].id === id) {
             return cards[i];
           }
+          if (cards[i].type === CARD_BUNDLE_CARD) {
+            card = cards[i].findCard(id);
+            if (card) {
+              return card;
+            }
+          }
         }
         return undefined;
       };
 
-      this.cardCount = function () {
+      this.cardCount = function (action) {
         var array;
         if (this.type === ACTION_CARD && this.action === "SHARE") {
           array = shareCards;
         } else {
-          array = cards;
+          array = action ? actionCards : cards;
         }
         return array.length;
       };
 
-      this.findPosition = function (id) {
+      this.findPosition = function (id, action) {
         var i, l, array;
         if (this.type === ACTION_CARD && this.action === "SHARE") {
           array = shareCards;
         } else {
-          array = cards;
-        }
-        if (this.type === START_CARD) {
-          array.sort(cardSort);
+          if (action) {
+            array = actionCards;
+          } else {
+            array = cards;
+            if (this.type !== HTML_BUNDLE_CARD) {
+              array.sort(cardSort);
+            }
+          }
         }
         l = array.length;
         for (i = 0; i < l; i++) {
@@ -787,16 +820,30 @@
         }
       };
 
-      this.showCard = function (pos) {
+      this.showCard = function (pos, action) {
         if (type === ACTION_CARD && that.action === "SHARE") {
           shareCards[pos].show();
         } else {
-          cards[pos].show();
+          if (action) {
+            actionCards[pos].show();
+          } else {
+            cards[pos].show();
+          }
         }
       };
 
       this.addCard = function (card) {
         cards.push(card);
+      };
+
+      this.hasActions = function () {
+        if (this.type !== HTML_BUNDLE_CARD) { return false; }
+        return (actionCards && actionCards.length > 0);
+      };
+
+      this.showActions = function () {
+        if (this.type !== HTML_BUNDLE_CARD) { return; }
+        up(true);
       };
 
       function createDiv() {
@@ -830,7 +877,7 @@
           if (!!that.text) {
             textDiv.appendChild(doc.createTextNode(that.text));
           }
-          dateDiv.appendChild(doc.createTextNode(that.date.niceDate()));
+          if (that.date) { dateDiv.appendChild(doc.createTextNode(that.date.niceDate())); }
           if (that.image) {
             cardDiv.style.backgroundImage = "url(" + that.image + ")";
           }
@@ -864,7 +911,7 @@
         l = data.cardOptions.length;
         for (i = 0; i < l; i++) {
           if (data.cardOptions[i].action) {
-            cards.push(new Card(ACTION_CARD, that.id + "_" + data.cardOptions[i].action, that, data.cardOptions[i]));
+            actionCards.push(new Card(ACTION_CARD, that.id + "_" + data.cardOptions[i].action, that, data.cardOptions[i]));
           }
         }
       }
@@ -881,11 +928,26 @@
         cardDiv.onselectstart = function () { return false; };
       }
 
-      createDiv();
-      setupEvents();
-      if (data.cardOptions && data.cardOptions.length > 0) {
-        createActionCards();
+      function createHtmlBundle() {
+        var i, l;
+        l = that.htmlPages.length;
+        for (i = 0; i < l; i++) {
+          cards.push(new Card(CONTENT_CARD, that.id + "_" + i, that, {"html": that.htmlPages[i]}));
+        }
       }
+
+      function initialize() {
+        createDiv();
+        setupEvents();
+        if (data.cardOptions && data.cardOptions.length > 0) {
+          createActionCards();
+        }
+        if (that.htmlPages && that.htmlPages.length > 0) {
+          createHtmlBundle();
+        }
+      }
+
+      initialize();
     }
 
     function handleCards(result) {
