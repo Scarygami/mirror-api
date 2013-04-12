@@ -43,7 +43,7 @@
       mirror,
       mainDiv = doc.getElementById("glass"),
       timer, running = false,
-      START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4, SHARE_CARD = 5, REPLY_CARD = 6,
+      START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4, SHARE_CARD = 5, REPLY_CARD = 6, HTML_BUNDLE_CARD = 7, CARD_BUNDLE_CARD = 8,
       UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4,
       recognition;
 
@@ -60,7 +60,8 @@
           "text": "Hello World!",
           "cardOptions": [{"action": "READ_ALOUD"}],
           "when": "2013-04-05T12:26:55.837450",
-          "id": 2
+          "id": 2,
+          "bundleId": 123
         },
         {
           "text": "What a nice photo!",
@@ -84,11 +85,23 @@
             }
           ],
           "when": "2013-04-07T12:45:41.841880",
-          "id": 4
+          "id": 4,
+          "bundleId": 123
         },
         {
           "html": "<ul style=\"font-size: 40px; margin-left: 30px;\"><li>Just</li><li>some</li><li>simple</li><li>html</li></ul><img src=\"http://cdn4.iconfinder.com/data/icons/gnome-desktop-icons-png/PNG/48/Gnome-Face-Smile-48.png\">",
           "when": "2013-04-11T23:00:41.841880",
+          "id": 5
+        },
+        {
+          "html": "<b>Html Cover Card</b>",
+          "htmlPages": [
+            "<b>First Page</b>",
+            "<b>Second Page</b>",
+            "<b>Third Page</b>"
+          ],
+          "cardOptions": [{"action": "SHARE"}],
+          "when": "2013-04-12T08:00:41.841880",
           "id": 5
         }
       ]
@@ -164,6 +177,13 @@
       "<div class=\"card card_type_progress\" style=\"display: none\">" +
       "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"https://mirror-api.appspot.com/images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
       "</div>";
+    templates[HTML_BUNDLE_CARD] =
+      "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
+      "<div class=\"card_text\"></div>" +
+      "<div class=\"card_date\"></div>" +
+      "<img class=\"card_icon\" src=\"https://mirror-api.appspot.com/images/corner.png\"></div>" +
+      "<div class=\"card_interface\"></div>";
+    templates[CARD_BUNDLE_CARD] = templates[HTML_BUNDLE_CARD];
 
     if (!global.glassDemoMode) {
       mirror = global.gapi.client.mirror;
@@ -224,7 +244,7 @@
     function Card(type, id, parent, data) {
       var
         cardDiv, textDiv, htmlFrame, htmlDiv, dateDiv, interfaceDiv, iconDiv, progressDiv, progressIconDiv, progressTextDiv, mouseX, mouseY,
-        ignoreClick = false, that = this, cards = [];
+        that = this, cards = [];
       data = data || {};
       this.id = id;
       this.text = data.text || data.displayName || "";
@@ -243,7 +263,6 @@
       if (data.imageUrls && data.imageUrls.length > 0) {
         this.image = data.imageUrls[0];
       }
-      type = type || CONTENT_CARD;
 
       if (this.html) {
         // HTML overrides text and image, can't be mixed
@@ -373,7 +392,7 @@
         if (recognition) {
           recognition.interimResults = true;
           recognition.continuous = false;
-          recognition.onstart = function (e) {
+          recognition.onstart = function () {
             result = "";
           };
           recognition.onresult = function (e) {
@@ -432,8 +451,6 @@
       }
 
       function startReply() {
-        var data;
-
         if (type !== ACTION_CARD || that.action !== "REPLY") { return; }
 
         that.hide();
@@ -558,13 +575,14 @@
       }
 
       function updateDisplayDate() {
-        var i, l;
         switch (type) {
         case CLOCK_CARD:
           dateDiv.innerHTML = "";
           dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
           break;
         case CONTENT_CARD:
+        case HTML_BUNDLE_CARD:
+        case CARD_BUNDLE_CARD:
           dateDiv.innerHTML = "";
           dateDiv.appendChild(doc.createTextNode(that.date.niceDate()));
           break;
@@ -597,6 +615,10 @@
           }
         }
 
+        if (type === HTML_BUNDLE_CARD || type === CARD_BUNDLE_CARD) {
+          cardDiv.classList.add("card_type_bundle");
+        }
+        
         switch (type) {
         case START_CARD:
           break;
@@ -607,6 +629,8 @@
           cardDiv.classList.add("card_type_clock");
           break;
         case CONTENT_CARD:
+        case HTML_BUNDLE_CARD:
+        case CARD_BUNDLE_CARD:
           if (!!that.html) {
             cardDiv.classList.add("card_type_html");
           } else {
@@ -792,7 +816,10 @@
           dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
           textDiv.appendChild(doc.createTextNode("\"ok glass\""));
           break;
+
         case CONTENT_CARD:
+        case HTML_BUNDLE_CARD:
+        case CARD_BUNDLE_CARD:
           htmlFrame = cardDiv.querySelector(".card_iframe");
           htmlFrame.onload = function () {
             htmlDiv = htmlFrame.contentWindow.document.getElementById("html");
@@ -808,6 +835,7 @@
             cardDiv.style.backgroundImage = "url(" + that.image + ")";
           }
           break;
+
         case ACTION_CARD:
           if (!!actions[that.action]) {
             textDiv.appendChild(doc.createTextNode(actions[that.action].values[0].displayName));
@@ -817,10 +845,12 @@
             iconDiv.src = data.values[0].iconUrl;
           }
           break;
+
         case SHARE_CARD:
           textDiv.appendChild(doc.createTextNode(that.text));
           cardDiv.style.backgroundImage = "url(" + that.image + ")";
           break;
+
         case REPLY_CARD:
           textDiv.innerHTML = "Speak your message";
           break;
@@ -884,7 +914,7 @@
     }
 
     function handleShareEntities(result) {
-      var i, l, share;
+      var i, l;
       if (result && result.items) {
         l = result.items.length;
         for (i = 0; i < l; i++) {

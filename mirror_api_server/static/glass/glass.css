@@ -175,6 +175,14 @@ body.inner {
   display: none;
 }
 
+.card_type_bundle > .card_icon {
+  position: absolute;
+  height: 30px;
+  width: 30px;
+  top: 0;
+  right: 0;
+}
+
 .card_type_image > .card_text {
   background-color: rgba(0,0,0,0.4);
   font-size: 2.4em;
