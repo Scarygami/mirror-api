@@ -129,7 +129,7 @@
         "id": "SHARE",
         "values": [{
           "displayName": "Share",
-          "iconUrl": "https://mirror-api.appspot.com/images/share.png"
+          "iconUrl": "../images/share.png"
         }]
       },
       "REPLY": {
@@ -137,7 +137,7 @@
         "id": "REPLY",
         "values": [{
           "displayName": "Reply",
-          "iconUrl": "https://mirror-api.appspot.com/images/reply.png"
+          "iconUrl": "../images/reply.png"
         }]
       },
       "READ_ALOUD": {
@@ -145,7 +145,7 @@
         "id": "READ_ALOUD",
         "values": [{
           "displayName": "Read aloud",
-          "iconUrl": "https://mirror-api.appspot.com/images/read_aloud.png"
+          "iconUrl": "../images/read_aloud.png"
         }]
       }
     };
@@ -169,19 +169,19 @@
       "<div class=\"card_text\"></div>" +
       "<div class=\"card_interface\"></div>" +
       "<div class=\"card card_type_progress\" style=\"display: none\">" +
-      "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"https://mirror-api.appspot.com/images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
+      "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"../images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
       "</div>";
     templates[REPLY_CARD] =
       "<div class=\"card_text\"></div>" +
-      "<img class=\"card_icon\" src=\"https://mirror-api.appspot.com/images/talk.png\">" +
+      "<img class=\"card_icon\" src=\"../images/talk.png\">" +
       "<div class=\"card card_type_progress\" style=\"display: none\">" +
-      "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"https://mirror-api.appspot.com/images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
+      "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"../images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
       "</div>";
     templates[HTML_BUNDLE_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
       "<div class=\"card_text\"></div>" +
       "<div class=\"card_date\"></div>" +
-      "<img class=\"card_icon\" src=\"https://mirror-api.appspot.com/images/corner.png\"></div>" +
+      "<img class=\"card_icon\" src=\"../images/corner.png\"></div>" +
       "<div class=\"card_interface\"></div>";
     templates[CARD_BUNDLE_CARD] = templates[HTML_BUNDLE_CARD];
 
@@ -287,19 +287,19 @@
         }
 
         function onSuccess() {
-          progressIconDiv.src = "https://mirror-api.appspot.com/images/success.png";
+          progressIconDiv.src = "../images/success.png";
           progressTextDiv.innerHTML = "Shared";
           global.setTimeout(closeShare, 2000);
         }
 
         function onError() {
-          progressIconDiv.src = "https://mirror-api.appspot.com/images/error.png";
+          progressIconDiv.src = "../images/error.png";
           progressTextDiv.innerHTML = "Failed";
           global.setTimeout(closeShare, 2000);
         }
 
         that.hide(true);
-        progressIconDiv.src = "https://mirror-api.appspot.com/images/share.png";
+        progressIconDiv.src = "../images/share.png";
         progressTextDiv.innerHTML = "Sharing";
         progressDiv.style.display = "block";
         if (global.glassDemoMode) {
@@ -332,19 +332,19 @@
         }
 
         function onSuccess() {
-          iconDiv.src = "https://mirror-api.appspot.com/images/success.png";
+          iconDiv.src = "../images/success.png";
           textDiv.innerHTML = "Sent";
           global.setTimeout(closeAction, 2000);
         }
 
         function onError() {
-          iconDiv.src = "https://mirror-api.appspot.com/images/error.png";
+          iconDiv.src = "../images/error.png";
           textDiv.innerHTML = "Failed";
           global.setTimeout(closeAction, 2000);
         }
 
         that.hide(true);
-        iconDiv.src = "https://mirror-api.appspot.com/images/share.png";
+        iconDiv.src = "../images/share.png";
         textDiv.innerHTML = "Sending";
         if (global.glassDemoMode) {
           global.setTimeout(onSuccess, 2000);
@@ -380,14 +380,14 @@
         }
 
         function onSuccess() {
-          progressIconDiv.src = "https://mirror-api.appspot.com/images/success.png";
+          progressIconDiv.src = "../images/success.png";
           progressTextDiv.innerHTML = "Sent";
           progressDiv.style.display = "block";
           global.setTimeout(closeReply, 2000);
         }
 
         function onError() {
-          progressIconDiv.src = "https://mirror-api.appspot.com/images/error.png";
+          progressIconDiv.src = "../images/error.png";
           progressTextDiv.innerHTML = "Failed";
           progressDiv.style.display = "block";
           global.setTimeout(closeReply, 2000);
@@ -414,7 +414,7 @@
           recognition.onend = function () {
             var data;
             if (result !== "") {
-              progressIconDiv.src = "https://mirror-api.appspot.com/images/reply.png";
+              progressIconDiv.src = "../images/reply.png";
               progressTextDiv.innerHTML = "Sending";
               progressDiv.style.display = "block";
               if (global.glassDemoMode) {
@@ -504,7 +504,7 @@
         }
 
         if (cards && cards.length > 0) {
-          cards.sort(cardSort);
+          if (type !== HTML_BUNDLE_CARD) { cards.sort(cardSort) };
           cards[0].show();
           that.hide();
           return;

@@ -177,8 +177,8 @@ body.inner {
 
 .card_type_bundle > .card_icon {
   position: absolute;
-  height: 30px;
-  width: 30px;
+  height: 40px;
+  width: 40px;
   top: 0;
   right: 0;
 }
