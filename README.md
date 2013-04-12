@@ -2,9 +2,14 @@
 
 ### Description
 
-This is an attempt to recreate the behaviour of the Mirror API (based on public information available) to allow developers like me who aren't part of the Glass Explorer program, to test potential applications that could be feasible using Glass.
+This is an attempt to recreate the behaviour of the Mirror API (based on public
+information available) to allow developers like me who aren't part of the Glass
+Explorer program, to test potential applications that could be feasible using
+Glass.
 
-And even if the real Mirror API turns out to be completely different from what I envision it to be you can use this as a learning place for different Google technologies:
+And even if the real Mirror API turns out to be completely different from what
+I envision it to be you can use this as a learning place for different Google
+technologies:
 
 - Google Cloud Endpoints, with JavaScript and Python clients
 
@@ -19,13 +24,19 @@ And even if the real Mirror API turns out to be completely different from what I
 
 ### Parts
 
-`mirror_api_server` is meant to be hosted on Google App Engine and includes several parts.
+`mirror_api_server`
+is meant to be hosted on Google App Engine and includes several parts.
 
-`mirror_api` is an implementation of the Mirror API using Google Cloud Endpoints.
+`mirror_api`
+is an implementation of the Mirror API using Google Cloud Endpoints.
 
-`static/glass` contains a browser based emulator for Glass (can be accessed at `yourapp.appspot.com/glass/`).
+`static/glass`
+contains a browser based emulator for Glass.
+(can be accessed at `yourapp.appspot.com/glass/`)
 
-`service.py` is a simple playground implementation for a Web Application that makes use of the Mirror API.
+`service.py`
+is a simple playground implementation for a Web Application that makes use of
+the Mirror API.
 
 
 ### Repo-Setup
@@ -36,7 +47,8 @@ And even if the real Mirror API turns out to be completely different from what I
 
 `git submodule update`
 
-2) Create symlink `mirror_api_server/endpoints_proto_datastore` to `endpoints-proto-datastore/endpoints_proto_datastore`
+2) Create symlink `mirror_api_server/endpoints_proto_datastore`
+to `endpoints-proto-datastore/endpoints_proto_datastore`
 
 Linux/Unix-based systems:
 ```
@@ -59,54 +71,70 @@ Activate the Google+ API in `Services`
 
 Create a new Client ID for web applications in `API Access`
 
-Leave Redirect URIs empty but set Javascript origin to `https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
+Leave Redirect URIs empty but set Javascript origin to
+`https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
 
-Edit `mirror_api_server/client_secrets.json` to replace `YOUR_CLIENT_ID` and `YOUR_CLIENT_SECRET` with the information from the APIs Console.
+Edit `mirror_api_server/client_secrets.json` to replace `YOUR_CLIENT_ID` and
+`YOUR_CLIENT_SECRET` with the information from the APIs Console.
 
-Important: Don't commit that file if you contribute to this project. One possible solution to prevent this: http://blog.bossylobster.com/2011/10/protecting.html
+Important: Don't commit that file if you contribute to this project. One possible
+solution to prevent this: http://blog.bossylobster.com/2011/10/protecting.html
 
-Edit `mirror_api_server/app.yaml` to change the name of the application to match your App Engine application.
+Edit `mirror_api_server/app.yaml` to change the name of the application to match
+your App Engine application.
 
 
 ### Testing
 
-At the moment the only functionality of the web app hosted at `https://yourapp.appspot.com/` is to send text and image cards
-to the Glass emulator available at `https://yourapp.appspot.com/glass/` but I'm planning to add more functionality to it.
+At the moment the only functionality of the web app hosted at
+`https://yourapp.appspot.com/` is to send text and image cards
+to the Glass emulator available at `https://yourapp.appspot.com/glass/`
+but I'm planning to add more functionality to it.
 
-You can also use the API Explorer at `https://yourapp.appspot.com/_ah/api/explorer` to directly send requests to the API.
-You will have to turn on OAuth (in the upper right corner of the Explorer) with the `https://www.googleapis.com/auth/userinfo.email` scope.
-You can already use the Explorer to register ShareEntities and Subscriptions, but at the moment the Glass emulator doesn't make active use of them yet.
-ShareEntities will already be displayed when choosing the Share action in the emulator.
+You can also use the API Explorer at `https://yourapp.appspot.com/_ah/api/explorer`
+to directly send requests to the API.
+You will have to turn on OAuth (in the upper right corner of the Explorer) with
+the `https://www.googleapis.com/auth/userinfo.email` scope.
+You can already use the Explorer to register ShareEntities and Subscriptions.
+The Glass emulator will display actions and shares correctly and send them to
+the Mirror API Server which forwards the information to the relevant subscriptions.
 
 
 ### Deviations from the actual Mirror API
 
-For simplification (and because it's easier to implement like this for Cloud endpoints) this assumes
-that there is only one application (i.e. one Client ID) that uses the Mirror API, so you will have access to all timeline cards of a user,
-whereas in the real Mirror API you would only have access to cards created by or shared with your application.
+For simplification (and because it's easier to implement like this for Cloud endpoints)
+this assumes that there is only one application (i.e. one Client ID) that uses the
+Mirror API, so you will have access to all timeline cards of a user, whereas in the
+real Mirror API you would only have access to cards created by or shared with your application.
 
 The real Mirror API supports Multipart-bodies to attach images to cards.
-Since this isn't possible using Google Cloud Endpoints (they only support `application/json` as request/response bodies),
+Since this isn't possible using Google Cloud Endpoints
+(they only support `application/json` as request/response bodies),
 I went for a different solution with an `image` field inside of a card which takes any image URL.
 Also works with Data-URIs if the image isn't available online,
 which will be the case mostly when uploading images from Glass itself.
 
-The probably unclearest part so far is how subscriptions actually work, so I make some assumptions here which might turn out to be very far from the truth:
+The probably unclearest part so far is how subscriptions actually work,
+so I make some assumptions here which might turn out to be very far from the truth:
 
 - You can subscribe to Actions, which can be SHARE, REPLY or CUSTOM.
 
-- I added an additional `value` field to actions which isn't listed in the demo, to make Actions and subscriptions work the way I think they can work.
+- I added an additional `value` field to actions which isn't listed in the demo,
+  to make Actions and subscriptions work the way I think they can work.
 
-- This `value` will contain the ID of the ShareEntity for SHARE actions and the ID of the registered Action for CUSTOM actions.
+- This `value` will contain the ID of the ShareEntity for SHARE actions and the
+  ID of the registered Action for CUSTOM actions.
 
-- REPLY will first create a new Timeline Card with the text of the reply and send the ID of this card as `itemId`. The card which was replied to will be listed as `value`.
+- REPLY will first create a new Timeline Card with the text of the reply and send
+  the ID of this card as `itemId`. The card which was replied to will be listed as `value`.
 
 
 ### Disclaimer
 
-I'm not part of the Glass Explorer program so there are no guarantees that the final Mirror API
-will work anything like I suppose it will in this demo implementation. The information is collected
-from the various public bits and pieces that have been published. Also see
+I'm not part of the Glass Explorer program so there are no guarantees that
+the final Mirror API will work anything like I suppose it will in this demo
+implementation. The information is collected from the various public bits and
+pieces that have been published. Also see
 [my document about the topic](https://docs.google.com/document/d/1XgYDbWNKEDLfm-F44sZy0uSOQKton5ksg5pWdv9XCo0/edit).
 
 
