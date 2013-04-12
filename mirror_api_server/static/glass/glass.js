@@ -494,7 +494,7 @@
           that.parent.showActions();
           that.hide();
         }
-        
+
         if (type === CONTENT_CARD || action) {
           if (actionCards && actionCards.length > 0) {
             actionCards[0].show();
@@ -504,6 +504,7 @@
         }
 
         if (cards && cards.length > 0) {
+          cards.sort(cardSort);
           cards[0].show();
           that.hide();
           return;
@@ -939,7 +940,7 @@
       function initialize() {
         createDiv();
         setupEvents();
-        if (data.cardOptions && data.cardOptions.length > 0) {
+        if (that.type !== CARD_BUNDLE_CARD && data.cardOptions && data.cardOptions.length > 0) {
           createActionCards();
         }
         if (that.htmlPages && that.htmlPages.length > 0) {
@@ -951,7 +952,7 @@
     }
 
     function handleCards(result) {
-      var i, l, card;
+      var i, l, card, bundles = {}, bundleId, bundleCard;
       if (result && result.items) {
         l = result.items.length;
         for (i = 0; i < l; i++) {
@@ -959,8 +960,30 @@
           if (card) {
             card.update(result.items[i]);
           } else {
-            card = new Card(CONTENT_CARD, result.items[i].id, startCard, result.items[i]);
-            startCard.addCard(card);
+            if (result.items[i].bundleId) {
+              bundleId = "b" + result.items[i].bundleId;
+              // handle card bundels separately
+              if (!bundles[bundleId]) {
+                bundles[bundleId] = [];
+              }
+              bundles[bundleId].push(result.items[i]);
+            } else {
+              card = new Card(CONTENT_CARD, result.items[i].id, startCard, result.items[i]);
+              startCard.addCard(card);
+            }
+          }
+        }
+      }
+      for (bundleId in bundles) {
+        if (bundles.hasOwnProperty(bundleId)) {
+          bundleCard = startCard.findCard(bundleId);
+          if (!bundleCard) {
+            bundleCard = new Card(CARD_BUNDLE_CARD, bundleId, startCard, bundles[bundleId][0]);
+            startCard.addCard(bundleCard);
+          }
+          l = bundles[bundleId].length;
+          for (i = 0; i < l; i++) {
+            bundleCard.addCard(new Card(CONTENT_CARD, bundles[bundleId][i].id, bundleCard, bundles[bundleId][i]));
           }
         }
       }
