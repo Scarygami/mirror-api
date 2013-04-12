@@ -504,7 +504,7 @@
         }
 
         if (cards && cards.length > 0) {
-          if (type !== HTML_BUNDLE_CARD) { cards.sort(cardSort) };
+          if (type !== HTML_BUNDLE_CARD) { cards.sort(cardSort); }
           cards[0].show();
           that.hide();
           return;
