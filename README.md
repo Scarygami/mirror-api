@@ -21,6 +21,9 @@ technologies:
 
 - And how they all can work together
 
+See [this document](https://docs.google.com/document/d/1_qP2wxbYvfjbImdsk24ZPZkeERCUD4hIvBgBqvpHl9s/edit?usp=sharing)
+for a detailed description of what this does and how it works.
+
 
 ### Parts
 
