@@ -52,7 +52,7 @@
         {
           "text": "Just some text... easiest Card ever",
           "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
-          "when": "2013-04-12T14:50:41.000000",
+          "when": "2013-04-12T16:21:41.000000",
           "id": 7
         },
         {
@@ -63,19 +63,19 @@
             "<p style=\"color: green; text-align: right; font-weight: 300;\">...pages.</p>"
           ],
           "cardOptions": [{"action": "SHARE"}],
-          "when": "2013-04-12T14:36:41.000000",
+          "when": "2013-04-12T15:36:41.000000",
           "id": 6
         },
         {
           "html": "<ul style=\"font-size: 40px; margin-left: 30px;\"><li>Just</li><li>some</li><li>simple</li><li>html</li></ul><img src=\"http://cdn4.iconfinder.com/data/icons/gnome-desktop-icons-png/PNG/48/Gnome-Face-Smile-48.png\">",
-          "when": "2013-04-12T14:35:41.000000",
+          "when": "2013-04-12T15:35:41.000000",
           "id": 5
         },
         {
           "text": "Card Bundles can have mixed content, like an image...",
           "image": "https://lh6.googleusercontent.com/-wS9sJ-3oHao/TRnf4MmmlvI/AAAAAAAABX4/BebMZPistPo/s967/2010_09_20+-+Moon.jpg",
           "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
-          "when": "2013-04-12T14:34:41.000000",
+          "when": "2013-04-12T15:34:41.000000",
           "bundleId": 123,
           "id": 3
         },
@@ -93,14 +93,14 @@
               "id": "smile"
             }
           ],
-          "when": "2013-04-12T14:33:41.000000",
+          "when": "2013-04-12T15:33:41.000000",
           "id": 4,
           "bundleId": 123
         },
         {
           "html": "<p style=\"font-size: 40px\">...or maybe some <b style=\"color: blue\">HTML</b></p>",
           "cardOptions": [{"action": "READ_ALOUD"}],
-          "when": "2013-04-12T14:32:41.000000",
+          "when": "2013-04-12T15:32:41.000000",
           "id": 2,
           "bundleId": 123
         },
@@ -108,7 +108,7 @@
           "text": "Sample Image Card",
           "image": "https://lh5.googleusercontent.com/-L7PvYS3WeJQ/TvqB-VcRklI/AAAAAAAAP9U/eEBCbBNS9bY/s1012/IMG_0135-2.jpg",
           "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
-          "when": "2013-04-12T14:31:41.000000",
+          "when": "2013-04-12T15:31:41.000000",
           "id": 1
         }
       ]
