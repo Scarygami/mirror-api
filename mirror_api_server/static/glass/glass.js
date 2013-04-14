@@ -44,8 +44,10 @@
       mainDiv = doc.getElementById("glass"),
       timer, running = false,
       START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4, SHARE_CARD = 5, REPLY_CARD = 6, HTML_BUNDLE_CARD = 7, CARD_BUNDLE_CARD = 8,
-      UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4,
       recognition;
+
+    /*@type{enum}*/
+    var glassevent = {UP:1, DOWN: 2, LEFT: 3, RIGHT: 4};
 
     demoCards = {
       "items": [
@@ -210,12 +212,15 @@
       return b.date.getTime() - a.date.getTime();
     }
 
+    /**
+     * @returns glassevent
+     */
     function getClickDirection(x, y) {
-      if (x < 30) { return RIGHT; }
-      if (x > 610) { return LEFT; }
-      if (y < 30) { return DOWN; }
-      if (y > 330) { return UP; }
-      return UP;
+      if (x < 30) { return glassevent.RIGHT; }
+      if (x > 610) { return glassevent.LEFT; }
+      if (y < 30) { return glassevent.DOWN; }
+      if (y > 330) { return glassevent.UP; }
+      return glassevent.UP;
     }
 
     function getDirection(x1, y1, x2, y2) {
@@ -228,10 +233,10 @@
       }
 
       if (dx === 0) {
-        return (dy > 0) ? DOWN : UP;
+        return (dy > 0) ? glassevent.DOWN : glassevent.UP;
       }
       if (dy === 0) {
-        return (dx > 0) ? RIGHT : LEFT;
+        return (dx > 0) ? glassevent.RIGHT : glassevent.LEFT;
       }
       tmp = Math.abs(dx / dy);
       if (tmp >= 0.5 && tmp <= 1.5) {
@@ -241,11 +246,11 @@
 
       if (tmp > 1.5) {
         // mainly horizontal movement
-        return (dx > 0) ? RIGHT : LEFT;
+        return (dx > 0) ? glassevent.RIGHT : glassevent.LEFT;
       }
 
       // mainly vertical movement
-      return (dy > 0) ? DOWN : UP;
+      return (dy > 0) ? glassevent.DOWN : glassevent.UP;
     }
 
     /** 
@@ -579,20 +584,21 @@
       }
 
       function makeMove(x1, y1, x2, y2) {
+        /** @type {glassevent} */
         var dir;
         dir = getDirection(x1, y1, x2, y2);
 
         switch (dir) {
-        case RIGHT:
+        case glassevent.RIGHT:
           right();
           break;
-        case LEFT:
+        case glassevent.LEFT:
           left();
           break;
-        case UP:
+        case glassevent.UP:
           up();
           break;
-        case DOWN:
+        case glassevent.DOWN:
           down();
           break;
         }
@@ -1085,6 +1091,7 @@
 
     initialize();
   }
+
 
   global.onSignInCallback = function (authResult) {
     if (authResult.access_token) {
