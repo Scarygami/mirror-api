@@ -248,6 +248,11 @@
       return (dy > 0) ? DOWN : UP;
     }
 
+    /** 
+     * @constructor 
+     * @param {Card=} parent parent card
+     * @param {Object=} data data for instantiating card
+     */
     function Card(type, id, parent, data) {
       var
         cardDiv, textDiv, htmlFrame, htmlDiv, dateDiv, interfaceDiv, iconDiv, progressDiv, progressIconDiv, progressTextDiv, mouseX, mouseY,
@@ -471,6 +476,7 @@
 
       /**
        * User up event
+       * @param {boolean=} action Does this come from an action card?
        */
       function up(action) {
         var i, l;
@@ -742,6 +748,9 @@
         }
       };
 
+      /**
+       * @param {boolean=} shadowOnly optional
+       */
       this.hide = function (shadowOnly) {
         this.active = false;
         if (shadowOnly) {
