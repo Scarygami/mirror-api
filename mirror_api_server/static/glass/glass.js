@@ -47,7 +47,7 @@
       recognition;
 
     /*@type{enum}*/
-    var glassevent = {UP:1, DOWN: 2, LEFT: 3, RIGHT: 4};
+    var glassevent = {UP:1, DOWN: 2, LEFT: 3, RIGHT: 4, TAP: 5};
 
     demoCards = {
       "items": [
@@ -220,7 +220,7 @@
       if (x > 610) { return glassevent.LEFT; }
       if (y < 30) { return glassevent.DOWN; }
       if (y > 330) { return glassevent.UP; }
-      return glassevent.UP;
+      return glassevent.TAP;
     }
 
     function getDirection(x1, y1, x2, y2) {
@@ -481,55 +481,8 @@
 
       /**
        * User up event
-       * @param {boolean=} action Does this come from an action card?
        */
-      function up(action) {
-        var i, l;
-        if (type === ACTION_CARD && that.action === "SHARE") {
-          l = shareCards.length;
-          if (l === 0) { return; }
-          for (i = 0; i < l; i++) {
-            shareCards[i].parent = that;
-          }
-          shareCards[0].show();
-          that.hide();
-          return;
-        }
-        if (type === SHARE_CARD) {
-          shareCard();
-          return;
-        }
-
-        if (type === ACTION_CARD) {
-          if (that.action === "REPLY") {
-            startReply();
-            return;
-          }
-          if (that.action === "CUSTOM") {
-            sendCustomAction();
-            return;
-          }
-        }
-
-        if (type === CONTENT_CARD && that.parent.type === HTML_BUNDLE_CARD && that.parent.hasActions()) {
-          that.parent.showActions();
-          that.hide();
-        }
-
-        if (type === CONTENT_CARD || action) {
-          if (actionCards && actionCards.length > 0) {
-            actionCards[0].show();
-            that.hide(true);
-            return;
-          }
-        }
-
-        if (cards && cards.length > 0) {
-          if (type !== HTML_BUNDLE_CARD) { cards.sort(cardSort); }
-          cards[0].show();
-          that.hide();
-          return;
-        }
+      function up() {
       }
 
       /**
@@ -570,6 +523,60 @@
         }
       }
 
+      /**
+       * User tap event
+       * @param {boolean=} action
+       */
+      function tap(action) {
+        var i, l;
+        if (type === ACTION_CARD && that.action === "SHARE") {
+          l = shareCards.length;
+          if (l === 0) { return; }
+          for (i = 0; i < l; i++) {
+            shareCards[i].parent = that;
+          }
+          shareCards[0].show();
+          that.hide();
+          return;
+        }
+        if (type === SHARE_CARD) {
+          shareCard();
+          return;
+        }
+
+        if (type === ACTION_CARD) {
+          if (that.action === "REPLY") {
+            startReply();
+            return;
+          }
+          if (that.action === "CUSTOM") {
+            sendCustomAction();
+            return;
+          }
+        }
+
+        if (type === CONTENT_CARD && that.parent.type === HTML_BUNDLE_CARD && that.parent.hasActions()) {
+          that.parent.showActions();
+          that.hide();
+        }
+
+        if (type === CONTENT_CARD || action) {
+          if (actionCards && actionCards.length > 0) {
+            actionCards[0].show();
+            that.hide(true);
+            return;
+          }
+        }
+
+        // "power on"
+        if (cards && cards.length > 0) {
+          if (type !== HTML_BUNDLE_CARD) { cards.sort(cardSort); }
+          cards[0].show();
+          that.hide();
+          return;
+        }
+      }
+
       function onMouseDown(e) {
         mouseX = e.pageX - cardDiv.offsetLeft;
         mouseY = e.pageY - cardDiv.offsetTop;
@@ -600,6 +607,9 @@
           break;
         case glassevent.DOWN:
           down();
+          break;
+        case glassevent.TAP:
+          tap();
           break;
         }
       }
@@ -879,7 +889,7 @@
 
       this.showActions = function () {
         if (this.type !== HTML_BUNDLE_CARD) { return; }
-        up(true);
+        tap(true);
       };
 
       function createDiv() {
