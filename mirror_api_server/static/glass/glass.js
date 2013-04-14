@@ -70,13 +70,15 @@
   };
 
   /**
-   * Main Glass scope
+   * Main Glass object
+   * @constructor
    */
   function Glass() {
     var
       startCard, shareCards = [], replyCard,
       demoCards, demoShareEntities, templates, actions,
       mirror,
+      emulator = this,
       mainDiv = doc.getElementById("glass"),
       activeCard,
       timer, running = false,
@@ -292,7 +294,6 @@
 
     /** 
      * @constructor 
-     * @param {Card=} parent parent card
      * @param {Object=} data data for instantiating card
      */
     var Card = function(type, id, parent, data) {
@@ -330,7 +331,7 @@
         this.image = undefined;
       }
 
-      this.createDiv();
+      this.createCardElements();
       if (this.type !== CARD_BUNDLE_CARD && data.cardOptions && data.cardOptions.length > 0) {
         this.createActionCards();
       }
@@ -537,12 +538,14 @@
        * User up event
        */
     Card.prototype.up = function () {
+      console.log('up');
     };
 
     /**
      * User down event
      */
     Card.prototype.down = function () {
+      console.log('down');
       if (!!this.parent) {
         this.parent.show();
         this.hide();
@@ -567,6 +570,7 @@
      * User right event
      */
     Card.prototype.right = function() {
+      console.log('right');
       var pos;
       if (!!this.parent) {
         pos = this.parent.findPosition(this.id, this.type === ACTION_CARD);
@@ -582,6 +586,7 @@
      * @param {boolean=} action
      */
     Card.prototype.tap = function (action) {
+      console.log('tap');
       var i, l;
       if (this.type === ACTION_CARD && this.action === "SHARE") {
         l = shareCards.length;
@@ -635,10 +640,6 @@
 
     Card.prototype.updateDisplayDate = function() {
       switch (this.type) {
-      case CLOCK_CARD:
-        this.dateDiv.innerHTML = "";
-        this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
-        break;
       case CONTENT_CARD:
       case HTML_BUNDLE_CARD:
       case CARD_BUNDLE_CARD:
@@ -678,6 +679,8 @@
         if (shadow !== "") {
           this.cardDiv.classList.add("shadow" + shadow);
         }
+      } else {
+        this.cardDiv.style.display = "none";
       }
 
       if (this.type === HTML_BUNDLE_CARD || this.type === CARD_BUNDLE_CARD) {
@@ -715,70 +718,13 @@
       }
     };
 
-      function onMouseDown(e) {
-        mouseX = e.pageX - mainDiv.offsetLeft;
-        mouseY = e.pageY - mainDiv.offsetTop;
-      }
-
-      function onTouchStart(e) {
-        if (e.changedTouches && e.changedTouches.length > 0) {
-          e.preventDefault();
-          mouseX = e.changedTouches[0].pageX - mainDiv.offsetLeft;
-          mouseY = e.changedTouches[0].pageY - mainDiv.offsetTop;
-        }
-      }
-
-      /**
-       * Convert a movement to a UI Event */
-      function makeMove(x1, y1, x2, y2) {
-        /** @type {glassevent} */
-        var dir;
-        dir = getDirection(x1, y1, x2, y2);
-
-        switch (dir) {
-        case glassevent.RIGHT:
-          activeCard.right();
-          break;
-        case glassevent.LEFT:
-          activeCard.left();
-          break;
-        case glassevent.UP:
-          activeCard.up();
-          break;
-        case glassevent.DOWN:
-          activeCard.down();
-          break;
-        case glassevent.TAP:
-          activeCard.tap();
-          break;
-        }
-      }
-
-      function onTouchEnd(e) {
-        var x, y;
-        if (e.changedTouches && e.changedTouches.length > 0) {
-          e.preventDefault();
-          x = e.changedTouches[0].pageX - mainDiv.offsetLeft;
-          y = e.changedTouches[0].pageY - mainDiv.offsetTop;
-          makeMove(mouseX, mouseY, x, y);
-        }
-      }
-
-      function onMouseUp(e) {
-        var x, y;
-        if (e.which !== 2 && e.button !== 2) {
-          x = e.pageX - mainDiv.offsetLeft;
-          y = e.pageY - mainDiv.offsetTop;
-
-          makeMove(mouseX, mouseY, x, y);
-        }
-      }
-
     Card.prototype.show = function () {
       this.active = true;
       this.updateDisplayDate();
       this.updateCardStyle();
       this.cardDiv.style.display = "block";
+
+      activeCard = this;
 
       if (this.type === CLOCK_CARD && recognition) {
         recognition.onstart = function (e) {
@@ -907,49 +853,49 @@
       return undefined;
     };
 
-      this.cardCount = function (action) {
-        var array;
-        if (this.type === ACTION_CARD && this.action === "SHARE") {
-          array = shareCards;
-        } else {
-          array = action ? actionCards : cards;
-        }
-        return array.length;
-      };
+    Card.prototype.cardCount = function (action) {
+      var array;
+      if (this.type === ACTION_CARD && this.action === "SHARE") {
+        array = shareCards;
+      } else {
+        array = action ? actionCards : cards;
+      }
+      return array.length;
+    };
 
-      this.findPosition = function (id, action) {
-        var i, l, array;
-        if (this.type === ACTION_CARD && this.action === "SHARE") {
-          array = shareCards;
+    Card.prototype.findPosition = function (id, action) {
+      var i, l, array;
+      if (this.type === ACTION_CARD && this.action === "SHARE") {
+        array = shareCards;
+      } else {
+        if (action) {
+          array = actionCards;
         } else {
-          if (action) {
-            array = actionCards;
-          } else {
-            array = cards;
-            if (this.type !== HTML_BUNDLE_CARD) {
-              array.sort(cardSort);
-            }
+          array = cards;
+          if (this.type !== HTML_BUNDLE_CARD) {
+            array.sort(cardSort);
           }
         }
-        l = array.length;
-        for (i = 0; i < l; i++) {
-          if (array[i].id === id) {
-            return i;
-          }
+      }
+      l = array.length;
+      for (i = 0; i < l; i++) {
+        if (array[i].id === id) {
+          return i;
         }
-      };
+      }
+    };
 
-      this.showCard = function (pos, action) {
-        if (this.type === ACTION_CARD && this.action === "SHARE") {
-          shareCards[pos].show();
+   Card.prototype.showCard = function (pos, action) {
+      if (this.type === ACTION_CARD && this.action === "SHARE") {
+        shareCards[pos].show();
+      } else {
+        if (action) {
+          actionCards[pos].show();
         } else {
-          if (action) {
-            actionCards[pos].show();
-          } else {
-            cards[pos].show();
-          }
+          cards[pos].show();
         }
-      };
+      }
+    };
 
     Card.prototype.addCard = function (card) {
       cards.push(card);
@@ -963,6 +909,13 @@
     Card.prototype.showActions = function () {
       if (this.type !== HTML_BUNDLE_CARD) { return; }
       this.tap(true);
+    };
+
+    /**
+     * Overload this for subclasses
+     */
+    Card.prototype.createCardElements = function () {
+      this.createDiv();
     };
 
 
@@ -979,11 +932,6 @@
       this.progressIconDiv = this.cardDiv.querySelector(".card_progress_icon");
       this.progressTextDiv = this.cardDiv.querySelector(".card_progress_text");
       switch (this.type) {
-      case CLOCK_CARD:
-        this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
-        this.textDiv.appendChild(doc.createTextNode("\"ok glass\""));
-        break;
-
       case CONTENT_CARD:
       case HTML_BUNDLE_CARD:
       case CARD_BUNDLE_CARD:
@@ -1000,16 +948,6 @@
         if (this.date) { this.dateDiv.appendChild(doc.createTextNode(this.date.niceDate())); }
         if (this.image) {
           this.cardDiv.style.backgroundImage = "url(" + this.image + ")";
-        }
-        break;
-
-      case ACTION_CARD:
-        if (!!actions[this.action]) {
-          this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
-          this.iconDiv.src = actions[this.action].values[0].iconUrl;
-        } else {
-          this.textDiv.appendChild(doc.createTextNode(this.data.values[0].displayName));
-          this.iconDiv.src = this.data.values[0].iconUrl;
         }
         break;
 
@@ -1036,20 +974,113 @@
       }
     }
 
+  /** @constructor */
+  var ActionCard = function(id, parent, data){
+    this.init(ACTION_CARD, id, parent, data);
+  };
 
-    var ActionCard = function(id, parent, data){
-      this.init(ACTION_CARD, id, parent, data);
-    };
+  ActionCard.prototype = new Card();
 
-    ActionCard.prototype = new Card();
+  ActionCard.prototype.createCardElements = function () {
+    this.createDiv();
+    if (!!actions[this.action]) {
+      this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
+      this.iconDiv.src = actions[this.action].values[0].iconUrl;
+    } else {
+      this.textDiv.appendChild(doc.createTextNode(this.data.values[0].displayName));
+      this.iconDiv.src = this.data.values[0].iconUrl;
+    }
+  };
 
-      function createHtmlBundle() {
-        var i, l;
-        l = this.htmlPages.length;
-        for (i = 0; i < l; i++) {
-          cards.push(new Card(CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
-        }
-      }
+  function createHtmlBundle() {
+    var i, l;
+    l = this.htmlPages.length;
+    for (i = 0; i < l; i++) {
+      cards.push(new Card(CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
+    }
+  }
+
+
+  /** @constructor */
+  var ClockCard = function(id, parent){
+    this.init(CLOCK_CARD, id, parent);
+  };
+
+  ClockCard.prototype = new Card();
+
+
+  ClockCard.prototype.createCardElements = function () {
+    this.createDiv();
+    this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+    this.textDiv.appendChild(doc.createTextNode("\"ok glass\""));
+  }
+
+  ClockCard.prototype.updateDisplayDate = function () {
+    this.dateDiv.innerHTML = "";
+    this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+  };
+
+
+  /** Event Listeners */
+
+  function onMouseDown(e) {
+    mouseX = e.pageX - activeCard.cardDiv.offsetLeft;
+    mouseY = e.pageY - activeCard.cardDiv.offsetTop;
+  }
+
+  function onTouchStart(e) {
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      e.preventDefault();
+      mouseX = e.changedTouches[0].pageX - activeCard.cardDiv.offsetLeft;
+      mouseY = e.changedTouches[0].pageY - activeCard.cardDiv.offsetTop;
+    }
+  }
+
+  /**
+   * Convert a movement to a UI Event */
+  function makeMove(x1, y1, x2, y2) {
+    /** @type {glassevent} */
+    var dir;
+    dir = getDirection(x1, y1, x2, y2);
+
+    switch (dir) {
+    case glassevent.RIGHT:
+      activeCard.right();
+      break;
+    case glassevent.LEFT:
+      activeCard.left();
+      break;
+    case glassevent.UP:
+      activeCard.up();
+      break;
+    case glassevent.DOWN:
+      activeCard.down();
+      break;
+    case glassevent.TAP:
+      activeCard.tap();
+      break;
+    }
+  }
+
+  function onTouchEnd(e) {
+    var x, y;
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      e.preventDefault();
+      x = e.changedTouches[0].pageX - activeCard.cardDiv.cardDiv.offsetLeft;
+      y = e.changedTouches[0].pageY - activeCard.cardDiv.cardDiv.offsetTop;
+      makeMove(mouseX, mouseY, x, y);
+    }
+  }
+
+  function onMouseUp(e) {
+    var x, y;
+    if (e.which !== 2 && e.button !== 2) {
+      x = e.pageX - activeCard.cardDiv.offsetLeft;
+      y = e.pageY - activeCard.cardDiv.offsetTop;
+
+      makeMove(mouseX, mouseY, x, y);
+    }
+  }
 
     function handleCards(result) {
       var i, l, card, bundles = {}, bundleId, bundleCard;
@@ -1142,7 +1173,7 @@
       }
 
       //TODO
-      //cardDiv.onselectstart = function () { return false; };
+      mainDiv.onselectstart = function () { return false; };
     }
 
     this.initialize = function() {
@@ -1154,7 +1185,7 @@
 
       replyCard = new Card(REPLY_CARD, "reply");
 
-      card = new Card(CLOCK_CARD, "clock", startCard);
+      card = new ClockCard("clock", startCard);
       startCard.addCard(card);
 
       if (global.glassDemoMode) {
