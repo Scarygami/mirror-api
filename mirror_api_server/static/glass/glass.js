@@ -538,17 +538,14 @@
        * User up event
        */
     Card.prototype.up = function () {
-      console.log('up');
     };
 
     /**
      * User down event
      */
     Card.prototype.down = function () {
-      console.log('down');
       if (!!this.parent) {
-        this.parent.show();
-        this.hide();
+        emulator.switchToCard(this.parent);
       }
     };
 
@@ -621,9 +618,7 @@
 
       if (this.type === CONTENT_CARD || action) {
         if (actionCards && actionCards.length > 0) {
-          actionCards[0].show();
-          console.log(actionCards[0])
-          this.hide(true);
+          emulator.introduceShareCard(actionCards[0]);
           return;
         }
       }
@@ -631,8 +626,7 @@
       // "power on"
       if (cards && cards.length > 0) {
         if (this.type !== HTML_BUNDLE_CARD) { cards.sort(cardSort); }
-        cards[0].show();
-        this.hide();
+        emulator.switchToCard(cards[0]);
         return;
       }
     };
@@ -772,26 +766,10 @@
     /**
      * @param {boolean=} shadowOnly optional
      */
-    Card.prototype.hide = function (shadowOnly) {
+    Card.prototype.hide = function () {
       this.active = false;
-      if (shadowOnly) {
-        this.updateCardStyle();
-      } else {
+      this.cardDiv.style.display = "none";
 
-        var cd = this.cardDiv;
-        var h = function () {
-            cd.style.display = "none";
-        };
-
-        if (this.type === ACTION_CARD) {
-          var wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
-          new Tween(wrapDiv, 'paddingTop', '%', 1, 50, 0.25);
-          (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
-        } else {
-          h();
-        }
-        
-      }
       if (this.type === CLOCK_CARD && recognition) {
         recognition.stop();
       }
@@ -887,12 +865,12 @@
 
    Card.prototype.showCard = function (pos, action) {
       if (this.type === ACTION_CARD && this.action === "SHARE") {
-        shareCards[pos].show();
+        emulator.slideToCard(shareCards[pos]);
       } else {
         if (action) {
-          actionCards[pos].show();
+          emulator.slideToCard(actionCards[pos]);
         } else {
-          cards[pos].show();
+          emulator.slideToCard(cards[pos]);
         }
       }
     };
@@ -992,6 +970,49 @@
     }
   };
 
+  ActionCard.prototype.animateIn = function () {
+    var wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
+    new Tween(wrapDiv, 'paddingTop', '%', 50, 1, 0.25);
+    new Tween(this.cardDiv, 'opacity', null, 0, 1, 0.25);
+  };
+
+  ActionCard.prototype.animateOut = function () {
+    this.active = false;
+    var cd = this.cardDiv;
+    var h = function () {
+        cd.style.display = "none";
+    };
+
+    if (this.type === ACTION_CARD) {
+      var wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
+      new Tween(wrapDiv, 'paddingTop', '%', 1, 50, 0.25);
+      (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
+    } else {
+      h();
+    }
+  };
+
+  /**
+   * Overload handler to animate out
+   */
+  ActionCard.prototype.down = function () {
+    var cd = this.cardDiv;
+    var h = function () {
+        cd.style.display = "none";
+    };
+
+    if (this.type === ACTION_CARD) {
+      var wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
+      new Tween(wrapDiv, 'paddingTop', '%', 1, 50, 0.25);
+      (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
+    } else {
+      h();
+    }
+
+    activeCard = this.parent;
+  };
+
+
   function createHtmlBundle() {
     var i, l;
     l = this.htmlPages.length;
@@ -1019,6 +1040,12 @@
     this.dateDiv.innerHTML = "";
     this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
   };
+
+
+  ClockCard.prototype.tap = function () {
+    this.parent.show();
+    this.hide();
+  }
 
 
   /** Event Listeners */
@@ -1159,6 +1186,32 @@
       timer = global.setTimeout(fetchCards, 1);
       running = true;
     };
+
+
+    /** TODO: Add nice slide effect here */
+    this.slideToCard = function (newcard) {
+      var oldcard = activeCard;
+      activeCard = newcard;
+      newcard.show();
+      oldcard.hide();
+    }
+
+    /** Go straight to a card without fancy effects */
+    this.switchToCard = function (newcard) {
+      var oldcard = activeCard;
+      activeCard = newcard;
+      newcard.show();
+      oldcard.hide();
+    }
+
+    /** Don't hide the parent card */
+    this.introduceShareCard = function (newcard) {
+      var oldcard = activeCard;
+      activeCard = newcard;
+      oldcard.active=false;
+      newcard.show();
+      newcard.animateIn();
+    }
 
     /**
      * Set up main UI event handlers
