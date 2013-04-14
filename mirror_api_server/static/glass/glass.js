@@ -469,6 +469,9 @@
         replyCard.show();
       }
 
+      /**
+       * User up event
+       */
       function up(action) {
         var i, l;
         if (type === ACTION_CARD && that.action === "SHARE") {
@@ -518,6 +521,9 @@
         }
       }
 
+      /**
+       * User down event
+       */
       function down() {
         if (!!that.parent) {
           that.hide();
@@ -525,6 +531,9 @@
         }
       }
 
+      /**
+       * User left event
+       */
       function left() {
         var pos;
         if (!!that.parent) {
@@ -536,6 +545,9 @@
         }
       }
 
+      /**
+       * User right event
+       */
       function right() {
         var pos;
         if (!!that.parent) {
@@ -925,6 +937,9 @@
         }
       }
 
+      /**
+       * Set up main UI event handlers
+       */
       function setupEvents() {
         if (!interfaceDiv) { return; }
         if (global.ontouchstart !== undefined) {
