@@ -236,6 +236,10 @@
       "<div class=\"card card_type_progress\" style=\"display: none\">" +
       "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"../images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
       "</div>";
+    templates[cardType.CAMERA_CARD] =
+      "<video class=\"card_video\"></video>" +
+      "<canvas style=\"display: none\" class=\"card_canvas\"></canvas>" +
+      "<div class=\"card_text\"></div>";
     templates[cardType.HTML_BUNDLE_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
       "<div class=\"card_text\"></div>" +
@@ -250,11 +254,13 @@
 
     if (global.webkitSpeechRecognition) {
       recognition = new global.webkitSpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
       recognition.lang = "en-US";
       recognition.grammars.addFromUri("grammar.grxml", 10);
     }
+
+    global.navigator.getUserMedia =
+      global.navigator.getUserMedia || global.navigator.webkitGetUserMedia
+      || global.navigator.mozGetUserMedia || global.navigator.msGetUserMedia;
 
     function cardSort(a, b) {
       if (a.type === cardType.CLOCK_CARD) { return -1; }
@@ -561,6 +567,9 @@
       case cardType.SHARE_CARD:
         this.cardDiv.classList.add("card_type_share");
         break;
+      case cardType.CAMERA_CARD:
+        this.cardDiv.classList.add("card_type_camera");
+        break;
       }
     };
 
@@ -570,46 +579,6 @@
       this.updateCardStyle();
       this.cardDiv.style.display = "block";
       activeCard = this;
-
-      if (this.type === cardType.CLOCK_CARD && recognition) {
-        recognition.onstart = function (e) {
-          console.log(e);
-        };
-        recognition.onresult = function (e) {
-          var i, interim = "";
-          for (i = e.resultIndex; i < e.results.length; i++) {
-            if (e.results[i].isFinal) {
-              this.speech_result += e.results[i][0].transcript;
-            } else {
-              interim += e.results[i][0].transcript;
-            }
-          }
-          console.log("Final: " + this.speech_result);
-          console.log("Interim: " + interim);
-        };
-        recognition.onerror = function (e) {
-          console.log(e);
-        };
-        recognition.onend = function (e) {
-          console.log(e);
-        };
-        this.speech_result = "";
-        // recognition.start();
-        // TODO: actually make recognition do something
-      }
-
-      if (this.type === cardType.ACTION_CARD) {
-        this.textDiv.innerHTML = "";
-        this.cardDiv.style.opacity = 1;
-        this.actionDiv.style.paddingTop = "0%";
-        if (!!actions[this.action]) {
-          this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
-          this.iconDiv.src = actions[this.action].values[0].iconUrl;
-        } else {
-          this.textDiv.appendChild(doc.createTextNode(this.data.values[0].displayName));
-          this.iconDiv.src = this.data.values[0].iconUrl;
-        }
-      }
     };
 
     /**
@@ -797,12 +766,34 @@
       }
     };
 
+    Card.prototype.createHtmlBundle = function () {
+      var i, l;
+      l = this.htmlPages.length;
+      for (i = 0; i < l; i++) {
+        this.cards.push(new Card(cardType.CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
+      }
+    };
+
     /** @constructor */
     ActionCard = function (id, parent, data) {
       this.init(cardType.ACTION_CARD, id, parent, data);
     };
 
     ActionCard.prototype = new Card();
+
+    ActionCard.prototype.show = function () {
+      Card.prototype.show.call(this);
+      this.textDiv.innerHTML = "";
+      this.cardDiv.style.opacity = 1;
+      this.actionDiv.style.paddingTop = "0%";
+      if (!!actions[this.action]) {
+        this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
+        this.iconDiv.src = actions[this.action].values[0].iconUrl;
+      } else {
+        this.textDiv.appendChild(doc.createTextNode(this.data.values[0].displayName));
+        this.iconDiv.src = this.data.values[0].iconUrl;
+      }
+    };
 
     ActionCard.prototype.createCardElements = function () {
       this.createDiv();
@@ -919,21 +910,47 @@
     };
 
 
-    Card.prototype.createHtmlBundle = function () {
-      var i, l;
-      l = this.htmlPages.length;
-      for (i = 0; i < l; i++) {
-        this.cards.push(new Card(cardType.CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
-      }
-    };
-
-
     /** @constructor */
     ClockCard = function (id, parent) {
       this.init(cardType.CLOCK_CARD, id, parent);
     };
 
     ClockCard.prototype = new Card();
+
+    ClockCard.prototype.show = function () {
+      var speech_result = "", me = this, photo = false;
+      Card.prototype.show.call(this);
+
+      if (recognition) {
+
+        recognition.onresult = function (e) {
+          var i, interim = "";
+          for (i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) {
+              speech_result += e.results[i][0].transcript;
+            } else {
+              interim += e.results[i][0].transcript;
+            }
+          }
+          interim = speech_result + interim;
+          if (interim.indexOf("take a picture") >= 0 || interim.indexOf("take a photo") >= 0) {
+            photo = true;
+            recognition.stop();
+          }
+        };
+        recognition.onerror = function (e) {
+          console.log(e);
+        };
+        recognition.onend = function (e) {
+          if (photo) {
+            emulator.switchToCard(me.cards[0]);
+          }
+        };
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.start();
+      }
+    };
 
     ClockCard.prototype.createCardElements = function () {
       this.createDiv();
@@ -1063,6 +1080,54 @@
       this.init(cardType.CAMERA_CARD, id, parent);
     };
 
+    CameraCard.prototype = new Card();
+
+    CameraCard.prototype.show = function () {
+      Card.prototype.show.call(this);
+      this.startRecording();
+    };
+
+    CameraCard.prototype.takePicture = function () {
+      var me = this;
+      me.textDiv.innerHTML = "3";
+      global.setTimeout(function () {
+        me.textDiv.innerHTML = "2";
+        global.setTimeout(function () {
+          me.textDiv.innerHTML = "1";
+          global.setTimeout(function () {
+            me.textDiv.innerHTML = "";
+            me.canvas.width = me.video.offsetWidth;
+            me.canvas.height = me.video.offsetHeight;
+            me.ctx.drawImage(me.video, 0, 0);
+            me.image = me.canvas.toDataURL("image/png");
+            me.cardDiv.style.backgroundImage = "url(" + me.image + ")";
+            me.video.style.display = "none";
+            me.video.pause();
+            // TODO: Create new timeline card with image and switch to it
+          }, 1000);
+        }, 1000);
+      }, 1000);
+    };
+
+    CameraCard.prototype.startRecording = function () {
+      var me = this;
+      me.cardDiv.style.backgroundImage = "none";
+      global.navigator.getUserMedia({video: true}, function (stream) {
+        me.video.style.display = "block";
+        me.video.src = global.URL.createObjectURL(stream);
+        me.video.play();
+      }, function (e) {
+        console.log(e);
+      });
+    };
+
+    CameraCard.prototype.createCardElements = function () {
+      this.createDiv();
+      this.video = this.cardDiv.querySelector(".card_video");
+      this.canvas = this.cardDiv.querySelector(".card_canvas");
+      this.ctx = this.canvas.getContext("2d");
+      this.video.addEventListener("play", this.takePicture.bind(this));
+    };
 
     /** Event Listeners */
 
@@ -1086,7 +1151,6 @@
       /** @type {glassevent} */
       var dir;
       dir = getDirection(x1, y1, x2, y2);
-      console.log(dir);
       switch (dir) {
       case glassevent.RIGHT:
         activeCard.right();
@@ -1273,6 +1337,10 @@
 
       card = new ClockCard("clock", startCard);
       startCard.addCard(card);
+
+      if (!!global.navigator.getUserMedia) {
+        card.addCard(new CameraCard("camera", card));
+      }
 
       if (global.glassDemoMode) {
         handleShareEntities(demoShareEntities);

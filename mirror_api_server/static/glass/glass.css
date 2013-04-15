@@ -286,6 +286,27 @@ body.inner {
   bottom: auto;
 }
 
+.card_type_camera {
+  background-size: cover;
+}
+
+.card_type_camera > .card_video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.card_type_camera > .card_text {
+  text-align: right;
+  font-size: 40px;
+  font-weight: 300;
+  padding: 10px;
+  color: #FFF;
+  background-color: transparent;
+}
+
+
 #signin, #signout {
   padding: 5px;
 }
