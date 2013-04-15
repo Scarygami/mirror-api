@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<project basedir="." default="compile">
+  <!--
+    Ant build for javascript - used as a linting tool
+    -->
+  <taskdef name="jscomp" classname="com.google.javascript.jscomp.ant.CompileTask"
+           classpath="tools/compiler.jar"/>
+
+  <target name="compile" depends="glass" />
+
+  <target name="glass">
+    <!-- Use simple optimisations - just using to lint -->
+    <jscomp compilationLevel="simple" warning="verbose" 
+            debug="false" output="${basedir}/mirror_api_server/static/glass/glass.min.js">
+
+      <sources dir="${basedir}/mirror_api_server/static/glass/">
+        <file name="glass.js"/>
+      </sources>
+    </jscomp>
+    
+  </target>
+</project>

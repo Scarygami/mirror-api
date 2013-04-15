@@ -36,16 +36,57 @@
     return h + ":" + (min[1] ? min : "0" + min[0]);
   };
 
+  /** 
+   * Basic tween object 
+   * @constructor
+   */
+  var Tween = function (element, attribute, type, from, to, duration) {
+    type = type || "";
+    this.then = function (cb) {
+      this._cb = cb;
+      if (this._done) { cb() }
+    }
+
+    var raf = window.requestAnimationFrame || window.mozRequestAnimationFrame  
+              || window.webkitRequestAnimationFrame ||window.msRequestAnimationFrame;
+
+    if (raf) { 
+      var started = new Date(), me = this;
+      var update = function () {
+        var t = ((new Date()) - started)/1000;
+        if (t <= duration) {
+          element.style[attribute] = (from + ((to - from) * t / duration)) + type;
+          raf(update);
+        } else {
+          element.style[attribute] = to + type;
+          me._done = true;
+          if (me._cb !== undefined) { me._cb();}
+        }
+      }
+      raf(update);
+    } else {
+      this._done = true;
+    }
+  };
+
+  /**
+   * Main Glass object
+   * @constructor
+   */
   function Glass() {
     var
       startCard, shareCards = [], replyCard,
       demoCards, demoShareEntities, templates, actions,
       mirror,
+      emulator = this,
       mainDiv = doc.getElementById("glass"),
+      activeCard,
       timer, running = false,
       START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4, SHARE_CARD = 5, REPLY_CARD = 6, HTML_BUNDLE_CARD = 7, CARD_BUNDLE_CARD = 8,
-      UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4,
       recognition;
+
+    /*@type{enum}*/
+    var glassevent = {UP:1, DOWN: 2, LEFT: 3, RIGHT: 4, TAP: 5};
 
     demoCards = {
       "items": [
@@ -207,15 +248,19 @@
     function cardSort(a, b) {
       if (a.type === CLOCK_CARD) { return -1; }
       if (b.type === CLOCK_CARD) { return 1; }
+      if (!(b.date && a.date)) { return 1; }
       return b.date.getTime() - a.date.getTime();
     }
 
+    /**
+     * @returns glassevent
+     */
     function getClickDirection(x, y) {
-      if (x < 30) { return RIGHT; }
-      if (x > 610) { return LEFT; }
-      if (y < 30) { return DOWN; }
-      if (y > 330) { return UP; }
-      return UP;
+      if (x < 30) { return glassevent.RIGHT; }
+      if (x > 610) { return glassevent.LEFT; }
+      if (y < 30) { return glassevent.DOWN; }
+      if (y > 330) { return glassevent.UP; }
+      return glassevent.TAP;
     }
 
     function getDirection(x1, y1, x2, y2) {
@@ -228,10 +273,10 @@
       }
 
       if (dx === 0) {
-        return (dy > 0) ? DOWN : UP;
+        return (dy > 0) ? glassevent.DOWN : glassevent.UP;
       }
       if (dy === 0) {
-        return (dx > 0) ? RIGHT : LEFT;
+        return (dx > 0) ? glassevent.RIGHT : glassevent.LEFT;
       }
       tmp = Math.abs(dx / dy);
       if (tmp >= 0.5 && tmp <= 1.5) {
@@ -241,18 +286,25 @@
 
       if (tmp > 1.5) {
         // mainly horizontal movement
-        return (dx > 0) ? RIGHT : LEFT;
+        return (dx > 0) ? glassevent.RIGHT : glassevent.LEFT;
       }
 
       // mainly vertical movement
-      return (dy > 0) ? DOWN : UP;
+      return (dy > 0) ? glassevent.DOWN : glassevent.UP;
     }
 
-    function Card(type, id, parent, data) {
-      var
-        cardDiv, textDiv, htmlFrame, htmlDiv, dateDiv, interfaceDiv, iconDiv, progressDiv, progressIconDiv, progressTextDiv, mouseX, mouseY,
-        that = this, cards = [], actionCards = [];
+    /** 
+     * @constructor 
+     * @param {Object=} data data for instantiating card
+     */
+    var Card = function(type, id, parent, data) {
+        this.init(type, id, parent, data);
+    }
+
+    Card.prototype.init = function (type, id, parent, data) {
       data = data || {};
+      this.cards = [];
+      this.data = data;
       this.id = id;
       this.text = data.text || data.displayName || "";
       this.html = data.html || "";
@@ -281,42 +333,61 @@
         this.image = undefined;
       }
 
-      function shareCard() {
-        var data;
+      this.createCardElements();
+      if (this.type !== CARD_BUNDLE_CARD && data.cardOptions && data.cardOptions.length > 0) {
+        this.createActionCards();
+      }
+      if (this.htmlPages && this.htmlPages.length > 0) {
+        this.createHtmlBundle();
+      }
+    }
 
-        if (type !== SHARE_CARD) { return; }
+
+
+      var
+        htmlFrame, htmlDiv, progressDiv, progressIconDiv,
+        progressTextDiv, mouseX, mouseY, actionCards = [];
+
+      Card.prototype.shareCard = function () {
+        var data;
+        var me = this;
+
+        if (this.type !== SHARE_CARD) { return; }
 
         function closeShare() {
-          progressDiv.style.display = "none";
-          that.hide();
-          that.parent.hide();
-          that.parent.parent.show();
+          me.progressDiv.style.display = "none";
+          me.hide();
+          me.parent.hide();
+          me.parent.parent.show();
         }
 
         function onSuccess() {
-          progressIconDiv.src = "../images/success.png";
-          progressTextDiv.innerHTML = "Shared";
+          me.progressIconDiv.src = "../images/success.png";
+          me.progressTextDiv.innerHTML = "Shared";
           global.setTimeout(closeShare, 2000);
         }
 
         function onError() {
-          progressIconDiv.src = "../images/error.png";
-          progressTextDiv.innerHTML = "Failed";
+          me.progressIconDiv.src = "../images/error.png";
+          me.progressTextDiv.innerHTML = "Failed";
           global.setTimeout(closeShare, 2000);
         }
 
-        that.hide(true);
-        progressIconDiv.src = "../images/share.png";
-        progressTextDiv.innerHTML = "Sharing";
-        progressDiv.style.display = "block";
+        /**
+         * TODO: Sharing Progress should be separate overlay which can be
+         * animated in
+         */
+        this.progressIconDiv.src = "../images/share.png";
+        this.progressTextDiv.innerHTML = "Sharing";
+        this.progressDiv.style.display = "block";
         if (global.glassDemoMode) {
           global.setTimeout(onSuccess, 2000);
         } else {
           data = {};
           data.collection = "timeline";
-          data.itemId = that.parent.parent.id;
+          data.itemId = this.parent.parent.id;
           data.operation = "SHARE";
-          data.value = that.id;
+          data.value = this.id;
           mirror.actions.insert({"resource": data}).execute(function (resp) {
             console.log(resp);
             if (resp.success) {
@@ -331,36 +402,36 @@
       function sendCustomAction() {
         var data;
 
-        if (type !== ACTION_CARD || that.action !== "CUSTOM") { return; }
+        if (this.type !== ACTION_CARD || this.action !== "CUSTOM") { return; }
 
         function closeAction() {
-          that.hide();
-          that.parent.show();
+          this.hide();
+          this.parent.show();
         }
 
         function onSuccess() {
-          iconDiv.src = "../images/success.png";
-          textDiv.innerHTML = "Sent";
+          this.iconDiv.src = "../images/success.png";
+          this.textDiv.innerHTML = "Sent";
           global.setTimeout(closeAction, 2000);
         }
 
         function onError() {
-          iconDiv.src = "../images/error.png";
-          textDiv.innerHTML = "Failed";
+          this.iconDiv.src = "../images/error.png";
+          this.textDiv.innerHTML = "Failed";
           global.setTimeout(closeAction, 2000);
         }
 
-        that.hide(true);
-        iconDiv.src = "../images/share.png";
-        textDiv.innerHTML = "Sending";
+        this.hide(true);
+        this.iconDiv.src = "../images/share.png";
+        this.textDiv.innerHTML = "Sending";
         if (global.glassDemoMode) {
           global.setTimeout(onSuccess, 2000);
         } else {
           data = {};
           data.collection = "timeline";
-          data.itemId = that.parent.id;
+          data.itemId = this.parent.id;
           data.operation = "CUSTOM";
-          data.value = that.actionId;
+          data.value = this.actionId;
           mirror.actions.insert({"resource": data}).execute(function (resp) {
             console.log(resp);
             if (resp.success) {
@@ -372,592 +443,686 @@
         }
       }
 
-      function sendReply() {
-        var result = "";
-        if (type !== REPLY_CARD) { return; }
-        textDiv.classList.remove("real_input");
-        textDiv.innerHTML = "Speak your message";
-        progressDiv.style.display = "none";
+    /**
+     * User up event
+     */
+    Card.prototype.up = function () {
+    };
 
-        function closeReply() {
-          progressDiv.style.display = "none";
-          that.hide();
-          that.parent.hide();
-          that.parent.parent.show();
+    /**
+     * User down event
+     */
+    Card.prototype.down = function () {
+      if (!!this.parent) {
+        if (this.parent.type == ACTION_CARD) {
+
+          this.parent.show();
+          this.parent.animateIn();
+          this.hide();
+        } else {
+          emulator.switchToCard(this.parent);
+        }
+      }
+    };
+
+    /**
+     * User left event
+     */
+    Card.prototype.left = function() {
+      var pos;
+      if (!!this.parent) {
+        pos = this.parent.findPosition(this.id, this.type === ACTION_CARD);
+        if (pos < this.parent.cardCount(this.type === ACTION_CARD) - 1) {
+          this.hide();
+          this.parent.showCard(pos + 1, this.type === ACTION_CARD);
+        }
+      }
+    }
+
+    /**
+     * User right event
+     */
+    Card.prototype.right = function() {
+      console.log('right');
+      var pos;
+      if (!!this.parent) {
+        pos = this.parent.findPosition(this.id, this.type === ACTION_CARD);
+        if (pos > 0) {
+          this.hide();
+          this.parent.showCard(pos - 1, this.type === ACTION_CARD);
+        }
+      }
+    };
+
+    /**
+     * User tap event
+     * @param {boolean=} action
+     */
+    Card.prototype.tap = function (action) {
+      if (this.type === SHARE_CARD) {
+        this.shareCard();
+        return;
+      }
+
+      if (this.type === CONTENT_CARD && this.parent.type === HTML_BUNDLE_CARD && this.parent.hasActions()) {
+        this.parent.showActions();
+        this.hide();
+      }
+
+      if (this.type === CONTENT_CARD || action) {
+        if (actionCards && actionCards.length > 0) {
+          emulator.introduceShareCard(actionCards[0]);
+          return;
+        }
+      }
+
+      // "power on"
+      if (this.cards && this.cards.length > 0) {
+        if (this.type !== HTML_BUNDLE_CARD) { this.cards.sort(cardSort); }
+        emulator.switchToCard(this.cards[0]);
+        return;
+      }
+    };
+
+
+    Card.prototype.updateDisplayDate = function() {
+      switch (this.type) {
+      case CONTENT_CARD:
+      case HTML_BUNDLE_CARD:
+      case CARD_BUNDLE_CARD:
+        this.dateDiv.innerHTML = "";
+        if (this.date) { this.dateDiv.appendChild(doc.createTextNode(this.date.niceDate())); }
+        break;
+      }
+    };
+
+
+    Card.prototype.updateCardStyle = function() {
+      var shadow = "", pos, last;
+      this.cardDiv.className = "card";
+
+      if (this.active) {
+        if (
+          (this.cards && this.cards.length > 0)
+            || this.action === "SHARE"
+            || (actionCards && actionCards.length > 0)
+            || (this.parent && this.parent.hasActions())
+        ) {
+          shadow += "_down";
         }
 
-        function onSuccess() {
-          progressIconDiv.src = "../images/success.png";
-          progressTextDiv.innerHTML = "Sent";
-          progressDiv.style.display = "block";
-          global.setTimeout(closeReply, 2000);
+        if (!!this.parent) {
+          pos = this.parent.findPosition(this.id, this.type === ACTION_CARD);
+          last = this.parent.cardCount(this.type === ACTION_CARD) - 1;
+          if (pos > 0) {
+            shadow += "_left";
+          }
+          if (pos < last) {
+            shadow += "_right";
+          }
+          shadow += "_up";
         }
 
-        function onError() {
-          progressIconDiv.src = "../images/error.png";
-          progressTextDiv.innerHTML = "Failed";
-          progressDiv.style.display = "block";
-          global.setTimeout(closeReply, 2000);
+        if (shadow !== "") {
+          this.cardDiv.classList.add("shadow" + shadow);
         }
+      } else {
+        this.cardDiv.style.display = "none";
+      }
 
-        if (recognition) {
-          recognition.interimResults = true;
-          recognition.continuous = false;
-          recognition.onstart = function () {
-            result = "";
-          };
-          recognition.onresult = function (e) {
-            var i;
-            console.log(e);
-            for (i = e.resultIndex; i < e.results.length; i++) {
-              if (e.results[i].isFinal) {
-                result += e.results[i][0].transcript;
-              }
+      if (this.type === HTML_BUNDLE_CARD || this.type === CARD_BUNDLE_CARD) {
+        this.cardDiv.classList.add("card_type_bundle");
+      }
+
+      switch (this.type) {
+      case START_CARD:
+        break;
+      case REPLY_CARD:
+        this.cardDiv.classList.add("card_type_reply");
+        break;
+      case CLOCK_CARD:
+        this.cardDiv.classList.add("card_type_clock");
+        break;
+      case CONTENT_CARD:
+      case HTML_BUNDLE_CARD:
+      case CARD_BUNDLE_CARD:
+        if (!!this.html) {
+          this.cardDiv.classList.add("card_type_html");
+        } else {
+          if (!!this.image) {
+            this.cardDiv.classList.add("card_type_image");
+          } else {
+            this.cardDiv.classList.add("card_type_text");
+          }
+        }
+        break;
+      case ACTION_CARD:
+        this.cardDiv.classList.add("card_type_action");
+        break;
+      case SHARE_CARD:
+        this.cardDiv.classList.add("card_type_share");
+        break;
+      }
+    };
+
+    Card.prototype.show = function () {
+      this.active = true;
+      this.updateDisplayDate();
+      this.updateCardStyle();
+      this.cardDiv.style.display = "block";
+
+      activeCard = this;
+
+      if (this.type === CLOCK_CARD && recognition) {
+        recognition.onstart = function (e) {
+          console.log(e);
+        };
+        recognition.onresult = function (e) {
+          var i, interim = "";
+          for (i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) {
+              this.speech_result += e.results[i][0].transcript;
+            } else {
+              interim += e.results[i][0].transcript;
             }
-            textDiv.innerHTML = result;
-            textDiv.classList.add("real_input");
-          };
-          recognition.onerror = onError;
-          recognition.onend = function () {
-            var data;
-            if (result !== "") {
-              progressIconDiv.src = "../images/reply.png";
-              progressTextDiv.innerHTML = "Sending";
-              progressDiv.style.display = "block";
-              if (global.glassDemoMode) {
-                global.setTimeout(onSuccess, 2000);
-              } else {
-                // create Timeline Card with reply text
-                data = {};
-                data.text = result;
-                mirror.timeline.insert({"resource": data}).execute(function (resp) {
-                  var action;
-                  console.log(resp);
-                  if (resp.id) {
-                    // Send action with reply card id and ID of original card
-                    action = {};
-                    action.collection = "timeline";
-                    action.itemId = resp.id;
-                    action.operation = "REPLY";
-                    action.value = that.parent.parent.id.toString();
-                    mirror.actions.insert({"resource": action}).execute(function (actionResp) {
-                      console.log(actionResp);
-                      if (actionResp.success) {
-                        onSuccess();
-                      } else {
-                        onError();
-                      }
-                    });
+          }
+          console.log("Final: " + this.speech_result);
+          console.log("Interim: " + interim);
+        };
+        recognition.onerror = function (e) {
+          console.log(e);
+        };
+        recognition.onend = function (e) {
+          console.log(e);
+        };
+        this.speech_result = "";
+        // recognition.start();
+        // TODO: actually make recognition do something
+      }
+
+      if (this.type === REPLY_CARD && this.parent) {
+        this.sendReply();
+      }
+
+      if (this.type === ACTION_CARD) {
+        this.textDiv.innerHTML = "";
+        if (!!actions[this.action]) {
+          this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
+          this.iconDiv.src = actions[this.action].values[0].iconUrl;
+        } else {
+          this.textDiv.appendChild(doc.createTextNode(this.data.values[0].displayName));
+          this.iconDiv.src = this.data.values[0].iconUrl;
+        }
+      }
+    };
+
+    /**
+     * @param {boolean=} shadowOnly optional
+     */
+    Card.prototype.hide = function () {
+      this.active = false;
+      this.cardDiv.style.display = "none";
+
+      if (this.type === CLOCK_CARD && recognition) {
+        recognition.stop();
+      }
+    };
+
+    Card.prototype.update = function (data) {
+      var tmpDate;
+      if (data.when) {
+        tmpDate = new Date(data.when);
+        if (this.date.getTime() !== tmpDate.getTime()) {
+          this.date = tmpDate;
+          this.updateDisplayDate();
+        }
+      }
+      if (this.html !== data.html) {
+        this.html = data.html || "";
+        htmlDiv.innerHTML = this.html;
+      }
+      if (this.html) {
+        // HTML overrides text and image in card, can't be mixed
+        this.text = "";
+        this.image = undefined;
+        this.cardDiv.style.backgroundImage = "none";
+        this.textDiv.innerHTML = "";
+      } else {
+        if (this.text !== data.text) {
+          this.text = data.text || "";
+          this.textDiv.innerHTML = "";
+          this.textDiv.appendChild(doc.createTextNode(this.text));
+        }
+        if (this.image !== data.image) {
+          if (data.image && !this.html) {
+            this.image = data.image;
+            this.cardDiv.style.backgroundImage = "url(" + this.image + ")";
+          } else {
+            this.image = undefined;
+            this.cardDiv.style.backgroundImage = "none";
+          }
+        }
+      }
+      this.updateCardStyle();
+    };
+
+    /** Traverse the card tree looking for a card */
+    Card.prototype.findCard = function (id) {
+      var i, l, card;
+      l = this.cards.length;
+      for (i = 0; i < l; i++) {
+        if (this.cards[i].id === id) {
+          return this.cards[i];
+        }
+        if (this.cards[i].type === CARD_BUNDLE_CARD) {
+          card = this.cards[i].findCard(id);
+          if (card) {
+            return card;
+          }
+        }
+      }
+      return undefined;
+    };
+
+    Card.prototype.cardCount = function (action) {
+      var array;
+      if (this.type === ACTION_CARD && this.action === "SHARE") {
+        array = shareCards;
+      } else {
+        array = action ? actionCards : this.cards;
+      }
+      return array.length;
+    };
+
+    Card.prototype.findPosition = function (id, action) {
+      var i, l, array;
+      if (this.type === ACTION_CARD && this.action === "SHARE") {
+        array = shareCards;
+      } else {
+        if (action) {
+          array = actionCards;
+        } else {
+          array = this.cards;
+          if (this.type !== HTML_BUNDLE_CARD) {
+            array.sort(cardSort);
+          }
+        }
+      }
+      l = array.length;
+      for (i = 0; i < l; i++) {
+        if (array[i].id === id) {
+          return i;
+        }
+      }
+    };
+
+   Card.prototype.showCard = function (pos, action) {
+      if (this.type === ACTION_CARD && this.action === "SHARE") {
+        emulator.slideToCard(shareCards[pos]);
+      } else {
+        if (action) {
+          emulator.slideToCard(actionCards[pos]);
+        } else {
+          emulator.slideToCard(this.cards[pos]);
+        }
+      }
+    };
+
+    Card.prototype.addCard = function (card) {
+      this.cards.push(card);
+    };
+
+    Card.prototype.hasActions = function () {
+      if (this.type !== HTML_BUNDLE_CARD) { return false; }
+      return (actionCards && actionCards.length > 0);
+    };
+
+    Card.prototype.showActions = function () {
+      if (this.type !== HTML_BUNDLE_CARD) { return; }
+      this.tap(true);
+    };
+
+    /**
+     * Overload this for subclasses
+     */
+    Card.prototype.createCardElements = function () {
+      this.createDiv();
+    };
+
+
+    Card.prototype.createDiv = function() {
+      this.cardDiv = doc.createElement("div");
+      this.cardDiv.id = "c" + this.id;
+      this.cardDiv.innerHTML = templates[this.type];
+      mainDiv.appendChild(this.cardDiv);
+      this.textDiv = this.cardDiv.querySelector(".card_text");
+      this.dateDiv = this.cardDiv.querySelector(".card_date");
+      this.interfaceDiv = this.cardDiv.querySelector(".card_interface");
+      this.iconDiv = this.cardDiv.querySelector(".card_icon");
+      this.progressDiv = this.cardDiv.querySelector(".card_type_progress");
+      this.progressIconDiv = this.cardDiv.querySelector(".card_progress_icon");
+      this.progressTextDiv = this.cardDiv.querySelector(".card_progress_text");
+      switch (this.type) {
+      case CONTENT_CARD:
+      case HTML_BUNDLE_CARD:
+      case CARD_BUNDLE_CARD:
+        htmlFrame = this.cardDiv.querySelector(".card_iframe");
+        htmlFrame.onload = function () {
+          htmlDiv = htmlFrame.contentWindow.document.getElementById("html");
+          if (!!this.html) {
+            htmlDiv.innerHTML = this.html;
+          }
+        };
+        if (!!this.text) {
+          this.textDiv.appendChild(doc.createTextNode(this.text));
+        }
+        if (this.date) { this.dateDiv.appendChild(doc.createTextNode(this.date.niceDate())); }
+        if (this.image) {
+          this.cardDiv.style.backgroundImage = "url(" + this.image + ")";
+        }
+        break;
+
+      case SHARE_CARD:
+        this.textDiv.appendChild(doc.createTextNode(this.text));
+        this.cardDiv.style.backgroundImage = "url(" + this.image + ")";
+        break;
+
+      case REPLY_CARD:
+        this.textDiv.innerHTML = "Speak your message";
+        break;
+      }
+      this.updateCardStyle();
+    };
+
+  Card.prototype.createActionCards = function() {
+      var i, l;
+      l = this.data.cardOptions.length;
+      for (i = 0; i < l; i++) {
+        if (this.data.cardOptions[i].action) {
+          actionCards.push(new ActionCard(this.id + "_" + this.data.cardOptions[i].action, this, this.data.cardOptions[i]));
+          console.log(actionCards);
+        }
+      }
+    }
+
+  /** @constructor */
+  var ActionCard = function(id, parent, data){
+    this.init(ACTION_CARD, id, parent, data);
+  };
+
+  ActionCard.prototype = new Card();
+
+  ActionCard.prototype.createCardElements = function () {
+    this.createDiv();
+    if (!!actions[this.action]) {
+      this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
+      this.iconDiv.src = actions[this.action].values[0].iconUrl;
+    } else {
+      this.textDiv.appendChild(doc.createTextNode(this.data.values[0].displayName));
+      this.iconDiv.src = this.data.values[0].iconUrl;
+    }
+  };
+
+  ActionCard.prototype.animateIn = function () {
+    this.active = true;
+    activeCard = this;
+    var wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
+    new Tween(wrapDiv, 'paddingTop', '%', 50, 1, 0.25);
+    new Tween(this.cardDiv, 'opacity', null, 0, 1, 0.25);
+  };
+
+  ActionCard.prototype.animateOut = function () {
+    this.active = false;
+    var cd = this.cardDiv;
+    var h = function () {
+        cd.style.display = "none";
+    };
+
+    if (this.type === ACTION_CARD) {
+      var wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
+      new Tween(wrapDiv, 'paddingTop', '%', 1, 50, 0.25);
+      (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
+    } else {
+      h();
+    }
+  };
+
+  /**
+   * Overload handler to animate out
+   */
+  ActionCard.prototype.down = function () {
+    var cd = this.cardDiv;
+    var h = function () {
+        cd.style.display = "none";
+    };
+
+    if (this.type === ACTION_CARD) {
+      var wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
+      new Tween(wrapDiv, 'paddingTop', '%', 1, 50, 0.25);
+      (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
+    } else {
+      h();
+    }
+
+    activeCard = this.parent;
+  };
+
+
+  ActionCard.prototype.tap = function () {
+    this.startAction();
+  };
+
+  
+  ActionCard.prototype.startAction = function () {
+    var i, l;
+    switch (this.action) {
+    case "SHARE":
+      l = shareCards.length;
+      if (l === 0) { return; }
+      for (i = 0; i < l; i++) {
+        shareCards[i].parent = this;
+      }
+      shareCards[0].show();
+      this.animateOut();
+      break;
+    case "REPLY":
+      this.hide();
+      replyCard.parent = this;
+      replyCard.show();
+      break;
+    case "CUSTOM":
+      sendCustomAction();
+      break;
+    }
+  };
+
+
+
+  ActionCard.prototype.sendReply = function () {
+    var result = "";
+    if (this.type !== REPLY_CARD) { return; }
+    this.textDiv.classList.remove("real_input");
+    this.textDiv.innerHTML = "Speak your message";
+    progressDiv.style.display = "none";
+
+    function closeReply() {
+      progressDiv.style.display = "none";
+      this.hide();
+      this.parent.hide();
+      this.parent.parent.show();
+    }
+
+    function onSuccess() {
+      progressIconDiv.src = "../images/success.png";
+      progressTextDiv.innerHTML = "Sent";
+      progressDiv.style.display = "block";
+      global.setTimeout(closeReply, 2000);
+    }
+
+    function onError() {
+      progressIconDiv.src = "../images/error.png";
+      progressTextDiv.innerHTML = "Failed";
+      progressDiv.style.display = "block";
+      global.setTimeout(closeReply, 2000);
+    }
+
+    if (recognition) {
+      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognition.onstart = function () {
+        result = "";
+      };
+      recognition.onresult = function (e) {
+        var i;
+        console.log(e);
+        for (i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            result += e.results[i][0].transcript;
+          }
+        }
+        this.textDiv.innerHTML = result;
+        this.textDiv.classList.add("real_input");
+      };
+      recognition.onerror = onError;
+      recognition.onend = function () {
+        var data;
+        if (result !== "") {
+          progressIconDiv.src = "../images/reply.png";
+          progressTextDiv.innerHTML = "Sending";
+          progressDiv.style.display = "block";
+          if (global.glassDemoMode) {
+            global.setTimeout(onSuccess, 2000);
+          } else {
+            // create Timeline Card with reply text
+            data = {};
+            data.text = result;
+            mirror.timeline.insert({"resource": data}).execute(function (resp) {
+              var action;
+              console.log(resp);
+              if (resp.id) {
+                // Send action with reply card id and ID of original card
+                action = {};
+                action.collection = "timeline";
+                action.itemId = resp.id;
+                action.operation = "REPLY";
+                action.value = this.parent.parent.id.toString();
+                mirror.actions.insert({"resource": action}).execute(function (actionResp) {
+                  console.log(actionResp);
+                  if (actionResp.success) {
+                    onSuccess();
                   } else {
                     onError();
                   }
                 });
-              }
-            } else {
-              onError();
-            }
-          };
-          recognition.start();
-        }
-      }
-
-      function startReply() {
-        if (type !== ACTION_CARD || that.action !== "REPLY") { return; }
-
-        that.hide();
-        replyCard.parent = that;
-        replyCard.show();
-      }
-
-      function up(action) {
-        var i, l;
-        if (type === ACTION_CARD && that.action === "SHARE") {
-          l = shareCards.length;
-          if (l === 0) { return; }
-          for (i = 0; i < l; i++) {
-            shareCards[i].parent = that;
-          }
-          shareCards[0].show();
-          that.hide();
-          return;
-        }
-        if (type === SHARE_CARD) {
-          shareCard();
-          return;
-        }
-
-        if (type === ACTION_CARD) {
-          if (that.action === "REPLY") {
-            startReply();
-            return;
-          }
-          if (that.action === "CUSTOM") {
-            sendCustomAction();
-            return;
-          }
-        }
-
-        if (type === CONTENT_CARD && that.parent.type === HTML_BUNDLE_CARD && that.parent.hasActions()) {
-          that.parent.showActions();
-          that.hide();
-        }
-
-        if (type === CONTENT_CARD || action) {
-          if (actionCards && actionCards.length > 0) {
-            actionCards[0].show();
-            that.hide(true);
-            return;
-          }
-        }
-
-        if (cards && cards.length > 0) {
-          if (type !== HTML_BUNDLE_CARD) { cards.sort(cardSort); }
-          cards[0].show();
-          that.hide();
-          return;
-        }
-      }
-
-      function down() {
-        if (!!that.parent) {
-          that.hide();
-          that.parent.show();
-        }
-      }
-
-      function left() {
-        var pos;
-        if (!!that.parent) {
-          pos = that.parent.findPosition(that.id, type === ACTION_CARD);
-          if (pos < that.parent.cardCount(type === ACTION_CARD) - 1) {
-            that.hide();
-            that.parent.showCard(pos + 1, type === ACTION_CARD);
-          }
-        }
-      }
-
-      function right() {
-        var pos;
-        if (!!that.parent) {
-          pos = that.parent.findPosition(that.id, type === ACTION_CARD);
-          if (pos > 0) {
-            that.hide();
-            that.parent.showCard(pos - 1, type === ACTION_CARD);
-          }
-        }
-      }
-
-      function onMouseDown(e) {
-        mouseX = e.pageX - cardDiv.offsetLeft;
-        mouseY = e.pageY - cardDiv.offsetTop;
-      }
-
-      function onTouchStart(e) {
-        if (e.changedTouches && e.changedTouches.length > 0) {
-          e.preventDefault();
-          mouseX = e.changedTouches[0].pageX - cardDiv.offsetLeft;
-          mouseY = e.changedTouches[0].pageY - cardDiv.offsetTop;
-        }
-      }
-
-      function makeMove(x1, y1, x2, y2) {
-        var dir;
-        dir = getDirection(x1, y1, x2, y2);
-
-        switch (dir) {
-        case RIGHT:
-          right();
-          break;
-        case LEFT:
-          left();
-          break;
-        case UP:
-          up();
-          break;
-        case DOWN:
-          down();
-          break;
-        }
-      }
-
-      function onTouchEnd(e) {
-        var x, y;
-        if (e.changedTouches && e.changedTouches.length > 0) {
-          e.preventDefault();
-          x = e.changedTouches[0].pageX - cardDiv.offsetLeft;
-          y = e.changedTouches[0].pageY - cardDiv.offsetTop;
-          makeMove(mouseX, mouseY, x, y);
-        }
-      }
-
-      function onMouseUp(e) {
-        var x, y;
-        if (e.which !== 2 && e.button !== 2) {
-          x = e.pageX - cardDiv.offsetLeft;
-          y = e.pageY - cardDiv.offsetTop;
-
-          makeMove(mouseX, mouseY, x, y);
-        }
-      }
-
-      function updateDisplayDate() {
-        switch (type) {
-        case CLOCK_CARD:
-          dateDiv.innerHTML = "";
-          dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
-          break;
-        case CONTENT_CARD:
-        case HTML_BUNDLE_CARD:
-        case CARD_BUNDLE_CARD:
-          dateDiv.innerHTML = "";
-          if (that.date) { dateDiv.appendChild(doc.createTextNode(that.date.niceDate())); }
-          break;
-        }
-      }
-
-      function updateCardStyle() {
-        var shadow = "", pos, last;
-        cardDiv.className = "card";
-
-        if (that.active) {
-          if (
-            (cards && cards.length > 0)
-              || that.action === "SHARE"
-              || (actionCards && actionCards.length > 0)
-              || (that.parent && that.parent.hasActions())
-          ) {
-            shadow += "_down";
-          }
-
-          if (!!that.parent) {
-            pos = that.parent.findPosition(that.id, type === ACTION_CARD);
-            last = that.parent.cardCount(type === ACTION_CARD) - 1;
-            if (pos > 0) {
-              shadow += "_left";
-            }
-            if (pos < last) {
-              shadow += "_right";
-            }
-            shadow += "_up";
-          }
-
-          if (shadow !== "") {
-            cardDiv.classList.add("shadow" + shadow);
-          }
-        }
-
-        if (type === HTML_BUNDLE_CARD || type === CARD_BUNDLE_CARD) {
-          cardDiv.classList.add("card_type_bundle");
-        }
-
-        switch (type) {
-        case START_CARD:
-          break;
-        case REPLY_CARD:
-          cardDiv.classList.add("card_type_reply");
-          break;
-        case CLOCK_CARD:
-          cardDiv.classList.add("card_type_clock");
-          break;
-        case CONTENT_CARD:
-        case HTML_BUNDLE_CARD:
-        case CARD_BUNDLE_CARD:
-          if (!!that.html) {
-            cardDiv.classList.add("card_type_html");
-          } else {
-            if (!!that.image) {
-              cardDiv.classList.add("card_type_image");
-            } else {
-              cardDiv.classList.add("card_type_text");
-            }
-          }
-          break;
-        case ACTION_CARD:
-          cardDiv.classList.add("card_type_action");
-          break;
-        case SHARE_CARD:
-          cardDiv.classList.add("card_type_share");
-          break;
-        }
-      }
-
-      this.show = function () {
-        this.active = true;
-        updateDisplayDate();
-        updateCardStyle();
-        cardDiv.style.display = "block";
-
-        if (that.type === CLOCK_CARD && recognition) {
-          recognition.onstart = function (e) {
-            console.log(e);
-          };
-          recognition.onresult = function (e) {
-            var i, interim = "";
-            for (i = e.resultIndex; i < e.results.length; i++) {
-              if (e.results[i].isFinal) {
-                that.speech_result += e.results[i][0].transcript;
               } else {
-                interim += e.results[i][0].transcript;
+                onError();
               }
-            }
-            console.log("Final: " + that.speech_result);
-            console.log("Interim: " + interim);
-          };
-          recognition.onerror = function (e) {
-            console.log(e);
-          };
-          recognition.onend = function (e) {
-            console.log(e);
-          };
-          this.speech_result = "";
-          // recognition.start();
-          // TODO: actually make recognition do something
-        }
-
-        if (that.type === REPLY_CARD && that.parent) {
-          sendReply();
-        }
-
-        if (that.type === ACTION_CARD) {
-          textDiv.innerHTML = "";
-          if (!!actions[that.action]) {
-            textDiv.appendChild(doc.createTextNode(actions[that.action].values[0].displayName));
-            iconDiv.src = actions[that.action].values[0].iconUrl;
-          } else {
-            textDiv.appendChild(doc.createTextNode(data.values[0].displayName));
-            iconDiv.src = data.values[0].iconUrl;
+            });
           }
-        }
-      };
-
-      this.hide = function (shadowOnly) {
-        this.active = false;
-        if (shadowOnly) {
-          updateCardStyle();
         } else {
-          cardDiv.style.display = "none";
-        }
-        if (that.type === CLOCK_CARD && recognition) {
-          recognition.stop();
+          onError();
         }
       };
-
-      this.update = function (data) {
-        var tmpDate;
-        if (data.when) {
-          tmpDate = new Date(data.when);
-          if (this.date.getTime() !== tmpDate.getTime()) {
-            this.date = tmpDate;
-            updateDisplayDate();
-          }
-        }
-        if (this.html !== data.html) {
-          this.html = data.html || "";
-          htmlDiv.innerHTML = this.html;
-        }
-        if (this.html) {
-          // HTML overrides text and image in card, can't be mixed
-          this.text = "";
-          this.image = undefined;
-          cardDiv.style.backgroundImage = "none";
-          textDiv.innerHTML = "";
-        } else {
-          if (this.text !== data.text) {
-            this.text = data.text || "";
-            textDiv.innerHTML = "";
-            textDiv.appendChild(doc.createTextNode(this.text));
-          }
-          if (this.image !== data.image) {
-            if (data.image && !this.html) {
-              this.image = data.image;
-              cardDiv.style.backgroundImage = "url(" + that.image + ")";
-            } else {
-              this.image = undefined;
-              cardDiv.style.backgroundImage = "none";
-            }
-          }
-        }
-        updateCardStyle();
-      };
-
-      this.findCard = function (id) {
-        var i, l, card;
-        l = cards.length;
-        for (i = 0; i < l; i++) {
-          if (cards[i].id === id) {
-            return cards[i];
-          }
-          if (cards[i].type === CARD_BUNDLE_CARD) {
-            card = cards[i].findCard(id);
-            if (card) {
-              return card;
-            }
-          }
-        }
-        return undefined;
-      };
-
-      this.cardCount = function (action) {
-        var array;
-        if (this.type === ACTION_CARD && this.action === "SHARE") {
-          array = shareCards;
-        } else {
-          array = action ? actionCards : cards;
-        }
-        return array.length;
-      };
-
-      this.findPosition = function (id, action) {
-        var i, l, array;
-        if (this.type === ACTION_CARD && this.action === "SHARE") {
-          array = shareCards;
-        } else {
-          if (action) {
-            array = actionCards;
-          } else {
-            array = cards;
-            if (this.type !== HTML_BUNDLE_CARD) {
-              array.sort(cardSort);
-            }
-          }
-        }
-        l = array.length;
-        for (i = 0; i < l; i++) {
-          if (array[i].id === id) {
-            return i;
-          }
-        }
-      };
-
-      this.showCard = function (pos, action) {
-        if (type === ACTION_CARD && that.action === "SHARE") {
-          shareCards[pos].show();
-        } else {
-          if (action) {
-            actionCards[pos].show();
-          } else {
-            cards[pos].show();
-          }
-        }
-      };
-
-      this.addCard = function (card) {
-        cards.push(card);
-      };
-
-      this.hasActions = function () {
-        if (this.type !== HTML_BUNDLE_CARD) { return false; }
-        return (actionCards && actionCards.length > 0);
-      };
-
-      this.showActions = function () {
-        if (this.type !== HTML_BUNDLE_CARD) { return; }
-        up(true);
-      };
-
-      function createDiv() {
-        cardDiv = doc.createElement("div");
-        cardDiv.id = "c" + id;
-        cardDiv.innerHTML = templates[type];
-        mainDiv.appendChild(cardDiv);
-        textDiv = cardDiv.querySelector(".card_text");
-        dateDiv = cardDiv.querySelector(".card_date");
-        interfaceDiv = cardDiv.querySelector(".card_interface");
-        iconDiv = cardDiv.querySelector(".card_icon");
-        progressDiv = cardDiv.querySelector(".card_type_progress");
-        progressIconDiv = cardDiv.querySelector(".card_progress_icon");
-        progressTextDiv = cardDiv.querySelector(".card_progress_text");
-        switch (type) {
-        case CLOCK_CARD:
-          dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
-          textDiv.appendChild(doc.createTextNode("\"ok glass\""));
-          break;
-
-        case CONTENT_CARD:
-        case HTML_BUNDLE_CARD:
-        case CARD_BUNDLE_CARD:
-          htmlFrame = cardDiv.querySelector(".card_iframe");
-          htmlFrame.onload = function () {
-            htmlDiv = htmlFrame.contentWindow.document.getElementById("html");
-            if (!!that.html) {
-              htmlDiv.innerHTML = that.html;
-            }
-          };
-          if (!!that.text) {
-            textDiv.appendChild(doc.createTextNode(that.text));
-          }
-          if (that.date) { dateDiv.appendChild(doc.createTextNode(that.date.niceDate())); }
-          if (that.image) {
-            cardDiv.style.backgroundImage = "url(" + that.image + ")";
-          }
-          break;
-
-        case ACTION_CARD:
-          if (!!actions[that.action]) {
-            textDiv.appendChild(doc.createTextNode(actions[that.action].values[0].displayName));
-            iconDiv.src = actions[that.action].values[0].iconUrl;
-          } else {
-            textDiv.appendChild(doc.createTextNode(data.values[0].displayName));
-            iconDiv.src = data.values[0].iconUrl;
-          }
-          break;
-
-        case SHARE_CARD:
-          textDiv.appendChild(doc.createTextNode(that.text));
-          cardDiv.style.backgroundImage = "url(" + that.image + ")";
-          break;
-
-        case REPLY_CARD:
-          textDiv.innerHTML = "Speak your message";
-          break;
-        }
-        updateCardStyle();
-        that.hide();
-      }
-
-      function createActionCards() {
-        var i, l;
-        l = data.cardOptions.length;
-        for (i = 0; i < l; i++) {
-          if (data.cardOptions[i].action) {
-            actionCards.push(new Card(ACTION_CARD, that.id + "_" + data.cardOptions[i].action, that, data.cardOptions[i]));
-          }
-        }
-      }
-
-      function setupEvents() {
-        if (!interfaceDiv) { return; }
-        if (global.ontouchstart !== undefined) {
-          interfaceDiv.addEventListener("touchstart", onTouchStart, false);
-          interfaceDiv.addEventListener("touchend", onTouchEnd, false);
-        } else {
-          interfaceDiv.onmousedown = onMouseDown;
-          interfaceDiv.onmouseup = onMouseUp;
-        }
-        cardDiv.onselectstart = function () { return false; };
-      }
-
-      function createHtmlBundle() {
-        var i, l;
-        l = that.htmlPages.length;
-        for (i = 0; i < l; i++) {
-          cards.push(new Card(CONTENT_CARD, that.id + "_" + i, that, {"html": that.htmlPages[i]}));
-        }
-      }
-
-      function initialize() {
-        createDiv();
-        setupEvents();
-        if (that.type !== CARD_BUNDLE_CARD && data.cardOptions && data.cardOptions.length > 0) {
-          createActionCards();
-        }
-        if (that.htmlPages && that.htmlPages.length > 0) {
-          createHtmlBundle();
-        }
-      }
-
-      initialize();
+      recognition.start();
     }
+  };
+
+
+  Card.prototype.createHtmlBundle = function () {
+    var i, l;
+    l = this.htmlPages.length;
+    for (i = 0; i < l; i++) {
+      this.cards.push(new Card(CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
+    }
+  };
+
+
+  /** @constructor */
+  var ClockCard = function(id, parent){
+    this.init(CLOCK_CARD, id, parent);
+  };
+
+  ClockCard.prototype = new Card();
+
+
+  ClockCard.prototype.createCardElements = function () {
+    this.createDiv();
+    this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+    this.textDiv.appendChild(doc.createTextNode("\"ok glass\""));
+  }
+
+  ClockCard.prototype.updateDisplayDate = function () {
+    this.dateDiv.innerHTML = "";
+    this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+  };
+
+
+  ClockCard.prototype.tap = function () {
+    this.parent.show();
+    this.hide();
+  }
+
+
+  /** Event Listeners */
+
+  function onMouseDown(e) {
+    mouseX = e.pageX - activeCard.cardDiv.offsetLeft;
+    mouseY = e.pageY - activeCard.cardDiv.offsetTop;
+  }
+
+  function onTouchStart(e) {
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      e.preventDefault();
+      mouseX = e.changedTouches[0].pageX - activeCard.cardDiv.offsetLeft;
+      mouseY = e.changedTouches[0].pageY - activeCard.cardDiv.offsetTop;
+    }
+  }
+
+  /**
+   * Convert a movement to a UI Event */
+  function makeMove(x1, y1, x2, y2) {
+    /** @type {glassevent} */
+    var dir;
+    dir = getDirection(x1, y1, x2, y2);
+
+    switch (dir) {
+    case glassevent.RIGHT:
+      activeCard.right();
+      break;
+    case glassevent.LEFT:
+      activeCard.left();
+      break;
+    case glassevent.UP:
+      activeCard.up();
+      break;
+    case glassevent.DOWN:
+      activeCard.down();
+      break;
+    case glassevent.TAP:
+      activeCard.tap();
+      break;
+    }
+  }
+
+  function onTouchEnd(e) {
+    var x, y;
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      e.preventDefault();
+      x = e.changedTouches[0].pageX - activeCard.cardDiv.cardDiv.offsetLeft;
+      y = e.changedTouches[0].pageY - activeCard.cardDiv.cardDiv.offsetTop;
+      makeMove(mouseX, mouseY, x, y);
+    }
+  }
+
+  function onMouseUp(e) {
+    var x, y;
+    if (e.which !== 2 && e.button !== 2) {
+      x = e.pageX - activeCard.cardDiv.offsetLeft;
+      y = e.pageY - activeCard.cardDiv.offsetTop;
+
+      makeMove(mouseX, mouseY, x, y);
+    }
+  }
 
     function handleCards(result) {
       var i, l, card, bundles = {}, bundleId, bundleCard;
@@ -997,12 +1162,28 @@
       }
     }
 
+
+    var lastCardSync = 0;
+    /** Called every 1s - use to schedule updates etc **/
+    var timestep = function () {
+      var now = (new Date());
+
+      // Keep clock up to date
+      activeCard.updateDisplayDate();
+
+      if (!global.glassDemoMode && ((now - lastCardSync) > 30000)) {
+        lastCardSync = new Date();
+        fetchCards();
+      }
+
+      timer = global.setTimeout(timestep, 1000);
+    };
+
     function fetchCards() {
       timer = undefined;
       mirror.timeline.list().execute(function (result) {
         console.log(result);
         handleCards(result);
-        timer = global.setTimeout(fetchCards, 30000);
       });
     }
 
@@ -1032,12 +1213,54 @@
     };
 
     this.start = function () {
-      if (running || global.glassDemoMode) { return; }
-      timer = global.setTimeout(fetchCards, 1);
+      if (running) { return; }
+      timer = global.setTimeout(timestep, 1);
       running = true;
     };
 
-    function initialize() {
+
+    /** TODO: Add nice slide effect here */
+    this.slideToCard = function (newcard) {
+      var oldcard = activeCard;
+      activeCard = newcard;
+      newcard.show();
+      oldcard.hide();
+    }
+
+    /** Go straight to a card without fancy effects */
+    this.switchToCard = function (newcard) {
+      var oldcard = activeCard;
+      activeCard = newcard;
+      newcard.show();
+      oldcard.hide();
+    }
+
+    /** Don't hide the parent card */
+    this.introduceShareCard = function (newcard) {
+      var oldcard = activeCard;
+      activeCard = newcard;
+      oldcard.active=false;
+      newcard.show();
+      newcard.animateIn();
+    }
+
+    /**
+     * Set up main UI event handlers
+     */
+    this.setupEvents = function() {
+      if (global.ontouchstart !== undefined) {
+        mainDiv.addEventListener("touchstart", onTouchStart, false);
+        mainDiv.addEventListener("touchend", onTouchEnd, false);
+      } else {
+        mainDiv.onmousedown = onMouseDown;
+        mainDiv.onmouseup = onMouseUp;
+      }
+
+      //TODO
+      mainDiv.onselectstart = function () { return false; };
+    }
+
+    this.initialize = function() {
       var card;
 
       mainDiv.innerHTML = "";
@@ -1046,7 +1269,7 @@
 
       replyCard = new Card(REPLY_CARD, "reply");
 
-      card = new Card(CLOCK_CARD, "clock", startCard);
+      card = new ClockCard("clock", startCard);
       startCard.addCard(card);
 
       if (global.glassDemoMode) {
@@ -1056,11 +1279,14 @@
         fetchShareEntities();
       }
 
-      startCard.show();
-    }
+      activeCard = startCard;
+      activeCard.show();
 
-    initialize();
-  }
+      this.setupEvents();
+    };
+
+    this.initialize();
+  };
 
   global.onSignInCallback = function (authResult) {
     if (authResult.access_token) {
@@ -1086,6 +1312,7 @@
   global.onload = function () {
     if (global.glassDemoMode) {
       global.glassapp = global.glassapp || new Glass();
+      global.glassapp.start();
       return;
     }
     doc.getElementById("signout_button").onclick = function () {
