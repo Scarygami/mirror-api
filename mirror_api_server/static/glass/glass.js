@@ -248,6 +248,7 @@
     function cardSort(a, b) {
       if (a.type === CLOCK_CARD) { return -1; }
       if (b.type === CLOCK_CARD) { return 1; }
+      if (!(b.date && a.date)) { return 1; }
       return b.date.getTime() - a.date.getTime();
     }
 
@@ -336,7 +337,7 @@
         this.createActionCards();
       }
       if (this.htmlPages && this.htmlPages.length > 0) {
-        createHtmlBundle();
+        this.createHtmlBundle();
       }
     }
 
@@ -346,34 +347,35 @@
         htmlFrame, htmlDiv, progressDiv, progressIconDiv,
         progressTextDiv, mouseX, mouseY, cards = [], actionCards = [];
 
-      function shareCard() {
+      Card.prototype.shareCard = function () {
         var data;
+        var me = this;
 
         if (this.type !== SHARE_CARD) { return; }
 
         function closeShare() {
-          progressDiv.style.display = "none";
-          this.hide();
-          this.parent.hide();
-          this.parent.parent.show();
+          me.progressDiv.style.display = "none";
+          me.hide();
+          me.parent.hide();
+          me.parent.parent.show();
         }
 
         function onSuccess() {
-          progressIconDiv.src = "../images/success.png";
-          progressTextDiv.innerHTML = "Shared";
+          me.progressIconDiv.src = "../images/success.png";
+          me.progressTextDiv.innerHTML = "Shared";
           global.setTimeout(closeShare, 2000);
         }
 
         function onError() {
-          progressIconDiv.src = "../images/error.png";
-          progressTextDiv.innerHTML = "Failed";
+          me.progressIconDiv.src = "../images/error.png";
+          me.progressTextDiv.innerHTML = "Failed";
           global.setTimeout(closeShare, 2000);
         }
 
         this.hide(true);
-        progressIconDiv.src = "../images/share.png";
-        progressTextDiv.innerHTML = "Sharing";
-        progressDiv.style.display = "block";
+        this.progressIconDiv.src = "../images/share.png";
+        this.progressTextDiv.innerHTML = "Sharing";
+        this.progressDiv.style.display = "block";
         if (global.glassDemoMode) {
           global.setTimeout(onSuccess, 2000);
         } else {
@@ -437,106 +439,9 @@
         }
       }
 
-      function sendReply() {
-        var result = "";
-        if (this.type !== REPLY_CARD) { return; }
-        this.textDiv.classList.remove("real_input");
-        this.textDiv.innerHTML = "Speak your message";
-        progressDiv.style.display = "none";
-
-        function closeReply() {
-          progressDiv.style.display = "none";
-          this.hide();
-          this.parent.hide();
-          this.parent.parent.show();
-        }
-
-        function onSuccess() {
-          progressIconDiv.src = "../images/success.png";
-          progressTextDiv.innerHTML = "Sent";
-          progressDiv.style.display = "block";
-          global.setTimeout(closeReply, 2000);
-        }
-
-        function onError() {
-          progressIconDiv.src = "../images/error.png";
-          progressTextDiv.innerHTML = "Failed";
-          progressDiv.style.display = "block";
-          global.setTimeout(closeReply, 2000);
-        }
-
-        if (recognition) {
-          recognition.interimResults = true;
-          recognition.continuous = false;
-          recognition.onstart = function () {
-            result = "";
-          };
-          recognition.onresult = function (e) {
-            var i;
-            console.log(e);
-            for (i = e.resultIndex; i < e.results.length; i++) {
-              if (e.results[i].isFinal) {
-                result += e.results[i][0].transcript;
-              }
-            }
-            this.textDiv.innerHTML = result;
-            this.textDiv.classList.add("real_input");
-          };
-          recognition.onerror = onError;
-          recognition.onend = function () {
-            var data;
-            if (result !== "") {
-              progressIconDiv.src = "../images/reply.png";
-              progressTextDiv.innerHTML = "Sending";
-              progressDiv.style.display = "block";
-              if (global.glassDemoMode) {
-                global.setTimeout(onSuccess, 2000);
-              } else {
-                // create Timeline Card with reply text
-                data = {};
-                data.text = result;
-                mirror.timeline.insert({"resource": data}).execute(function (resp) {
-                  var action;
-                  console.log(resp);
-                  if (resp.id) {
-                    // Send action with reply card id and ID of original card
-                    action = {};
-                    action.collection = "timeline";
-                    action.itemId = resp.id;
-                    action.operation = "REPLY";
-                    action.value = this.parent.parent.id.toString();
-                    mirror.actions.insert({"resource": action}).execute(function (actionResp) {
-                      console.log(actionResp);
-                      if (actionResp.success) {
-                        onSuccess();
-                      } else {
-                        onError();
-                      }
-                    });
-                  } else {
-                    onError();
-                  }
-                });
-              }
-            } else {
-              onError();
-            }
-          };
-          recognition.start();
-        }
-      }
-
-      function startReply() {
-        if (this.type !== ACTION_CARD || this.action !== "REPLY") { return; }
-
-        this.hide();
-        replyCard.parent = this;
-        replyCard.show();
-      }
-
-      /**
-       * User up event
-       */
+    /**
+     * User up event
+     */
     Card.prototype.up = function () {
     };
 
@@ -545,7 +450,14 @@
      */
     Card.prototype.down = function () {
       if (!!this.parent) {
-        emulator.switchToCard(this.parent);
+        if (this.parent.type == ACTION_CARD) {
+
+          this.parent.show();
+          this.parent.animateIn();
+          this.hide();
+        } else {
+          emulator.switchToCard(this.parent);
+        }
       }
     };
 
@@ -583,32 +495,9 @@
      * @param {boolean=} action
      */
     Card.prototype.tap = function (action) {
-      console.log('tap');
-      var i, l;
-      if (this.type === ACTION_CARD && this.action === "SHARE") {
-        l = shareCards.length;
-        if (l === 0) { return; }
-        for (i = 0; i < l; i++) {
-          shareCards[i].parent = this;
-        }
-        shareCards[0].show();
-        this.hide();
-        return;
-      }
       if (this.type === SHARE_CARD) {
-        shareCard();
+        this.shareCard();
         return;
-      }
-
-      if (this.type === ACTION_CARD) {
-        if (this.action === "REPLY") {
-          startReply();
-          return;
-        }
-        if (this.action === "CUSTOM") {
-          sendCustomAction();
-          return;
-        }
       }
 
       if (this.type === CONTENT_CARD && this.parent.type === HTML_BUNDLE_CARD && this.parent.hasActions()) {
@@ -748,7 +637,7 @@
       }
 
       if (this.type === REPLY_CARD && this.parent) {
-        sendReply();
+        this.sendReply();
       }
 
       if (this.type === ACTION_CARD) {
@@ -971,6 +860,8 @@
   };
 
   ActionCard.prototype.animateIn = function () {
+    this.active = true;
+    activeCard = this;
     var wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
     new Tween(wrapDiv, 'paddingTop', '%', 50, 1, 0.25);
     new Tween(this.cardDiv, 'opacity', null, 0, 1, 0.25);
@@ -1013,13 +904,133 @@
   };
 
 
-  function createHtmlBundle() {
+  ActionCard.prototype.tap = function () {
+    this.startAction();
+  };
+
+  
+  ActionCard.prototype.startAction = function () {
+    var i, l;
+    switch (this.action) {
+    case "SHARE":
+      l = shareCards.length;
+      if (l === 0) { return; }
+      for (i = 0; i < l; i++) {
+        shareCards[i].parent = this;
+      }
+      shareCards[0].show();
+      this.animateOut();
+      break;
+    case "REPLY":
+      this.hide();
+      replyCard.parent = this;
+      replyCard.show();
+      break;
+    case "CUSTOM":
+      sendCustomAction();
+      break;
+    }
+  };
+
+
+
+  ActionCard.prototype.sendReply = function () {
+    var result = "";
+    if (this.type !== REPLY_CARD) { return; }
+    this.textDiv.classList.remove("real_input");
+    this.textDiv.innerHTML = "Speak your message";
+    progressDiv.style.display = "none";
+
+    function closeReply() {
+      progressDiv.style.display = "none";
+      this.hide();
+      this.parent.hide();
+      this.parent.parent.show();
+    }
+
+    function onSuccess() {
+      progressIconDiv.src = "../images/success.png";
+      progressTextDiv.innerHTML = "Sent";
+      progressDiv.style.display = "block";
+      global.setTimeout(closeReply, 2000);
+    }
+
+    function onError() {
+      progressIconDiv.src = "../images/error.png";
+      progressTextDiv.innerHTML = "Failed";
+      progressDiv.style.display = "block";
+      global.setTimeout(closeReply, 2000);
+    }
+
+    if (recognition) {
+      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognition.onstart = function () {
+        result = "";
+      };
+      recognition.onresult = function (e) {
+        var i;
+        console.log(e);
+        for (i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            result += e.results[i][0].transcript;
+          }
+        }
+        this.textDiv.innerHTML = result;
+        this.textDiv.classList.add("real_input");
+      };
+      recognition.onerror = onError;
+      recognition.onend = function () {
+        var data;
+        if (result !== "") {
+          progressIconDiv.src = "../images/reply.png";
+          progressTextDiv.innerHTML = "Sending";
+          progressDiv.style.display = "block";
+          if (global.glassDemoMode) {
+            global.setTimeout(onSuccess, 2000);
+          } else {
+            // create Timeline Card with reply text
+            data = {};
+            data.text = result;
+            mirror.timeline.insert({"resource": data}).execute(function (resp) {
+              var action;
+              console.log(resp);
+              if (resp.id) {
+                // Send action with reply card id and ID of original card
+                action = {};
+                action.collection = "timeline";
+                action.itemId = resp.id;
+                action.operation = "REPLY";
+                action.value = this.parent.parent.id.toString();
+                mirror.actions.insert({"resource": action}).execute(function (actionResp) {
+                  console.log(actionResp);
+                  if (actionResp.success) {
+                    onSuccess();
+                  } else {
+                    onError();
+                  }
+                });
+              } else {
+                onError();
+              }
+            });
+          }
+        } else {
+          onError();
+        }
+      };
+      recognition.start();
+    }
+  };
+
+
+  Card.prototype.createHtmlBundle = function () {
     var i, l;
     l = this.htmlPages.length;
     for (i = 0; i < l; i++) {
       cards.push(new Card(CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
     }
-  }
+  };
 
 
   /** @constructor */
