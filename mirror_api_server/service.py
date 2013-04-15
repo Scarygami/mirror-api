@@ -22,12 +22,15 @@ import json
 import jinja2
 
 from apiclient.discovery import build
-from webapp2_extras import sessions
-from webapp2_extras.appengine import sessions_memcache
+from google.appengine.ext import ndb
 from google.appengine.api.app_identity import get_application_id
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
+from oauth2client.appengine import CredentialsNDBProperty
+from oauth2client.appengine import StorageByKeyName
+from webapp2_extras import sessions
+from webapp2_extras.appengine import sessions_memcache
 
 import logging
 
@@ -52,6 +55,11 @@ def createError(code, message):
 
 def createMessage(message):
     return json.dumps({"message": message})
+
+
+class User(ndb.Model):
+    verifyToken = ndb.StringProperty()
+    credentials = CredentialsNDBProperty()
 
 
 class BaseHandler(webapp2.RequestHandler):
