@@ -209,7 +209,8 @@
     templates[CONTENT_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
       "<div class=\"card_text\"></div>" +
-      "<div class=\"card_date\"></div>";
+      "<div class=\"card_date\"></div>" +
+      "<div class=\"card_interface\"></div>";
     templates[ACTION_CARD] =
       "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div>";
     templates[SHARE_CARD] =
@@ -227,7 +228,8 @@
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
       "<div class=\"card_text\"></div>" +
       "<div class=\"card_date\"></div>" +
-      "<img class=\"card_icon\" src=\"../images/corner.png\"></div>";
+      "<img class=\"card_icon\" src=\"../images/corner.png\"></div>" +
+      "<div class=\"card_interface\"></div>";
     templates[CARD_BUNDLE_CARD] = templates[HTML_BUNDLE_CARD];
 
     if (!global.glassDemoMode) {
@@ -1076,7 +1078,7 @@
       /** @type {glassevent} */
       var dir;
       dir = getDirection(x1, y1, x2, y2);
-
+      console.log(dir);
       switch (dir) {
       case glassevent.RIGHT:
         activeCard.right();
