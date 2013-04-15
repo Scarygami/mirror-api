@@ -1,6 +1,6 @@
 (function (global) {
   "use strict";
-  var doc = global.document, console = global.console;
+  var doc = global.document, console = global.console, Tween;
 
   Date.prototype.niceDate = function () {
     var y, m, d, h, min, dif, now;
@@ -36,33 +36,36 @@
     return h + ":" + (min[1] ? min : "0" + min[0]);
   };
 
-  /** 
-   * Basic tween object 
+  /**
+   * Basic tween object
    * @constructor
    */
-  var Tween = function (element, attribute, type, from, to, duration) {
+  Tween = function (element, attribute, type, from, to, duration) {
+    var raf, started, update, me;
     type = type || "";
     this.then = function (cb) {
       this._cb = cb;
-      if (this._done) { cb() }
-    }
+      if (this._done) { cb(); }
+    };
 
-    var raf = window.requestAnimationFrame || window.mozRequestAnimationFrame  
-              || window.webkitRequestAnimationFrame ||window.msRequestAnimationFrame;
+    raf =
+      global.requestAnimationFrame || global.mozRequestAnimationFrame
+      || global.webkitRequestAnimationFrame || global.msRequestAnimationFrame;
 
-    if (raf) { 
-      var started = new Date(), me = this;
-      var update = function () {
-        var t = ((new Date()) - started)/1000;
+    if (raf) {
+      started = new Date();
+      me = this;
+      update = function () {
+        var t = ((new Date()) - started) / 1000;
         if (t <= duration) {
           element.style[attribute] = (from + ((to - from) * t / duration)) + type;
           raf(update);
         } else {
           element.style[attribute] = to + type;
           me._done = true;
-          if (me._cb !== undefined) { me._cb();}
+          if (me._cb !== undefined) { me._cb(); }
         }
-      }
+      };
       raf(update);
     } else {
       this._done = true;
@@ -83,10 +86,10 @@
       activeCard,
       timer, running = false,
       START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4, SHARE_CARD = 5, REPLY_CARD = 6, HTML_BUNDLE_CARD = 7, CARD_BUNDLE_CARD = 8,
-      recognition;
+      recognition, mouseX, mouseY, glassevent, Card, ActionCard, ClockCard, ReplyCard, lastCardSync, timestep;
 
     /*@type{enum}*/
-    var glassevent = {UP:1, DOWN: 2, LEFT: 3, RIGHT: 4, TAP: 5};
+    glassevent = {UP: 1, DOWN: 2, LEFT: 3, RIGHT: 4, TAP: 5};
 
     demoCards = {
       "items": [
@@ -293,13 +296,13 @@
       return (dy > 0) ? glassevent.DOWN : glassevent.UP;
     }
 
-    /** 
-     * @constructor 
+    /**
+     * @constructor
      * @param {Object=} data data for instantiating card
      */
-    var Card = function(type, id, parent, data) {
-        this.init(type, id, parent, data);
-    }
+    Card = function (type, id, parent, data) {
+      this.init(type, id, parent, data);
+    };
 
     Card.prototype.init = function (type, id, parent, data) {
       data = data || {};
@@ -340,113 +343,63 @@
       if (this.htmlPages && this.htmlPages.length > 0) {
         this.createHtmlBundle();
       }
-    }
+    };
 
+    Card.prototype.shareCard = function () {
+      var data, me = this;
 
+      if (this.type !== SHARE_CARD) { return; }
 
-      var
-        htmlFrame, htmlDiv, progressDiv, progressIconDiv,
-        progressTextDiv, mouseX, mouseY, actionCards = [];
-
-      Card.prototype.shareCard = function () {
-        var data;
-        var me = this;
-
-        if (this.type !== SHARE_CARD) { return; }
-
-        function closeShare() {
-          me.progressDiv.style.display = "none";
-          me.hide();
-          me.parent.hide();
-          me.parent.parent.show();
-        }
-
-        function onSuccess() {
-          me.progressIconDiv.src = "../images/success.png";
-          me.progressTextDiv.innerHTML = "Shared";
-          global.setTimeout(closeShare, 2000);
-        }
-
-        function onError() {
-          me.progressIconDiv.src = "../images/error.png";
-          me.progressTextDiv.innerHTML = "Failed";
-          global.setTimeout(closeShare, 2000);
-        }
-
-        /**
-         * TODO: Sharing Progress should be separate overlay which can be
-         * animated in
-         */
-        this.progressIconDiv.src = "../images/share.png";
-        this.progressTextDiv.innerHTML = "Sharing";
-        this.progressDiv.style.display = "block";
-        if (global.glassDemoMode) {
-          global.setTimeout(onSuccess, 2000);
-        } else {
-          data = {};
-          data.collection = "timeline";
-          data.itemId = this.parent.parent.id;
-          data.operation = "SHARE";
-          data.value = this.id;
-          mirror.actions.insert({"resource": data}).execute(function (resp) {
-            console.log(resp);
-            if (resp.success) {
-              onSuccess();
-            } else {
-              onError();
-            }
-          });
-        }
+      function closeShare() {
+        me.progressDiv.style.display = "none";
+        me.hide();
+        me.parent.hide();
+        me.parent.parent.show();
       }
 
-      function sendCustomAction() {
-        var data;
-
-        if (this.type !== ACTION_CARD || this.action !== "CUSTOM") { return; }
-
-        function closeAction() {
-          this.hide();
-          this.parent.show();
-        }
-
-        function onSuccess() {
-          this.iconDiv.src = "../images/success.png";
-          this.textDiv.innerHTML = "Sent";
-          global.setTimeout(closeAction, 2000);
-        }
-
-        function onError() {
-          this.iconDiv.src = "../images/error.png";
-          this.textDiv.innerHTML = "Failed";
-          global.setTimeout(closeAction, 2000);
-        }
-
-        this.hide(true);
-        this.iconDiv.src = "../images/share.png";
-        this.textDiv.innerHTML = "Sending";
-        if (global.glassDemoMode) {
-          global.setTimeout(onSuccess, 2000);
-        } else {
-          data = {};
-          data.collection = "timeline";
-          data.itemId = this.parent.id;
-          data.operation = "CUSTOM";
-          data.value = this.actionId;
-          mirror.actions.insert({"resource": data}).execute(function (resp) {
-            console.log(resp);
-            if (resp.success) {
-              onSuccess();
-            } else {
-              onError();
-            }
-          });
-        }
+      function onSuccess() {
+        me.progressIconDiv.src = "../images/success.png";
+        me.progressTextDiv.innerHTML = "Shared";
+        global.setTimeout(closeShare, 2000);
       }
+
+      function onError() {
+        me.progressIconDiv.src = "../images/error.png";
+        me.progressTextDiv.innerHTML = "Failed";
+        global.setTimeout(closeShare, 2000);
+      }
+
+      /**
+       * TODO: Sharing Progress should be separate overlay which can be
+       * animated in
+       */
+      this.progressIconDiv.src = "../images/share.png";
+      this.progressTextDiv.innerHTML = "Sharing";
+      this.progressDiv.style.display = "block";
+      if (global.glassDemoMode) {
+        global.setTimeout(onSuccess, 2000);
+      } else {
+        data = {};
+        data.collection = "timeline";
+        data.itemId = this.parent.parent.id;
+        data.operation = "SHARE";
+        data.value = this.id;
+        mirror.actions.insert({"resource": data}).execute(function (resp) {
+          console.log(resp);
+          if (resp.success) {
+            onSuccess();
+          } else {
+            onError();
+          }
+        });
+      }
+    };
 
     /**
      * User up event
      */
     Card.prototype.up = function () {
+      this.tap();
     };
 
     /**
@@ -468,7 +421,7 @@
     /**
      * User left event
      */
-    Card.prototype.left = function() {
+    Card.prototype.left = function () {
       var pos;
       if (!!this.parent) {
         pos = this.parent.findPosition(this.id, this.type === ACTION_CARD);
@@ -477,13 +430,12 @@
           this.parent.showCard(pos + 1, this.type === ACTION_CARD);
         }
       }
-    }
+    };
 
     /**
      * User right event
      */
-    Card.prototype.right = function() {
-      console.log('right');
+    Card.prototype.right = function () {
       var pos;
       if (!!this.parent) {
         pos = this.parent.findPosition(this.id, this.type === ACTION_CARD);
@@ -510,8 +462,8 @@
       }
 
       if (this.type === CONTENT_CARD || action) {
-        if (actionCards && actionCards.length > 0) {
-          emulator.introduceShareCard(actionCards[0]);
+        if (this.actionCards && this.actionCards.length > 0) {
+          emulator.introduceActionCard(this.actionCards[0]);
           return;
         }
       }
@@ -525,7 +477,7 @@
     };
 
 
-    Card.prototype.updateDisplayDate = function() {
+    Card.prototype.updateDisplayDate = function () {
       switch (this.type) {
       case CONTENT_CARD:
       case HTML_BUNDLE_CARD:
@@ -537,7 +489,7 @@
     };
 
 
-    Card.prototype.updateCardStyle = function() {
+    Card.prototype.updateCardStyle = function (noHide) {
       var shadow = "", pos, last;
       this.cardDiv.className = "card";
 
@@ -545,7 +497,7 @@
         if (
           (this.cards && this.cards.length > 0)
             || this.action === "SHARE"
-            || (actionCards && actionCards.length > 0)
+            || (this.actionCards && this.actionCards.length > 0)
             || (this.parent && this.parent.hasActions())
         ) {
           shadow += "_down";
@@ -567,7 +519,9 @@
           this.cardDiv.classList.add("shadow" + shadow);
         }
       } else {
-        this.cardDiv.style.display = "none";
+        if (!noHide) {
+          this.cardDiv.style.display = "none";
+        }
       }
 
       if (this.type === HTML_BUNDLE_CARD || this.type === CARD_BUNDLE_CARD) {
@@ -679,7 +633,7 @@
       }
       if (this.html !== data.html) {
         this.html = data.html || "";
-        htmlDiv.innerHTML = this.html;
+        this.htmlDiv.innerHTML = this.html;
       }
       if (this.html) {
         // HTML overrides text and image in card, can't be mixed
@@ -729,7 +683,7 @@
       if (this.type === ACTION_CARD && this.action === "SHARE") {
         array = shareCards;
       } else {
-        array = action ? actionCards : this.cards;
+        array = action ? this.actionCards : this.cards;
       }
       return array.length;
     };
@@ -740,7 +694,7 @@
         array = shareCards;
       } else {
         if (action) {
-          array = actionCards;
+          array = this.actionCards;
         } else {
           array = this.cards;
           if (this.type !== HTML_BUNDLE_CARD) {
@@ -756,12 +710,12 @@
       }
     };
 
-   Card.prototype.showCard = function (pos, action) {
+    Card.prototype.showCard = function (pos, action) {
       if (this.type === ACTION_CARD && this.action === "SHARE") {
         emulator.slideToCard(shareCards[pos]);
       } else {
         if (action) {
-          emulator.slideToCard(actionCards[pos]);
+          emulator.slideToCard(this.actionCards[pos]);
         } else {
           emulator.slideToCard(this.cards[pos]);
         }
@@ -774,7 +728,7 @@
 
     Card.prototype.hasActions = function () {
       if (this.type !== HTML_BUNDLE_CARD) { return false; }
-      return (actionCards && actionCards.length > 0);
+      return (this.actionCards && this.actionCards.length > 0);
     };
 
     Card.prototype.showActions = function () {
@@ -790,7 +744,8 @@
     };
 
 
-    Card.prototype.createDiv = function() {
+    Card.prototype.createDiv = function () {
+      var me = this;
       this.cardDiv = doc.createElement("div");
       this.cardDiv.id = "c" + this.id;
       this.cardDiv.innerHTML = templates[this.type];
@@ -806,11 +761,11 @@
       case CONTENT_CARD:
       case HTML_BUNDLE_CARD:
       case CARD_BUNDLE_CARD:
-        htmlFrame = this.cardDiv.querySelector(".card_iframe");
-        htmlFrame.onload = function () {
-          htmlDiv = htmlFrame.contentWindow.document.getElementById("html");
-          if (!!this.html) {
-            htmlDiv.innerHTML = this.html;
+        this.htmlFrame = this.cardDiv.querySelector(".card_iframe");
+        this.htmlFrame.onload = function () {
+          me.htmlDiv = me.htmlFrame.contentWindow.document.getElementById("html");
+          if (!!me.html) {
+            me.htmlDiv.innerHTML = me.html;
           }
         };
         if (!!this.text) {
@@ -826,303 +781,359 @@
         this.textDiv.appendChild(doc.createTextNode(this.text));
         this.cardDiv.style.backgroundImage = "url(" + this.image + ")";
         break;
-
-      case REPLY_CARD:
-        this.textDiv.innerHTML = "Speak your message";
-        break;
       }
       this.updateCardStyle();
     };
 
-  Card.prototype.createActionCards = function() {
+    Card.prototype.createActionCards = function () {
       var i, l;
+      this.actionCards = this.actionCards || [];
       l = this.data.cardOptions.length;
       for (i = 0; i < l; i++) {
         if (this.data.cardOptions[i].action) {
-          actionCards.push(new ActionCard(this.id + "_" + this.data.cardOptions[i].action, this, this.data.cardOptions[i]));
-          console.log(actionCards);
+          this.actionCards.push(new ActionCard(this.id + "_" + this.data.cardOptions[i].action, this, this.data.cardOptions[i]));
         }
       }
-    }
-
-  /** @constructor */
-  var ActionCard = function(id, parent, data){
-    this.init(ACTION_CARD, id, parent, data);
-  };
-
-  ActionCard.prototype = new Card();
-
-  ActionCard.prototype.createCardElements = function () {
-    this.createDiv();
-    if (!!actions[this.action]) {
-      this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
-      this.iconDiv.src = actions[this.action].values[0].iconUrl;
-    } else {
-      this.textDiv.appendChild(doc.createTextNode(this.data.values[0].displayName));
-      this.iconDiv.src = this.data.values[0].iconUrl;
-    }
-  };
-
-  ActionCard.prototype.animateIn = function () {
-    this.active = true;
-    activeCard = this;
-    var wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
-    new Tween(wrapDiv, 'paddingTop', '%', 50, 1, 0.25);
-    new Tween(this.cardDiv, 'opacity', null, 0, 1, 0.25);
-  };
-
-  ActionCard.prototype.animateOut = function () {
-    this.active = false;
-    var cd = this.cardDiv;
-    var h = function () {
-        cd.style.display = "none";
     };
 
-    if (this.type === ACTION_CARD) {
-      var wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
-      new Tween(wrapDiv, 'paddingTop', '%', 1, 50, 0.25);
-      (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
-    } else {
-      h();
-    }
-  };
-
-  /**
-   * Overload handler to animate out
-   */
-  ActionCard.prototype.down = function () {
-    var cd = this.cardDiv;
-    var h = function () {
-        cd.style.display = "none";
+    /** @constructor */
+    ActionCard = function (id, parent, data) {
+      this.init(ACTION_CARD, id, parent, data);
     };
 
-    if (this.type === ACTION_CARD) {
-      var wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
-      new Tween(wrapDiv, 'paddingTop', '%', 1, 50, 0.25);
-      (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
-    } else {
-      h();
-    }
+    ActionCard.prototype = new Card();
 
-    activeCard = this.parent;
-  };
-
-
-  ActionCard.prototype.tap = function () {
-    this.startAction();
-  };
-
-  
-  ActionCard.prototype.startAction = function () {
-    var i, l;
-    switch (this.action) {
-    case "SHARE":
-      l = shareCards.length;
-      if (l === 0) { return; }
-      for (i = 0; i < l; i++) {
-        shareCards[i].parent = this;
+    ActionCard.prototype.createCardElements = function () {
+      this.createDiv();
+      if (!!actions[this.action]) {
+        this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
+        this.iconDiv.src = actions[this.action].values[0].iconUrl;
+      } else {
+        this.textDiv.appendChild(doc.createTextNode(this.data.values[0].displayName));
+        this.iconDiv.src = this.data.values[0].iconUrl;
       }
-      shareCards[0].show();
-      this.animateOut();
-      break;
-    case "REPLY":
-      this.hide();
-      replyCard.parent = this;
-      replyCard.show();
-      break;
-    case "CUSTOM":
-      sendCustomAction();
-      break;
-    }
-  };
+    };
 
+    ActionCard.prototype.animateIn = function () {
+      var wrapDiv;
+      this.active = true;
+      activeCard = this;
+      wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
+      new Tween(wrapDiv, 'paddingTop', '%', 50, 1, 0.25);
+      new Tween(this.cardDiv, 'opacity', null, 0, 1, 0.25);
+    };
 
-
-  ActionCard.prototype.sendReply = function () {
-    var result = "";
-    if (this.type !== REPLY_CARD) { return; }
-    this.textDiv.classList.remove("real_input");
-    this.textDiv.innerHTML = "Speak your message";
-    progressDiv.style.display = "none";
-
-    function closeReply() {
-      progressDiv.style.display = "none";
-      this.hide();
-      this.parent.hide();
-      this.parent.parent.show();
-    }
-
-    function onSuccess() {
-      progressIconDiv.src = "../images/success.png";
-      progressTextDiv.innerHTML = "Sent";
-      progressDiv.style.display = "block";
-      global.setTimeout(closeReply, 2000);
-    }
-
-    function onError() {
-      progressIconDiv.src = "../images/error.png";
-      progressTextDiv.innerHTML = "Failed";
-      progressDiv.style.display = "block";
-      global.setTimeout(closeReply, 2000);
-    }
-
-    if (recognition) {
-      recognition.interimResults = true;
-      recognition.continuous = false;
-      recognition.onstart = function () {
-        result = "";
+    ActionCard.prototype.animateOut = function () {
+      var cd, h, wrapDiv;
+      this.active = false;
+      cd = this.cardDiv;
+      h = function () {
+        cd.style.display = "none";
       };
-      recognition.onresult = function (e) {
-        var i;
-        console.log(e);
-        for (i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) {
-            result += e.results[i][0].transcript;
-          }
-        }
-        this.textDiv.innerHTML = result;
-        this.textDiv.classList.add("real_input");
+
+      if (this.type === ACTION_CARD) {
+        wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
+        new Tween(wrapDiv, 'paddingTop', '%', 1, 50, 0.25);
+        (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
+      } else {
+        h();
+      }
+    };
+
+    /**
+     * Overload handler to animate out
+     */
+    ActionCard.prototype.down = function () {
+      var cd, h, wrapDiv;
+      cd = this.cardDiv;
+      h = function () {
+        cd.style.display = "none";
       };
-      recognition.onerror = onError;
-      recognition.onend = function () {
-        var data;
-        if (result !== "") {
-          progressIconDiv.src = "../images/reply.png";
-          progressTextDiv.innerHTML = "Sending";
-          progressDiv.style.display = "block";
-          if (global.glassDemoMode) {
-            global.setTimeout(onSuccess, 2000);
+
+      if (this.type === ACTION_CARD) {
+        wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
+        new Tween(wrapDiv, 'paddingTop', '%', 1, 50, 0.25);
+        (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
+      } else {
+        h();
+      }
+
+      activeCard = this.parent;
+      activeCard.show();
+    };
+
+
+    ActionCard.prototype.tap = function () {
+      this.startAction();
+    };
+
+    ActionCard.prototype.sendCustomAction = function () {
+      var data, me = this;
+
+      if (this.type !== ACTION_CARD || this.action !== "CUSTOM") { return; }
+
+      function closeAction() {
+        me.hide();
+        me.parent.show();
+      }
+
+      function onSuccess() {
+        me.iconDiv.src = "../images/success.png";
+        me.textDiv.innerHTML = "Sent";
+        global.setTimeout(closeAction, 2000);
+      }
+
+      function onError() {
+        me.iconDiv.src = "../images/error.png";
+        me.textDiv.innerHTML = "Failed";
+        global.setTimeout(closeAction, 2000);
+      }
+
+      this.active = false;
+      this.updateCardStyle(true);
+      this.iconDiv.src = "../images/share.png";
+      this.textDiv.innerHTML = "Sending";
+      if (global.glassDemoMode) {
+        global.setTimeout(onSuccess, 2000);
+      } else {
+        data = {};
+        data.collection = "timeline";
+        data.itemId = this.parent.id;
+        data.operation = "CUSTOM";
+        data.value = this.actionId;
+        mirror.actions.insert({"resource": data}).execute(function (resp) {
+          console.log(resp);
+          if (resp.success) {
+            onSuccess();
           } else {
-            // create Timeline Card with reply text
-            data = {};
-            data.text = result;
-            mirror.timeline.insert({"resource": data}).execute(function (resp) {
-              var action;
-              console.log(resp);
-              if (resp.id) {
-                // Send action with reply card id and ID of original card
-                action = {};
-                action.collection = "timeline";
-                action.itemId = resp.id;
-                action.operation = "REPLY";
-                action.value = this.parent.parent.id.toString();
-                mirror.actions.insert({"resource": action}).execute(function (actionResp) {
-                  console.log(actionResp);
-                  if (actionResp.success) {
-                    onSuccess();
-                  } else {
-                    onError();
-                  }
-                });
-              } else {
-                onError();
-              }
-            });
+            onError();
           }
-        } else {
-          onError();
+        });
+      }
+    };
+
+    ActionCard.prototype.startAction = function () {
+      var i, l;
+      switch (this.action) {
+      case "SHARE":
+        l = shareCards.length;
+        if (l === 0) { return; }
+        for (i = 0; i < l; i++) {
+          shareCards[i].parent = this;
         }
-      };
-      recognition.start();
+        shareCards[0].show();
+        this.animateOut();
+        break;
+      case "REPLY":
+        this.hide();
+        replyCard.parent = this;
+        replyCard.show();
+        break;
+      case "CUSTOM":
+        this.sendCustomAction();
+        break;
+      }
+    };
+
+
+    Card.prototype.createHtmlBundle = function () {
+      var i, l;
+      l = this.htmlPages.length;
+      for (i = 0; i < l; i++) {
+        this.cards.push(new Card(CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
+      }
+    };
+
+
+    /** @constructor */
+    ClockCard = function (id, parent) {
+      this.init(CLOCK_CARD, id, parent);
+    };
+
+    ClockCard.prototype = new Card();
+
+    ClockCard.prototype.createCardElements = function () {
+      this.createDiv();
+      this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+      this.textDiv.appendChild(doc.createTextNode("\"ok glass\""));
+    };
+
+    ClockCard.prototype.updateDisplayDate = function () {
+      this.dateDiv.innerHTML = "";
+      this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+    };
+
+
+    ClockCard.prototype.tap = function () {
+      this.parent.show();
+      this.hide();
+    };
+
+
+    /** @constructor */
+    ReplyCard = function (id, parent) {
+      this.init(REPLY_CARD, id, parent);
+    };
+
+    ReplyCard.prototype = new Card();
+
+    ReplyCard.prototype.createCardElements = function () {
+      this.createDiv();
+      this.textDiv.innerHTML = "Speak your message";
+    };
+
+    ReplyCard.prototype.sendReply = function () {
+      var result = "", me = this;
+      if (this.type !== REPLY_CARD) { return; }
+      this.textDiv.classList.remove("real_input");
+      this.textDiv.innerHTML = "Speak your message";
+      this.progressDiv.style.display = "none";
+
+      function closeReply() {
+        me.progressDiv.style.display = "none";
+        me.hide();
+        me.parent.hide();
+        me.parent.parent.show();
+      }
+
+      function onSuccess() {
+        me.progressIconDiv.src = "../images/success.png";
+        me.progressTextDiv.innerHTML = "Sent";
+        me.progressDiv.style.display = "block";
+        global.setTimeout(closeReply, 2000);
+      }
+
+      function onError() {
+        me.progressIconDiv.src = "../images/error.png";
+        me.progressTextDiv.innerHTML = "Failed";
+        me.progressDiv.style.display = "block";
+        global.setTimeout(closeReply, 2000);
+      }
+
+      if (recognition) {
+        recognition.interimResults = true;
+        recognition.continuous = false;
+        recognition.onstart = function () {
+          result = "";
+        };
+        recognition.onresult = function (e) {
+          var i;
+          console.log(e);
+          for (i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) {
+              result += e.results[i][0].transcript;
+            }
+          }
+          me.textDiv.innerHTML = result;
+          me.textDiv.classList.add("real_input");
+        };
+        recognition.onerror = onError;
+        recognition.onend = function () {
+          var data;
+          if (result !== "") {
+            me.progressIconDiv.src = "../images/reply.png";
+            me.progressTextDiv.innerHTML = "Sending";
+            me.progressDiv.style.display = "block";
+            if (global.glassDemoMode) {
+              global.setTimeout(onSuccess, 2000);
+            } else {
+              // create Timeline Card with reply text
+              data = {};
+              data.text = result;
+              mirror.timeline.insert({"resource": data}).execute(function (resp) {
+                var action;
+                console.log(resp);
+                if (resp.id) {
+                  // Send action with reply card id and ID of original card
+                  action = {};
+                  action.collection = "timeline";
+                  action.itemId = resp.id;
+                  action.operation = "REPLY";
+                  action.value = me.parent.parent.id.toString();
+                  mirror.actions.insert({"resource": action}).execute(function (actionResp) {
+                    console.log(actionResp);
+                    if (actionResp.success) {
+                      onSuccess();
+                    } else {
+                      onError();
+                    }
+                  });
+                } else {
+                  onError();
+                }
+              });
+            }
+          } else {
+            onError();
+          }
+        };
+        recognition.start();
+      }
+    };
+
+
+
+    /** Event Listeners */
+
+    function onMouseDown(e) {
+      mouseX = e.pageX - activeCard.cardDiv.offsetLeft;
+      mouseY = e.pageY - activeCard.cardDiv.offsetTop;
     }
-  };
 
-
-  Card.prototype.createHtmlBundle = function () {
-    var i, l;
-    l = this.htmlPages.length;
-    for (i = 0; i < l; i++) {
-      this.cards.push(new Card(CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
+    function onTouchStart(e) {
+      if (e.changedTouches && e.changedTouches.length > 0) {
+        e.preventDefault();
+        mouseX = e.changedTouches[0].pageX - activeCard.cardDiv.offsetLeft;
+        mouseY = e.changedTouches[0].pageY - activeCard.cardDiv.offsetTop;
+      }
     }
-  };
 
+    /**
+     * Convert a movement to a UI Event
+     */
+    function makeMove(x1, y1, x2, y2) {
+      /** @type {glassevent} */
+      var dir;
+      dir = getDirection(x1, y1, x2, y2);
 
-  /** @constructor */
-  var ClockCard = function(id, parent){
-    this.init(CLOCK_CARD, id, parent);
-  };
-
-  ClockCard.prototype = new Card();
-
-
-  ClockCard.prototype.createCardElements = function () {
-    this.createDiv();
-    this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
-    this.textDiv.appendChild(doc.createTextNode("\"ok glass\""));
-  }
-
-  ClockCard.prototype.updateDisplayDate = function () {
-    this.dateDiv.innerHTML = "";
-    this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
-  };
-
-
-  ClockCard.prototype.tap = function () {
-    this.parent.show();
-    this.hide();
-  }
-
-
-  /** Event Listeners */
-
-  function onMouseDown(e) {
-    mouseX = e.pageX - activeCard.cardDiv.offsetLeft;
-    mouseY = e.pageY - activeCard.cardDiv.offsetTop;
-  }
-
-  function onTouchStart(e) {
-    if (e.changedTouches && e.changedTouches.length > 0) {
-      e.preventDefault();
-      mouseX = e.changedTouches[0].pageX - activeCard.cardDiv.offsetLeft;
-      mouseY = e.changedTouches[0].pageY - activeCard.cardDiv.offsetTop;
+      switch (dir) {
+      case glassevent.RIGHT:
+        activeCard.right();
+        break;
+      case glassevent.LEFT:
+        activeCard.left();
+        break;
+      case glassevent.UP:
+        activeCard.up();
+        break;
+      case glassevent.DOWN:
+        activeCard.down();
+        break;
+      case glassevent.TAP:
+        activeCard.tap();
+        break;
+      }
     }
-  }
 
-  /**
-   * Convert a movement to a UI Event */
-  function makeMove(x1, y1, x2, y2) {
-    /** @type {glassevent} */
-    var dir;
-    dir = getDirection(x1, y1, x2, y2);
-
-    switch (dir) {
-    case glassevent.RIGHT:
-      activeCard.right();
-      break;
-    case glassevent.LEFT:
-      activeCard.left();
-      break;
-    case glassevent.UP:
-      activeCard.up();
-      break;
-    case glassevent.DOWN:
-      activeCard.down();
-      break;
-    case glassevent.TAP:
-      activeCard.tap();
-      break;
+    function onTouchEnd(e) {
+      var x, y;
+      if (e.changedTouches && e.changedTouches.length > 0) {
+        e.preventDefault();
+        x = e.changedTouches[0].pageX - activeCard.cardDiv.cardDiv.offsetLeft;
+        y = e.changedTouches[0].pageY - activeCard.cardDiv.cardDiv.offsetTop;
+        makeMove(mouseX, mouseY, x, y);
+      }
     }
-  }
 
-  function onTouchEnd(e) {
-    var x, y;
-    if (e.changedTouches && e.changedTouches.length > 0) {
-      e.preventDefault();
-      x = e.changedTouches[0].pageX - activeCard.cardDiv.cardDiv.offsetLeft;
-      y = e.changedTouches[0].pageY - activeCard.cardDiv.cardDiv.offsetTop;
-      makeMove(mouseX, mouseY, x, y);
+    function onMouseUp(e) {
+      var x, y;
+      if (e.which !== 2 && e.button !== 2) {
+        x = e.pageX - activeCard.cardDiv.offsetLeft;
+        y = e.pageY - activeCard.cardDiv.offsetTop;
+
+        makeMove(mouseX, mouseY, x, y);
+      }
     }
-  }
-
-  function onMouseUp(e) {
-    var x, y;
-    if (e.which !== 2 && e.button !== 2) {
-      x = e.pageX - activeCard.cardDiv.offsetLeft;
-      y = e.pageY - activeCard.cardDiv.offsetTop;
-
-      makeMove(mouseX, mouseY, x, y);
-    }
-  }
 
     function handleCards(result) {
       var i, l, card, bundles = {}, bundleId, bundleCard;
@@ -1162,10 +1173,17 @@
       }
     }
 
+    function fetchCards() {
+      timer = undefined;
+      mirror.timeline.list().execute(function (result) {
+        console.log(result);
+        handleCards(result);
+      });
+    }
 
-    var lastCardSync = 0;
+    lastCardSync = 0;
     /** Called every 1s - use to schedule updates etc **/
-    var timestep = function () {
+    timestep = function () {
       var now = (new Date());
 
       // Keep clock up to date
@@ -1178,14 +1196,6 @@
 
       timer = global.setTimeout(timestep, 1000);
     };
-
-    function fetchCards() {
-      timer = undefined;
-      mirror.timeline.list().execute(function (result) {
-        console.log(result);
-        handleCards(result);
-      });
-    }
 
     function handleShareEntities(result) {
       var i, l;
@@ -1225,7 +1235,7 @@
       activeCard = newcard;
       newcard.show();
       oldcard.hide();
-    }
+    };
 
     /** Go straight to a card without fancy effects */
     this.switchToCard = function (newcard) {
@@ -1233,21 +1243,22 @@
       activeCard = newcard;
       newcard.show();
       oldcard.hide();
-    }
+    };
 
-    /** Don't hide the parent card */
-    this.introduceShareCard = function (newcard) {
+    /** Only hide style of parent card */
+    this.introduceActionCard = function (newcard) {
       var oldcard = activeCard;
       activeCard = newcard;
-      oldcard.active=false;
+      oldcard.active = false;
+      oldcard.updateCardStyle(true);
       newcard.show();
       newcard.animateIn();
-    }
+    };
 
     /**
      * Set up main UI event handlers
      */
-    this.setupEvents = function() {
+    this.setupEvents = function () {
       if (global.ontouchstart !== undefined) {
         mainDiv.addEventListener("touchstart", onTouchStart, false);
         mainDiv.addEventListener("touchend", onTouchEnd, false);
@@ -1258,16 +1269,16 @@
 
       //TODO
       mainDiv.onselectstart = function () { return false; };
-    }
+    };
 
-    this.initialize = function() {
+    this.initialize = function () {
       var card;
 
       mainDiv.innerHTML = "";
 
       startCard = new Card(START_CARD, "start");
 
-      replyCard = new Card(REPLY_CARD, "reply");
+      replyCard = new ReplyCard("reply");
 
       card = new ClockCard("clock", startCard);
       startCard.addCard(card);
@@ -1286,7 +1297,7 @@
     };
 
     this.initialize();
-  };
+  }
 
   global.onSignInCallback = function (authResult) {
     if (authResult.access_token) {
