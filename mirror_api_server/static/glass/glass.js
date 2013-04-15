@@ -819,7 +819,7 @@
       this.active = true;
       activeCard = this;
       wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
-      new Tween(wrapDiv, 'paddingTop', '%', 50, 1, 0.25);
+      new Tween(wrapDiv, 'paddingTop', '%', 50, 0, 0.25);
       new Tween(this.cardDiv, 'opacity', null, 0, 1, 0.25);
     };
 
@@ -833,7 +833,7 @@
 
       if (this.type === ACTION_CARD) {
         wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
-        new Tween(wrapDiv, 'paddingTop', '%', 1, 50, 0.25);
+        new Tween(wrapDiv, 'paddingTop', '%', 0, 50, 0.25);
         (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
       } else {
         h();
@@ -844,19 +844,7 @@
      * Overload handler to animate out
      */
     ActionCard.prototype.down = function () {
-      var cd, h, wrapDiv;
-      cd = this.cardDiv;
-      h = function () {
-        cd.style.display = "none";
-      };
-
-      if (this.type === ACTION_CARD) {
-        wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
-        new Tween(wrapDiv, 'paddingTop', '%', 1, 50, 0.25);
-        (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
-      } else {
-        h();
-      }
+      this.animateOut();
 
       activeCard = this.parent;
       activeCard.show();
