@@ -202,23 +202,18 @@
     };
 
     templates = [];
-    templates[START_CARD] =
-      "<div class=\"card_interface\"></div>";
+    templates[START_CARD] = "";
     templates[CLOCK_CARD] =
       "<div class=\"card_date\"></div>" +
-      "<div class=\"card_text\"></div>" +
-      "<div class=\"card_interface\"></div>";
+      "<div class=\"card_text\"></div>";
     templates[CONTENT_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
       "<div class=\"card_text\"></div>" +
-      "<div class=\"card_date\"></div>" +
-      "<div class=\"card_interface\"></div>";
+      "<div class=\"card_date\"></div>";
     templates[ACTION_CARD] =
-      "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div>" +
-      "<div class=\"card_interface\"></div>";
+      "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div>";
     templates[SHARE_CARD] =
       "<div class=\"card_text\"></div>" +
-      "<div class=\"card_interface\"></div>" +
       "<div class=\"card card_type_progress\" style=\"display: none\">" +
       "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"../images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
       "</div>";
@@ -232,8 +227,7 @@
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
       "<div class=\"card_text\"></div>" +
       "<div class=\"card_date\"></div>" +
-      "<img class=\"card_icon\" src=\"../images/corner.png\"></div>" +
-      "<div class=\"card_interface\"></div>";
+      "<img class=\"card_icon\" src=\"../images/corner.png\"></div>";
     templates[CARD_BUNDLE_CARD] = templates[HTML_BUNDLE_CARD];
 
     if (!global.glassDemoMode) {
@@ -754,7 +748,6 @@
       mainDiv.appendChild(this.cardDiv);
       this.textDiv = this.cardDiv.querySelector(".card_text");
       this.dateDiv = this.cardDiv.querySelector(".card_date");
-      this.interfaceDiv = this.cardDiv.querySelector(".card_interface");
       this.iconDiv = this.cardDiv.querySelector(".card_icon");
       this.progressDiv = this.cardDiv.querySelector(".card_type_progress");
       this.progressIconDiv = this.cardDiv.querySelector(".card_progress_icon");
