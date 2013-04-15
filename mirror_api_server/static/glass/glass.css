@@ -233,9 +233,10 @@ body.inner {
   z-index: 300;
 }
 
+/* nb action cards are always above other cards */
 .card_type_action {
   background-color: rgba(0,0,0,0.7);
-  z-index: 150;
+  z-index: 500;
 }
 
 .card_type_progress {
