@@ -600,6 +600,8 @@
 
       if (this.type === ACTION_CARD) {
         this.textDiv.innerHTML = "";
+        this.cardDiv.style.opacity = 1;
+        this.actionDiv.style.paddingTop = "0%";
         if (!!actions[this.action]) {
           this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
           this.iconDiv.src = actions[this.action].values[0].iconUrl;
@@ -805,6 +807,7 @@
 
     ActionCard.prototype.createCardElements = function () {
       this.createDiv();
+      this.actionDiv = this.cardDiv.getElementsByClassName('card_action')[0];
       if (!!actions[this.action]) {
         this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
         this.iconDiv.src = actions[this.action].values[0].iconUrl;
@@ -815,16 +818,14 @@
     };
 
     ActionCard.prototype.animateIn = function () {
-      var wrapDiv;
       this.active = true;
       activeCard = this;
-      wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
-      new Tween(wrapDiv, 'paddingTop', '%', 50, 0, 0.25);
+      new Tween(this.actionDiv, 'paddingTop', '%', 50, 0, 0.25);
       new Tween(this.cardDiv, 'opacity', null, 0, 1, 0.25);
     };
 
     ActionCard.prototype.animateOut = function () {
-      var cd, h, wrapDiv;
+      var cd, h;
       this.active = false;
       cd = this.cardDiv;
       h = function () {
@@ -832,8 +833,7 @@
       };
 
       if (this.type === ACTION_CARD) {
-        wrapDiv = this.cardDiv.getElementsByClassName('card_action')[0];
-        new Tween(wrapDiv, 'paddingTop', '%', 0, 50, 0.25);
+        new Tween(this.actionDiv, 'paddingTop', '%', 0, 50, 0.25);
         (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
       } else {
         h();
