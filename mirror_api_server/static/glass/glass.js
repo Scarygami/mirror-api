@@ -85,7 +85,8 @@
       mainDiv = doc.getElementById("glass"),
       activeCard,
       timer, running = false,
-      recognition, mouseX, mouseY, glassevent, cardType, Card, ActionCard, ClockCard, ReplyCard, CameraCard, lastCardSync, timestep;
+      recognition, mouseX, mouseY, glassevent, cardType, Card, ActionCard, ClockCard, ReplyCard, CameraCard, lastCardSync, timestep,
+      photoCount = 0;
 
     /*@type{enum}*/
     glassevent = {UP: 1, DOWN: 2, LEFT: 3, RIGHT: 4, TAP: 5};
@@ -360,7 +361,7 @@
     };
 
     Card.prototype.shareCard = function () {
-      var data, me = this;
+      var data, me = this, sharedCard = this.parent.parent;
 
       if (this.type !== cardType.SHARE_CARD) { return; }
 
@@ -393,19 +394,61 @@
       if (global.glassDemoMode) {
         global.setTimeout(onSuccess, 2000);
       } else {
-        data = {};
-        data.collection = "timeline";
-        data.itemId = this.parent.parent.id;
-        data.operation = "SHARE";
-        data.value = this.id;
-        mirror.actions.insert({"resource": data}).execute(function (resp) {
-          console.log(resp);
-          if (resp.success) {
-            onSuccess();
+        if (sharedCard.localOnly) {
+          data = {};
+          if (sharedCard.data.image) {
+            data.image = sharedCard.data.image;
+          }
+          if (sharedCard.data.text) {
+            data.text = sharedCard.data.text;
+          }
+          if (sharedCard.data.cardOptions) {
+            data.cardOptions = sharedCard.data.cardOptions;
+          }
+          if (data.image || data.text) {
+            mirror.timeline.insert({"resource": data}).execute(function (resp) {
+              var data;
+              console.log(resp);
+              if (resp.id) {
+                sharedCard.localOnly = false;
+                sharedCard.id = resp.id;
+                sharedCard.cardDiv.id = "c" + me.id;
+                data = {};
+                data.collection = "timeline";
+                data.itemId = sharedCard.id;
+                data.operation = "SHARE";
+                data.value = me.id;
+                mirror.actions.insert({"resource": data}).execute(function (resp) {
+                  console.log(resp);
+                  if (resp.success) {
+                    onSuccess();
+                  } else {
+                    onError();
+                  }
+                });
+              } else {
+                onError();
+              }
+            });
           } else {
             onError();
           }
-        });
+
+        } else {
+          data = {};
+          data.collection = "timeline";
+          data.itemId = sharedCard.id;
+          data.operation = "SHARE";
+          data.value = this.id;
+          mirror.actions.insert({"resource": data}).execute(function (resp) {
+            console.log(resp);
+            if (resp.success) {
+              onSuccess();
+            } else {
+              onError();
+            }
+          });
+        }
       }
     };
 
@@ -1087,6 +1130,11 @@
       this.startRecording();
     };
 
+    CameraCard.prototype.hide = function () {
+      this.video.pause();
+      Card.prototype.hide.call(this);
+    };
+
     CameraCard.prototype.takePicture = function () {
       var me = this;
       me.textDiv.innerHTML = "3";
@@ -1095,6 +1143,7 @@
         global.setTimeout(function () {
           me.textDiv.innerHTML = "1";
           global.setTimeout(function () {
+            var card;
             me.textDiv.innerHTML = "";
             me.canvas.width = me.video.offsetWidth;
             me.canvas.height = me.video.offsetHeight;
@@ -1103,7 +1152,16 @@
             me.cardDiv.style.backgroundImage = "url(" + me.image + ")";
             me.video.style.display = "none";
             me.video.pause();
-            // TODO: Create new timeline card with image and switch to it
+            photoCount++;
+            card = new Card(
+              cardType.CONTENT_CARD,
+              "new_" + photoCount,
+              startCard,
+              {image: me.image, when: new Date(), cardOptions: [{action: "SHARE"}]}
+            );
+            card.localOnly = true;
+            startCard.addCard(card);
+            emulator.switchToCard(card);
           }, 1000);
         }, 1000);
       }, 1000);
