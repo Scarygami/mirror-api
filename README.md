@@ -41,16 +41,23 @@ contains a browser based emulator for Glass.
 is a simple playground implementation for a Web Application that makes use of
 the Mirror API.
 
+### Getting the code - The proper way
 
-### Repo-Setup
+1) Clone (or fork and clone) this repository
 
-1) Fetch the endpoints_proto_datastore repository:
+```
+git clone https://github.com/Scarygami/mirror-api.git
+cd mirror-api
+```
 
-`git submodule init`
+2) Fetch the endpoints_proto_datastore repository:
 
-`git submodule update`
+```
+git submodule init
+git submodule update
+```
 
-2) Create symlink `mirror_api_server/endpoints_proto_datastore`
+3) Create symlink `mirror_api_server/endpoints_proto_datastore`
 to `endpoints-proto-datastore/endpoints_proto_datastore`
 
 Linux/Unix-based systems:
@@ -65,8 +72,24 @@ cd mirror_api_server
 mklink /D endpoints_proto_datastore ..\endpoints-proto-datastore\endpoints_proto_datastore\
 ```
 
+Alternatively (because the appcfg.py deploy script sometimes doesn't recognize the symlink correctly)
+copy the folder `endpoints-proto-datastore/endpoints_proto_datastore/` over to `mirror_api_server`
+so that you get this folder structure:
+```
+mirror_api_server/
+- endpoints_proto_datastore/
+  - ndb/
+```
+
+### Getting the code - The easy way
+
+Download the latest zip file from https://www.googledrive.com/host/0B1pwzJXH7GP8Z3VRcnVudERPQ2M/ and extract it.
+This includes all dependencies.
 
 ### Setup
+
+Create a new App Engine application at https://appengine.google.com/
+The name of the application will be referred to as `yourapp` for the following steps.
 
 Create a new project in the [Google APIs Console](https://code.google.com/apis/console/)
 
@@ -77,14 +100,18 @@ Create a new Client ID for web applications in `API Access`
 Leave Redirect URIs empty but set Javascript origin to
 `https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
 
-Edit `mirror_api_server/client_secrets.json` to replace `YOUR_CLIENT_ID` and
-`YOUR_CLIENT_SECRET` with the information from the APIs Console.
+Edit `mirror_api_server/client_secrets.json` and change `YOUR_CLIENT_ID` and
+`YOUR_CLIENT_SECRET` to the information from the APIs Console.
 
 Important: Don't commit that file if you contribute to this project. One possible
 solution to prevent this: http://blog.bossylobster.com/2011/10/protecting.html
 
-Edit `mirror_api_server/app.yaml` to change the name of the application to match
-your App Engine application.
+Edit `mirror_api_server/app.yaml` to change the name of the application to `yourapp`.
+
+Follow the steps in the [Google App Engine Python 2.7 Getting Started](https://developers.google.com/appengine/docs/python/gettingstartedpython27/)
+to install the necessary dependencies and deploy the application. Specifically you will need the steps
+[The Development Environment](https://developers.google.com/appengine/docs/python/gettingstartedpython27/devenvironment) and
+[Uploading Your Application](https://developers.google.com/appengine/docs/python/gettingstartedpython27/uploading)
 
 
 ### Testing
