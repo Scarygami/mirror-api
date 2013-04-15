@@ -55,7 +55,7 @@
       var update = function () {
         var t = ((new Date()) - started)/1000;
         if (t <= duration) {
-          element.style[attribute] = (from + (to - from) * t) + type;
+          element.style[attribute] = (from + ((to - from) * t / duration)) + type;
           raf(update);
         } else {
           element.style[attribute] = to + type;
