@@ -372,7 +372,10 @@
           global.setTimeout(closeShare, 2000);
         }
 
-        this.hide(true);
+        /**
+         * TODO: Sharing Progress should be separate overlay which can be
+         * animated in
+         */
         this.progressIconDiv.src = "../images/share.png";
         this.progressTextDiv.innerHTML = "Sharing";
         this.progressDiv.style.display = "block";
