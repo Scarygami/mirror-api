@@ -303,6 +303,7 @@
 
     Card.prototype.init = function (type, id, parent, data) {
       data = data || {};
+      this.cards = [];
       this.data = data;
       this.id = id;
       this.text = data.text || data.displayName || "";
@@ -345,7 +346,7 @@
 
       var
         htmlFrame, htmlDiv, progressDiv, progressIconDiv,
-        progressTextDiv, mouseX, mouseY, cards = [], actionCards = [];
+        progressTextDiv, mouseX, mouseY, actionCards = [];
 
       Card.prototype.shareCard = function () {
         var data;
@@ -516,9 +517,9 @@
       }
 
       // "power on"
-      if (cards && cards.length > 0) {
-        if (this.type !== HTML_BUNDLE_CARD) { cards.sort(cardSort); }
-        emulator.switchToCard(cards[0]);
+      if (this.cards && this.cards.length > 0) {
+        if (this.type !== HTML_BUNDLE_CARD) { this.cards.sort(cardSort); }
+        emulator.switchToCard(this.cards[0]);
         return;
       }
     };
@@ -542,7 +543,7 @@
 
       if (this.active) {
         if (
-          (cards && cards.length > 0)
+          (this.cards && this.cards.length > 0)
             || this.action === "SHARE"
             || (actionCards && actionCards.length > 0)
             || (this.parent && this.parent.hasActions())
@@ -708,13 +709,13 @@
     /** Traverse the card tree looking for a card */
     Card.prototype.findCard = function (id) {
       var i, l, card;
-      l = cards.length;
+      l = this.cards.length;
       for (i = 0; i < l; i++) {
-        if (cards[i].id === id) {
-          return cards[i];
+        if (this.cards[i].id === id) {
+          return this.cards[i];
         }
-        if (cards[i].type === CARD_BUNDLE_CARD) {
-          card = cards[i].findCard(id);
+        if (this.cards[i].type === CARD_BUNDLE_CARD) {
+          card = this.cards[i].findCard(id);
           if (card) {
             return card;
           }
@@ -728,7 +729,7 @@
       if (this.type === ACTION_CARD && this.action === "SHARE") {
         array = shareCards;
       } else {
-        array = action ? actionCards : cards;
+        array = action ? actionCards : this.cards;
       }
       return array.length;
     };
@@ -741,7 +742,7 @@
         if (action) {
           array = actionCards;
         } else {
-          array = cards;
+          array = this.cards;
           if (this.type !== HTML_BUNDLE_CARD) {
             array.sort(cardSort);
           }
@@ -762,13 +763,13 @@
         if (action) {
           emulator.slideToCard(actionCards[pos]);
         } else {
-          emulator.slideToCard(cards[pos]);
+          emulator.slideToCard(this.cards[pos]);
         }
       }
     };
 
     Card.prototype.addCard = function (card) {
-      cards.push(card);
+      this.cards.push(card);
     };
 
     Card.prototype.hasActions = function () {
@@ -1031,7 +1032,7 @@
     var i, l;
     l = this.htmlPages.length;
     for (i = 0; i < l; i++) {
-      cards.push(new Card(CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
+      this.cards.push(new Card(CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
     }
   };
 
@@ -1161,12 +1162,28 @@
       }
     }
 
+
+    var lastCardSync = 0;
+    /** Called every 1s - use to schedule updates etc **/
+    var timestep = function () {
+      var now = (new Date());
+
+      // Keep clock up to date
+      activeCard.updateDisplayDate();
+
+      if (!global.glassDemoMode && ((now - lastCardSync) > 30000)) {
+        lastCardSync = new Date();
+        fetchCards();
+      }
+
+      timer = global.setTimeout(timestep, 1000);
+    };
+
     function fetchCards() {
       timer = undefined;
       mirror.timeline.list().execute(function (result) {
         console.log(result);
         handleCards(result);
-        timer = global.setTimeout(fetchCards, 30000);
       });
     }
 
@@ -1196,8 +1213,8 @@
     };
 
     this.start = function () {
-      if (running || global.glassDemoMode) { return; }
-      timer = global.setTimeout(fetchCards, 1);
+      if (running) { return; }
+      timer = global.setTimeout(timestep, 1);
       running = true;
     };
 
@@ -1295,6 +1312,7 @@
   global.onload = function () {
     if (global.glassDemoMode) {
       global.glassapp = global.glassapp || new Glass();
+      global.glassapp.start();
       return;
     }
     doc.getElementById("signout_button").onclick = function () {
