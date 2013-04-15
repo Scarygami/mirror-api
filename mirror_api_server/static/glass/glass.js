@@ -85,11 +85,23 @@
       mainDiv = doc.getElementById("glass"),
       activeCard,
       timer, running = false,
-      START_CARD = 1, CLOCK_CARD = 2, CONTENT_CARD = 3, ACTION_CARD = 4, SHARE_CARD = 5, REPLY_CARD = 6, HTML_BUNDLE_CARD = 7, CARD_BUNDLE_CARD = 8,
-      recognition, mouseX, mouseY, glassevent, Card, ActionCard, ClockCard, ReplyCard, lastCardSync, timestep;
+      recognition, mouseX, mouseY, glassevent, cardType, Card, ActionCard, ClockCard, ReplyCard, CameraCard, lastCardSync, timestep;
 
     /*@type{enum}*/
     glassevent = {UP: 1, DOWN: 2, LEFT: 3, RIGHT: 4, TAP: 5};
+
+    /*@type{enum}*/
+    cardType = {
+      START_CARD: 1,
+      CLOCK_CARD: 2,
+      CONTENT_CARD: 3,
+      ACTION_CARD: 4,
+      SHARE_CARD: 5,
+      REPLY_CARD: 6,
+      HTML_BUNDLE_CARD: 7,
+      CARD_BUNDLE_CARD: 8,
+      CAMERA_CARD: 9
+    };
 
     demoCards = {
       "items": [
@@ -202,35 +214,35 @@
     };
 
     templates = [];
-    templates[START_CARD] = "";
-    templates[CLOCK_CARD] =
+    templates[cardType.START_CARD] = "";
+    templates[cardType.CLOCK_CARD] =
       "<div class=\"card_date\"></div>" +
       "<div class=\"card_text\"></div>";
-    templates[CONTENT_CARD] =
+    templates[cardType.CONTENT_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
       "<div class=\"card_text\"></div>" +
       "<div class=\"card_date\"></div>" +
       "<div class=\"card_interface\"></div>";
-    templates[ACTION_CARD] =
+    templates[cardType.ACTION_CARD] =
       "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div>";
-    templates[SHARE_CARD] =
+    templates[cardType.SHARE_CARD] =
       "<div class=\"card_text\"></div>" +
       "<div class=\"card card_type_progress\" style=\"display: none\">" +
       "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"../images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
       "</div>";
-    templates[REPLY_CARD] =
+    templates[cardType.REPLY_CARD] =
       "<div class=\"card_text\"></div>" +
       "<img class=\"card_icon\" src=\"../images/talk.png\">" +
       "<div class=\"card card_type_progress\" style=\"display: none\">" +
       "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"../images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
       "</div>";
-    templates[HTML_BUNDLE_CARD] =
+    templates[cardType.HTML_BUNDLE_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
       "<div class=\"card_text\"></div>" +
       "<div class=\"card_date\"></div>" +
       "<img class=\"card_icon\" src=\"../images/corner.png\"></div>" +
       "<div class=\"card_interface\"></div>";
-    templates[CARD_BUNDLE_CARD] = templates[HTML_BUNDLE_CARD];
+    templates[cardType.CARD_BUNDLE_CARD] = templates[cardType.HTML_BUNDLE_CARD];
 
     if (!global.glassDemoMode) {
       mirror = global.gapi.client.mirror;
@@ -245,8 +257,8 @@
     }
 
     function cardSort(a, b) {
-      if (a.type === CLOCK_CARD) { return -1; }
-      if (b.type === CLOCK_CARD) { return 1; }
+      if (a.type === cardType.CLOCK_CARD) { return -1; }
+      if (b.type === cardType.CLOCK_CARD) { return 1; }
       if (!(b.date && a.date)) { return 1; }
       return b.date.getTime() - a.date.getTime();
     }
@@ -309,7 +321,7 @@
       this.html = data.html || "";
       this.htmlPages = data.htmlPages || [];
       if (this.htmlPages && this.htmlPages.length > 0) {
-        type = HTML_BUNDLE_CARD;
+        type = cardType.HTML_BUNDLE_CARD;
       }
       this.action = data.action || "";
       this.actionId = data.id || "";
@@ -333,7 +345,7 @@
       }
 
       this.createCardElements();
-      if (this.type !== CARD_BUNDLE_CARD && data.cardOptions && data.cardOptions.length > 0) {
+      if (this.type !== cardType.CARD_BUNDLE_CARD && data.cardOptions && data.cardOptions.length > 0) {
         this.createActionCards();
       }
       if (this.htmlPages && this.htmlPages.length > 0) {
@@ -344,7 +356,7 @@
     Card.prototype.shareCard = function () {
       var data, me = this;
 
-      if (this.type !== SHARE_CARD) { return; }
+      if (this.type !== cardType.SHARE_CARD) { return; }
 
       function closeShare() {
         me.progressDiv.style.display = "none";
@@ -403,8 +415,7 @@
      */
     Card.prototype.down = function () {
       if (!!this.parent) {
-        if (this.parent.type == ACTION_CARD) {
-
+        if (this.parent.type === cardType.ACTION_CARD) {
           this.parent.show();
           this.parent.animateIn();
           this.hide();
@@ -420,10 +431,10 @@
     Card.prototype.left = function () {
       var pos;
       if (!!this.parent) {
-        pos = this.parent.findPosition(this.id, this.type === ACTION_CARD);
-        if (pos < this.parent.cardCount(this.type === ACTION_CARD) - 1) {
+        pos = this.parent.findPosition(this.id, this.type === cardType.ACTION_CARD);
+        if (pos < this.parent.cardCount(this.type === cardType.ACTION_CARD) - 1) {
           this.hide();
-          this.parent.showCard(pos + 1, this.type === ACTION_CARD);
+          this.parent.showCard(pos + 1, this.type === cardType.ACTION_CARD);
         }
       }
     };
@@ -434,10 +445,10 @@
     Card.prototype.right = function () {
       var pos;
       if (!!this.parent) {
-        pos = this.parent.findPosition(this.id, this.type === ACTION_CARD);
+        pos = this.parent.findPosition(this.id, this.type === cardType.ACTION_CARD);
         if (pos > 0) {
           this.hide();
-          this.parent.showCard(pos - 1, this.type === ACTION_CARD);
+          this.parent.showCard(pos - 1, this.type === cardType.ACTION_CARD);
         }
       }
     };
@@ -447,17 +458,17 @@
      * @param {boolean=} action
      */
     Card.prototype.tap = function (action) {
-      if (this.type === SHARE_CARD) {
+      if (this.type === cardType.SHARE_CARD) {
         this.shareCard();
         return;
       }
 
-      if (this.type === CONTENT_CARD && this.parent.type === HTML_BUNDLE_CARD && this.parent.hasActions()) {
+      if (this.type === cardType.CONTENT_CARD && this.parent.type === cardType.HTML_BUNDLE_CARD && this.parent.hasActions()) {
         this.parent.showActions();
         this.hide();
       }
 
-      if (this.type === CONTENT_CARD || action) {
+      if (this.type === cardType.CONTENT_CARD || action) {
         if (this.actionCards && this.actionCards.length > 0) {
           emulator.introduceActionCard(this.actionCards[0]);
           return;
@@ -466,7 +477,7 @@
 
       // "power on"
       if (this.cards && this.cards.length > 0) {
-        if (this.type !== HTML_BUNDLE_CARD) { this.cards.sort(cardSort); }
+        if (this.type !== cardType.HTML_BUNDLE_CARD) { this.cards.sort(cardSort); }
         emulator.switchToCard(this.cards[0]);
         return;
       }
@@ -475,9 +486,9 @@
 
     Card.prototype.updateDisplayDate = function () {
       switch (this.type) {
-      case CONTENT_CARD:
-      case HTML_BUNDLE_CARD:
-      case CARD_BUNDLE_CARD:
+      case cardType.CONTENT_CARD:
+      case cardType.HTML_BUNDLE_CARD:
+      case cardType.CARD_BUNDLE_CARD:
         this.dateDiv.innerHTML = "";
         if (this.date) { this.dateDiv.appendChild(doc.createTextNode(this.date.niceDate())); }
         break;
@@ -500,8 +511,8 @@
         }
 
         if (!!this.parent) {
-          pos = this.parent.findPosition(this.id, this.type === ACTION_CARD);
-          last = this.parent.cardCount(this.type === ACTION_CARD) - 1;
+          pos = this.parent.findPosition(this.id, this.type === cardType.ACTION_CARD);
+          last = this.parent.cardCount(this.type === cardType.ACTION_CARD) - 1;
           if (pos > 0) {
             shadow += "_left";
           }
@@ -520,22 +531,20 @@
         }
       }
 
-      if (this.type === HTML_BUNDLE_CARD || this.type === CARD_BUNDLE_CARD) {
+      if (this.type === cardType.HTML_BUNDLE_CARD || this.type === cardType.CARD_BUNDLE_CARD) {
         this.cardDiv.classList.add("card_type_bundle");
       }
 
       switch (this.type) {
-      case START_CARD:
-        break;
-      case REPLY_CARD:
+      case cardType.REPLY_CARD:
         this.cardDiv.classList.add("card_type_reply");
         break;
-      case CLOCK_CARD:
+      case cardType.CLOCK_CARD:
         this.cardDiv.classList.add("card_type_clock");
         break;
-      case CONTENT_CARD:
-      case HTML_BUNDLE_CARD:
-      case CARD_BUNDLE_CARD:
+      case cardType.CONTENT_CARD:
+      case cardType.HTML_BUNDLE_CARD:
+      case cardType.CARD_BUNDLE_CARD:
         if (!!this.html) {
           this.cardDiv.classList.add("card_type_html");
         } else {
@@ -546,10 +555,10 @@
           }
         }
         break;
-      case ACTION_CARD:
+      case cardType.ACTION_CARD:
         this.cardDiv.classList.add("card_type_action");
         break;
-      case SHARE_CARD:
+      case cardType.SHARE_CARD:
         this.cardDiv.classList.add("card_type_share");
         break;
       }
@@ -560,10 +569,9 @@
       this.updateDisplayDate();
       this.updateCardStyle();
       this.cardDiv.style.display = "block";
-
       activeCard = this;
 
-      if (this.type === CLOCK_CARD && recognition) {
+      if (this.type === cardType.CLOCK_CARD && recognition) {
         recognition.onstart = function (e) {
           console.log(e);
         };
@@ -590,11 +598,7 @@
         // TODO: actually make recognition do something
       }
 
-      if (this.type === REPLY_CARD && this.parent) {
-        this.sendReply();
-      }
-
-      if (this.type === ACTION_CARD) {
+      if (this.type === cardType.ACTION_CARD) {
         this.textDiv.innerHTML = "";
         this.cardDiv.style.opacity = 1;
         this.actionDiv.style.paddingTop = "0%";
@@ -615,7 +619,7 @@
       this.active = false;
       this.cardDiv.style.display = "none";
 
-      if (this.type === CLOCK_CARD && recognition) {
+      if (this.type === cardType.CLOCK_CARD && recognition) {
         recognition.stop();
       }
     };
@@ -666,7 +670,7 @@
         if (this.cards[i].id === id) {
           return this.cards[i];
         }
-        if (this.cards[i].type === CARD_BUNDLE_CARD) {
+        if (this.cards[i].type === cardType.CARD_BUNDLE_CARD) {
           card = this.cards[i].findCard(id);
           if (card) {
             return card;
@@ -678,7 +682,7 @@
 
     Card.prototype.cardCount = function (action) {
       var array;
-      if (this.type === ACTION_CARD && this.action === "SHARE") {
+      if (this.type === cardType.ACTION_CARD && this.action === "SHARE") {
         array = shareCards;
       } else {
         array = action ? this.actionCards : this.cards;
@@ -688,14 +692,14 @@
 
     Card.prototype.findPosition = function (id, action) {
       var i, l, array;
-      if (this.type === ACTION_CARD && this.action === "SHARE") {
+      if (this.type === cardType.ACTION_CARD && this.action === "SHARE") {
         array = shareCards;
       } else {
         if (action) {
           array = this.actionCards;
         } else {
           array = this.cards;
-          if (this.type !== HTML_BUNDLE_CARD) {
+          if (this.type !== cardType.HTML_BUNDLE_CARD) {
             array.sort(cardSort);
           }
         }
@@ -709,7 +713,7 @@
     };
 
     Card.prototype.showCard = function (pos, action) {
-      if (this.type === ACTION_CARD && this.action === "SHARE") {
+      if (this.type === cardType.ACTION_CARD && this.action === "SHARE") {
         emulator.slideToCard(shareCards[pos]);
       } else {
         if (action) {
@@ -725,12 +729,12 @@
     };
 
     Card.prototype.hasActions = function () {
-      if (this.type !== HTML_BUNDLE_CARD) { return false; }
+      if (this.type !== cardType.HTML_BUNDLE_CARD) { return false; }
       return (this.actionCards && this.actionCards.length > 0);
     };
 
     Card.prototype.showActions = function () {
-      if (this.type !== HTML_BUNDLE_CARD) { return; }
+      if (this.type !== cardType.HTML_BUNDLE_CARD) { return; }
       this.tap(true);
     };
 
@@ -755,9 +759,9 @@
       this.progressIconDiv = this.cardDiv.querySelector(".card_progress_icon");
       this.progressTextDiv = this.cardDiv.querySelector(".card_progress_text");
       switch (this.type) {
-      case CONTENT_CARD:
-      case HTML_BUNDLE_CARD:
-      case CARD_BUNDLE_CARD:
+      case cardType.CONTENT_CARD:
+      case cardType.HTML_BUNDLE_CARD:
+      case cardType.CARD_BUNDLE_CARD:
         this.htmlFrame = this.cardDiv.querySelector(".card_iframe");
         this.htmlFrame.onload = function () {
           me.htmlDiv = me.htmlFrame.contentWindow.document.getElementById("html");
@@ -774,7 +778,7 @@
         }
         break;
 
-      case SHARE_CARD:
+      case cardType.SHARE_CARD:
         this.textDiv.appendChild(doc.createTextNode(this.text));
         this.cardDiv.style.backgroundImage = "url(" + this.image + ")";
         break;
@@ -795,7 +799,7 @@
 
     /** @constructor */
     ActionCard = function (id, parent, data) {
-      this.init(ACTION_CARD, id, parent, data);
+      this.init(cardType.ACTION_CARD, id, parent, data);
     };
 
     ActionCard.prototype = new Card();
@@ -827,12 +831,8 @@
         cd.style.display = "none";
       };
 
-      if (this.type === ACTION_CARD) {
-        new Tween(this.actionDiv, 'paddingTop', '%', 0, 50, 0.25);
-        (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
-      } else {
-        h();
-      }
+      new Tween(this.actionDiv, 'paddingTop', '%', 0, 50, 0.25);
+      (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
     };
 
     /**
@@ -853,7 +853,7 @@
     ActionCard.prototype.sendCustomAction = function () {
       var data, me = this;
 
-      if (this.type !== ACTION_CARD || this.action !== "CUSTOM") { return; }
+      if (this.action !== "CUSTOM") { return; }
 
       function closeAction() {
         me.hide();
@@ -923,14 +923,14 @@
       var i, l;
       l = this.htmlPages.length;
       for (i = 0; i < l; i++) {
-        this.cards.push(new Card(CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
+        this.cards.push(new Card(cardType.CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
       }
     };
 
 
     /** @constructor */
     ClockCard = function (id, parent) {
-      this.init(CLOCK_CARD, id, parent);
+      this.init(cardType.CLOCK_CARD, id, parent);
     };
 
     ClockCard.prototype = new Card();
@@ -955,10 +955,15 @@
 
     /** @constructor */
     ReplyCard = function (id, parent) {
-      this.init(REPLY_CARD, id, parent);
+      this.init(cardType.REPLY_CARD, id, parent);
     };
 
     ReplyCard.prototype = new Card();
+
+    ReplyCard.prototype.show = function () {
+      Card.prototype.show.call(this);
+      this.sendReply();
+    };
 
     ReplyCard.prototype.createCardElements = function () {
       this.createDiv();
@@ -967,7 +972,6 @@
 
     ReplyCard.prototype.sendReply = function () {
       var result = "", me = this;
-      if (this.type !== REPLY_CARD) { return; }
       this.textDiv.classList.remove("real_input");
       this.textDiv.innerHTML = "Speak your message";
       this.progressDiv.style.display = "none";
@@ -1054,6 +1058,10 @@
       }
     };
 
+    /** @constructor */
+    CameraCard = function (id, parent) {
+      this.init(cardType.CAMERA_CARD, id, parent);
+    };
 
 
     /** Event Listeners */
@@ -1135,7 +1143,7 @@
               }
               bundles[bundleId].push(result.items[i]);
             } else {
-              card = new Card(CONTENT_CARD, result.items[i].id, startCard, result.items[i]);
+              card = new Card(cardType.CONTENT_CARD, result.items[i].id, startCard, result.items[i]);
               startCard.addCard(card);
             }
           }
@@ -1145,12 +1153,12 @@
         if (bundles.hasOwnProperty(bundleId)) {
           bundleCard = startCard.findCard(bundleId);
           if (!bundleCard) {
-            bundleCard = new Card(CARD_BUNDLE_CARD, bundleId, startCard, bundles[bundleId][0]);
+            bundleCard = new Card(cardType.CARD_BUNDLE_CARD, bundleId, startCard, bundles[bundleId][0]);
             startCard.addCard(bundleCard);
           }
           l = bundles[bundleId].length;
           for (i = 0; i < l; i++) {
-            bundleCard.addCard(new Card(CONTENT_CARD, bundles[bundleId][i].id, bundleCard, bundles[bundleId][i]));
+            bundleCard.addCard(new Card(cardType.CONTENT_CARD, bundles[bundleId][i].id, bundleCard, bundles[bundleId][i]));
           }
         }
       }
@@ -1185,7 +1193,7 @@
       if (result && result.items) {
         l = result.items.length;
         for (i = 0; i < l; i++) {
-          shareCards.push(new Card(SHARE_CARD, result.items[i].id, undefined, result.items[i]));
+          shareCards.push(new Card(cardType.SHARE_CARD, result.items[i].id, undefined, result.items[i]));
         }
       }
     }
@@ -1259,7 +1267,7 @@
 
       mainDiv.innerHTML = "";
 
-      startCard = new Card(START_CARD, "start");
+      startCard = new Card(cardType.START_CARD, "start");
 
       replyCard = new ReplyCard("reply");
 
