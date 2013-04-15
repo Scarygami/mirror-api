@@ -1132,6 +1132,10 @@
 
     CameraCard.prototype.hide = function () {
       this.video.pause();
+      if (this.stream) {
+        this.stream.stop();
+        this.stream = undefined;
+      }
       Card.prototype.hide.call(this);
     };
 
@@ -1171,10 +1175,12 @@
       var me = this;
       me.cardDiv.style.backgroundImage = "none";
       global.navigator.getUserMedia({video: true}, function (stream) {
+        me.stream = stream;
         me.video.style.display = "block";
         me.video.src = global.URL.createObjectURL(stream);
         me.video.play();
       }, function (e) {
+        me.stream = undefined;
         console.log(e);
       });
     };
