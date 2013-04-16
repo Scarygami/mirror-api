@@ -122,8 +122,7 @@ class MirrorApi(remote.Service):
             raise endpoints.BadRequestException("At least one imageUrl needs to be provided.")
 
         if contact.from_datastore:
-            name = contact.key.string_id()
-            raise endpoints.BadRequestException("Contact with id %s already exists." % name)
+            return contact
 
         contact.put()
         return contact

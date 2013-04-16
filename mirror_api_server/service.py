@@ -20,6 +20,7 @@ import os
 import webapp2
 import json
 import jinja2
+import logging
 
 from apiclient.discovery import build
 from google.appengine.ext import ndb
@@ -32,15 +33,11 @@ from oauth2client.appengine import StorageByKeyName
 from webapp2_extras import sessions
 from webapp2_extras.appengine import sessions_memcache
 
-import logging
-
 JINJA = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
 appname = get_application_id()
 base_url = "https://" + appname + ".appspot.com"
 discovery_url = base_url + "/_ah/api"
-
-logging.info(appname)
 
 config = {}
 config["webapp2_extras.sessions"] = {
@@ -144,17 +141,56 @@ class ConnectHandler(BaseHandler):
             self.response.out.write(createError(401, "Token's client ID does not match the app's client ID"))
             return
 
+        self.session["gplus_id"] = gplus_id
         storage = StorageByKeyName(User, gplus_id, "credentials")
         stored_credentials = storage.get()
-        stored_gplus_id = self.session.get("gplus_id")
-        if stored_credentials is not None and gplus_id == stored_gplus_id:
+        if stored_credentials is not None:
             self.response.status = 200
             self.response.out.write(createMessage("Current user is already connected."))
             return
 
-        # Store the access token in the session for later use.
+        try:
+            # Create a new authorized API client.
+            http = httplib2.Http()
+            http = credentials.authorize(http)
+            service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
+
+            # Register contacts
+            body = {}
+            body["acceptTypes"] = ["image/*"]
+            body["id"] = "instaglass_sepia"
+            body["displayName"] = "Sepia"
+            body["imageUrls"] = ["https://mirror-api.appspot.com/images/sepia.jpg"]
+            result = service.contacts().insert(body=body).execute()
+            logging.info(result)
+
+            # Register subscription
+            verifyToken = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(32))
+            body = {}
+            body["collection"] = "timeline"
+            body["operation"] = "UPDATE"
+            body["userToken"] = gplus_id
+            body["verifyToken"] = verifyToken
+            body["callbackUrl"] = base_url + "/timeline_update"
+            result = service.subscriptions().insert(body=body).execute()
+            logging.info(result)
+
+            # Send welcome message
+            body = {}
+            body["text"] = "Welcome to Instaglass!"
+            body["attachments"] = [{"contentType": "image/jpeg", "contentUrl": "https://mirror-api.appspot.com/images/sepia.jpg"}]
+            result = service.timeline().insert(body=body).execute()
+            logging.info(result)
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(createError(500, "Failed to refresh access token."))
+            return
+
+        # Store the access, refresh token and verify token
         storage.put(credentials)
-        self.session["gplus_id"] = gplus_id
+        user = ndb.Key("User", gplus_id).get()
+        user.verifyToken = verifyToken
+        user.put()
         self.response.status = 200
         self.response.out.write(createMessage("Successfully connected user."))
 
@@ -239,11 +275,7 @@ class NewCardHandler(BaseHandler):
 
         message = self.request.body
 
-        logging.info(message)
-
         data = json.loads(message)
-
-        logging.info(data["text"])
 
         body = {}
         body["text"] = data["text"]
