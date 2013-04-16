@@ -40,6 +40,8 @@ appname = get_application_id()
 base_url = "https://" + appname + ".appspot.com"
 discovery_url = base_url + "/_ah/api"
 
+logging.info(appname)
+
 config = {}
 config["webapp2_extras.sessions"] = {
     "secret_key": "ajksdlj1029jlksndajsaskd7298hkajsbdkaukjassnkjankj",
@@ -142,7 +144,8 @@ class ConnectHandler(BaseHandler):
             self.response.out.write(createError(401, "Token's client ID does not match the app's client ID"))
             return
 
-        stored_credentials = self.session.get("credentials")
+        storage = StorageByKeyName(User, gplus_id, "credentials")
+        stored_credentials = storage.get()
         stored_gplus_id = self.session.get("gplus_id")
         if stored_credentials is not None and gplus_id == stored_gplus_id:
             self.response.status = 200
@@ -150,7 +153,7 @@ class ConnectHandler(BaseHandler):
             return
 
         # Store the access token in the session for later use.
-        self.session["credentials"] = credentials
+        storage.put(credentials)
         self.session["gplus_id"] = gplus_id
         self.response.status = 200
         self.response.out.write(createMessage("Successfully connected user."))
@@ -162,8 +165,11 @@ class DisconnectHandler(BaseHandler):
 
         self.response.content_type = "application/json"
 
+        gplus_id = self.session.get("gplus_id")
+        storage = StorageByKeyName(User, gplus_id, "credentials")
+
         # Only disconnect a connected user.
-        credentials = self.session.get("credentials")
+        credentials = storage.get()
         if credentials is None:
             self.response.status = 401
             self.response.out.write(createError(401, "Current user not connected."))
@@ -175,7 +181,7 @@ class DisconnectHandler(BaseHandler):
         h = httplib2.Http()
         result = h.request(url, "GET")[0]
 
-        del self.session["credentials"]
+        ndb.Key("User", gplus_id).delete()
 
         if result["status"] == "200":
             # Reset the user's session.
@@ -193,7 +199,10 @@ class ListHandler(BaseHandler):
 
         self.response.content_type = "application/json"
 
-        credentials = self.session.get("credentials")
+        gplus_id = self.session.get("gplus_id")
+        storage = StorageByKeyName(User, gplus_id, "credentials")
+        credentials = storage.get()
+
         if credentials is None:
             self.response.status = 401
             self.response.out.write(createError(401, "Current user not connected."))
@@ -219,7 +228,10 @@ class NewCardHandler(BaseHandler):
 
         self.response.content_type = "application/json"
 
-        credentials = self.session.get("credentials")
+        gplus_id = self.session.get("gplus_id")
+        storage = StorageByKeyName(User, gplus_id, "credentials")
+        credentials = storage.get()
+
         if credentials is None:
             self.response.status = 401
             self.response.out.write(createError(401, "Current user not connected."))
@@ -236,9 +248,8 @@ class NewCardHandler(BaseHandler):
         body = {}
         body["text"] = data["text"]
         if "image" in data:
-            body["image"] = data["image"]
-            logging.info(data["image"])
-        body["cardOptions"] = [{"action": "SHARE"}, {"action": "REPLY"}]
+            body["attachments"] = [{"contentType": "image/*", "contentUrl": data["image"]}]
+        body["menuItems"] = [{"action": "SHARE"}, {"action": "REPLY"}]
 
         try:
             # Create a new authorized API client.
@@ -257,13 +268,6 @@ class NewCardHandler(BaseHandler):
 
 app = webapp2.WSGIApplication(
     [
-        ('/glass/', GlassHandler)
-    ],
-    debug=True, config=config)
-
-"""
-app = webapp2.WSGIApplication(
-    [
         ('/', IndexHandler),
         ('/glass/', GlassHandler),
         ('/connect', ConnectHandler),
@@ -272,4 +276,3 @@ app = webapp2.WSGIApplication(
         ('/new', NewCardHandler)
     ],
     debug=True, config=config)
-"""

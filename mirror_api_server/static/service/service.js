@@ -26,7 +26,7 @@
         l = items.length;
         for (i = l - 1; i >= 0; i--) {
           li = doc.createElement("li");
-          li.innerHTML = (new Date(items[i].when)).niceDate() + " - " + items[i].text;
+          li.innerHTML = (new Date(items[i].displayDate || items[i].udpated || items[i].created )).niceDate() + " - " + (items[i].text || "");
           ul.appendChild(li);
         }
       }
