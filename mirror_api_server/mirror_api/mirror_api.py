@@ -155,6 +155,14 @@ class MirrorApi(remote.Service):
         contact.put()
         return contact
 
+    @Subscription.query_method(query_fields=("limit", "pageToken"),
+                               user_required=True,
+                               path="subscriptions", name="subscriptions.list")
+    def subscriptions_list(self, query):
+        """List all Subscriptions registered for the current user."""
+
+        return query.filter(Contact.user == endpoints.get_current_user())
+
     @Subscription.method(user_required=True, http_method="POST",
                          path="subscriptions", name="subscriptions.insert")
     def subscription_insert(self, subscription):

@@ -211,6 +211,25 @@ class DisconnectHandler(BaseHandler):
             self.response.out.write(createError(401, "Current user not connected."))
             return
 
+        # Deregister contacts and subscriptions
+        http = httplib2.Http()
+        http = credentials.authorize(http)
+        service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
+
+        result = service.contacts().list().execute()
+        logging.info(result)
+        if "items" in result:
+            for contact in result["items"]:
+                del_result = service.contacts().delete(id=contact["id"]).execute()
+                logging.info(del_result)
+
+        result = service.subscriptions().list().execute()
+        logging.info(result)
+        if "items" in result:
+            for subscription in result["items"]:
+                del_result = service.subscriptions().delete(id=subscription["id"]).execute()
+                logging.info(del_result)
+
         # Execute HTTP GET request to revoke current token.
         access_token = credentials.access_token
         url = "https://accounts.google.com/o/oauth2/revoke?token=%s" % access_token
