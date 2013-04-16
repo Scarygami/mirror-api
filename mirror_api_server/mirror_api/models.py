@@ -27,39 +27,56 @@ from endpoints_proto_datastore.ndb import EndpointsUserProperty
 from endpoints_proto_datastore.ndb import EndpointsAliasProperty
 
 
-class CardAction(messages.Enum):
-    SHARE = 1
-    REPLY = 2
-    READ_ALOUD = 3
-    CUSTOM = 4
+class MenuAction(messages.Enum):
+    REPLY = 1
+    REPLY_ALL = 2
+    DELETE = 3
+    SHARE = 4
+    READ_ALOUD = 5
+    VOICE_CALL = 6
+    NAVIGATE = 7
+    TOGGLE_PINNED = 8
+    CUSTOM = 9
 
 
-class CardOptionValue(EndpointsModel):
+class MenuValue(EndpointsModel):
+
+    class MenuValueState(messages.Enum):
+        DEFAULT = 1
+        PENDING = 2
+        CONFIRMED = 3
+
     displayName = ndb.StringProperty(required=True)
     iconUrl = ndb.StringProperty(required=True)
+    state = msgprop.EnumProperty(MenuValueState, required=True)
 
 
-class CardOption(EndpointsModel):
-    action = msgprop.EnumProperty(CardAction, required=True)
+class MenuItem(EndpointsModel):
+    action = msgprop.EnumProperty(MenuAction, required=True)
     id = ndb.StringProperty()
-    values = ndb.LocalStructuredProperty(CardOptionValue, repeated=True)
+    removeWhenSelected = ndb.BooleanProperty(default=False)
+    values = ndb.LocalStructuredProperty(MenuValue, repeated=True)
 
 
-class Card(EndpointsModel):
+class TimelineItem(EndpointsModel):
     """Model for timeline cards.
 
     Since the when property is auto_now_add=True, Cards will document when
     they were inserted immediately after being stored.
     """
     _message_fields_schema = ("id", "when", "text", "html", "htmlPages", "bundleId", "image", "cardOptions")
+
+    user = EndpointsUserProperty(required=True, raise_unauthorized=True)
+
     text = ndb.StringProperty()
     html = ndb.TextProperty()
     htmlPages = ndb.TextProperty(repeated=True)
-    bundleId = ndb.IntegerProperty()
-    when = EndpointsDateTimeProperty(auto_now_add=True)
-    user = EndpointsUserProperty(required=True, raise_unauthorized=True)
+    bundleId = ndb.StringProperty()
+    created = EndpointsDateTimeProperty(auto_now_add=True)
+    updated = EndpointsDateTimeProperty(auto_now=True)
+    displayTime = EndpointsDateTimeProperty()
     image = ndb.TextProperty()
-    cardOptions = ndb.LocalStructuredProperty(CardOption, repeated=True)
+    menuItems = ndb.LocalStructuredProperty(MenuItem, repeated=True)
 
 
 class ShareEntity(EndpointsModel):

@@ -1,6 +1,6 @@
 (function (global) {
   "use strict";
-  var doc = global.document, console = global.console, Tween;
+  var doc = global.document, console = global.console;
 
   Date.prototype.niceDate = function () {
     var y, m, d, h, min, dif, now;
@@ -37,42 +37,6 @@
   };
 
   /**
-   * Basic tween object
-   * @constructor
-   */
-  Tween = function (element, attribute, type, from, to, duration) {
-    var raf, started, update, me;
-    type = type || "";
-    this.then = function (cb) {
-      this._cb = cb;
-      if (this._done) { cb(); }
-    };
-
-    raf =
-      global.requestAnimationFrame || global.mozRequestAnimationFrame
-      || global.webkitRequestAnimationFrame || global.msRequestAnimationFrame;
-
-    if (raf) {
-      started = new Date();
-      me = this;
-      update = function () {
-        var t = ((new Date()) - started) / 1000;
-        if (t <= duration) {
-          element.style[attribute] = (from + ((to - from) * t / duration)) + type;
-          raf(update);
-        } else {
-          element.style[attribute] = to + type;
-          me._done = true;
-          if (me._cb !== undefined) { me._cb(); }
-        }
-      };
-      raf(update);
-    } else {
-      this._done = true;
-    }
-  };
-
-  /**
    * Main Glass object
    * @constructor
    */
@@ -86,7 +50,43 @@
       activeCard,
       timer, running = false,
       recognition, mouseX, mouseY, glassevent, cardType, Card, ActionCard, ClockCard, ReplyCard, CameraCard, lastCardSync, timestep,
-      photoCount = 0;
+      photoCount = 0, Tween;
+
+    /**
+     * Basic tween object
+     * @constructor
+     */
+    Tween = function (element, attribute, type, from, to, duration) {
+      var raf, started, update, me;
+      type = type || "";
+      this.then = function (cb) {
+        this._cb = cb;
+        if (this._done) { cb(); }
+      };
+
+      raf =
+        global.requestAnimationFrame || global.mozRequestAnimationFrame
+        || global.webkitRequestAnimationFrame || global.msRequestAnimationFrame;
+
+      if (raf) {
+        started = new Date();
+        me = this;
+        update = function () {
+          var t = ((new Date()) - started) / 1000;
+          if (t <= duration) {
+            element.style[attribute] = (from + ((to - from) * t / duration)) + type;
+            raf(update);
+          } else {
+            element.style[attribute] = to + type;
+            me._done = true;
+            if (me._cb !== undefined) { me._cb(); }
+          }
+        };
+        raf(update);
+      } else {
+        this._done = true;
+      }
+    };
 
     /*@type{enum}*/
     glassevent = {UP: 1, DOWN: 2, LEFT: 3, RIGHT: 4, TAP: 5};
@@ -825,21 +825,22 @@
     };
 
     ActionCard.prototype.animateIn = function () {
+      var tween;
       this.active = true;
       activeCard = this;
-      new Tween(this.actionDiv, 'paddingTop', '%', 50, 0, 0.25);
-      new Tween(this.cardDiv, 'opacity', null, 0, 1, 0.25);
+      tween = new Tween(this.actionDiv, 'paddingTop', '%', 50, 0, 0.25);
+      tween = new Tween(this.cardDiv, 'opacity', null, 0, 1, 0.25);
     };
 
     ActionCard.prototype.animateOut = function () {
-      var cd, h;
+      var cd, h, tween;
       this.active = false;
       cd = this.cardDiv;
       h = function () {
         cd.style.display = "none";
       };
 
-      new Tween(this.actionDiv, 'paddingTop', '%', 0, 50, 0.25);
+      tween = new Tween(this.actionDiv, 'paddingTop', '%', 0, 50, 0.25);
       (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
     };
 
