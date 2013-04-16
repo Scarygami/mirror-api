@@ -46,7 +46,7 @@
       } else {
         html = "<article>";
       }
-      html += "<section><p class=\"text-auto-size\">" + text + "</p></section>";
+      html += "<section><p class=\"text-auto-size\">" + (text || "") + "</p></section>";
       html += "</article>";
     }
     cardDiv.innerHTML = html;
