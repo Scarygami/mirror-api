@@ -177,6 +177,12 @@ class Contact(EndpointsModel):
             return self.key.pairs()[1][1]
 
 
+class Operation(messages.Enum):
+    UPDATE = 1
+    INSERT = 2
+    DELETE = 3
+
+
 class Subscription(EndpointsModel):
     """Model for subscriptions"""
 
@@ -186,7 +192,7 @@ class Subscription(EndpointsModel):
     collection = ndb.StringProperty(default="timeline")
     userToken = ndb.StringProperty(required=True)
     verifyToken = ndb.StringProperty(required=True)
-    operation = msgprop.EnumProperty(MenuAction, repeated=True)
+    operation = msgprop.EnumProperty(Operation, repeated=True)
     callbackUrl = ndb.StringProperty(required=True)
 
 
@@ -199,7 +205,7 @@ class Action(messages.Message):
 
     collection = messages.StringField(1, default="timeline")
     itemId = messages.IntegerField(2, required=True)
-    operation = messages.EnumField(MenuAction, 3, required=True)
+    action = messages.EnumField(MenuAction, 3, required=True)
     value = messages.StringField(4)
 
 

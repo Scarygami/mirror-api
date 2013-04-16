@@ -26,6 +26,7 @@ from google.appengine.ext import endpoints
 from protorpc import remote
 from models import TimelineItem
 from models import MenuAction
+from models import Operation
 from models import Contact
 from models import Subscription
 from models import Action
@@ -203,23 +204,53 @@ class MirrorApi(remote.Service):
 
         # TODO: check if card exists and belongs to the user
 
-        data = {}
-        data["collection"] = action.collection
-        data["operation"] = action.operation.name
-        data["itemId"] = action.itemId
-        data["value"] = action.value
+        data = None
+        operation = None
 
-        header = {"Content-type": "application/json"}
+        if action.action == MenuAction.SHARE:
+            operation = Operation.UPDATE
+            data = {}
+            data["collection"] = "timeline"
+            data["itemId"] = action.itemId
+            data["operation"] = operation.name
+            data["userActions"] = ({"type": MenuAction.SHARE.name},)
 
-        query = Subscription.query().filter(Subscription.user == current_user).filter(Subscription.operation == action.operation)
-        for subscription in query.fetch():
-            data["userToken"] = subscription.userToken
-            data["verifyToken"] = subscription.verifyToken
+        if action.action == MenuAction.REPLY or action.action == MenuAction.REPLY_ALL:
+            operation = Operation.INSERT
+            data = {}
+            data["collection"] = "timeline"
+            data["itemId"] = action.itemId
+            data["operation"] = operation.name
+            data["userActions"] = ({"type": MenuAction.REPLY.name},)
 
-            req = urllib2.Request(subscription.callbackUrl, json.dumps(data), header)
-            try:
-                urllib2.urlopen(req)
-            except urllib2.URLError as e:
-                logging.error(e)
+        if action.action == MenuAction.DELETE:
+            operation = Operation.DELETE
+            data = {}
+            data["collection"] = "timeline"
+            data["itemId"] = action.itemId
+            data["operation"] = operation.name
+            data["userActions"] = ({"type": MenuAction.DELETE.name},)
+
+        if action.action == MenuAction.CUSTOM:
+            operation = Operation.UPDATE
+            data = {}
+            data["collection"] = "timeline"
+            data["itemId"] = action.itemId
+            data["operation"] = operation.name
+            data["userActions"] = ({"type": MenuAction.DELETE.name, "payload": action.value},)
+
+        if data is not None and operation is not None:
+            header = {"Content-type": "application/json"}
+
+            query = Subscription.query().filter(Subscription.user == current_user).filter(Subscription.operation == operation)
+            for subscription in query.fetch():
+                data["userToken"] = subscription.userToken
+                data["verifyToken"] = subscription.verifyToken
+
+                req = urllib2.Request(subscription.callbackUrl, json.dumps(data), header)
+                try:
+                    urllib2.urlopen(req)
+                except urllib2.URLError as e:
+                    logging.error(e)
 
         return ActionResponse(success=True)

@@ -420,8 +420,7 @@
         var data = {};
         data.collection = "timeline";
         data.itemId = sharedCard.id;
-        data.operation = "SHARE";
-        data.value = me.id;
+        data.action = "SHARE";
         mirror.actions.insert({"resource": data}).execute(function (resp) {
           console.log(resp);
           if (resp.success) {
@@ -939,7 +938,7 @@
         data = {};
         data.collection = "timeline";
         data.itemId = this.parent.id;
-        data.operation = "CUSTOM";
+        data.action = "CUSTOM";
         data.value = this.actionId;
         mirror.actions.insert({"resource": data}).execute(function (resp) {
           console.log(resp);
@@ -1108,6 +1107,7 @@
               // create Timeline Card with reply text
               data = {};
               data.text = result;
+              data.inReplyTo = me.parent.parent.id;
               mirror.timeline.insert({"resource": data}).execute(function (resp) {
                 var action;
                 console.log(resp);
@@ -1116,8 +1116,7 @@
                   action = {};
                   action.collection = "timeline";
                   action.itemId = resp.id;
-                  action.operation = "REPLY";
-                  action.value = me.parent.parent.id.toString();
+                  action.action = "REPLY";
                   mirror.actions.insert({"resource": action}).execute(function (actionResp) {
                     console.log(actionResp);
                     if (actionResp.success) {
