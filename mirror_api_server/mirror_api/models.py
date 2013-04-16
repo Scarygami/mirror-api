@@ -58,25 +58,66 @@ class MenuItem(EndpointsModel):
     values = ndb.LocalStructuredProperty(MenuValue, repeated=True)
 
 
+class Attachment(EndpointsModel):
+    """Attachment to a timeline card
+
+    Due to limitations in Cloud Endpoints this works a bit differently than
+    the attachments in the official API. Normally you would add attachments
+    by uploading the media data (as image/audio/video). Attachments in this
+    implementation can only by of type image and are represented either as
+    URL or Data-URI and can be added/retrieved/updated directly by filling
+    the attachments field in the timeline.insert method.
+    """
+    contentType = ndb.StringProperty()
+    contentUrl = ndb.TextProperty()
+
+
 class TimelineItem(EndpointsModel):
     """Model for timeline cards.
 
     Since the when property is auto_now_add=True, Cards will document when
     they were inserted immediately after being stored.
     """
-    _message_fields_schema = ("id", "when", "text", "html", "htmlPages", "bundleId", "image", "cardOptions")
+    _message_fields_schema = (
+        "id",
+        "attachments",
+        "bundleId",
+        "canonicalUrl",
+        "created",
+        "displayTime",
+        "html",
+        "htmlPages",
+        "inReplyTo",
+        "isBundleCover",
+        "isDeleted",
+        "isPinned",
+        "menuItems",
+        "sourceItemId",
+        "speakableText",
+        "text",
+        "title",
+        "updated"
+    )
 
     user = EndpointsUserProperty(required=True, raise_unauthorized=True)
 
-    text = ndb.StringProperty()
+    attachments = ndb.StructuredProperty(Attachment, repeated=True)
+    bundleId = ndb.StringProperty()
+    canonicalUrl = ndb.StringProperty()
+    created = EndpointsDateTimeProperty(auto_now_add=True)
+    displayTime = EndpointsDateTimeProperty()
     html = ndb.TextProperty()
     htmlPages = ndb.TextProperty(repeated=True)
-    bundleId = ndb.StringProperty()
-    created = EndpointsDateTimeProperty(auto_now_add=True)
-    updated = EndpointsDateTimeProperty(auto_now=True)
-    displayTime = EndpointsDateTimeProperty()
-    image = ndb.TextProperty()
+    inReplyTo = ndb.IntegerProperty()
+    isBundleCover = ndb.BooleanProperty(default=False)
+    isDeleted = ndb.BooleanProperty(default=False)
+    isPinned = ndb.BooleanProperty(default=False)
     menuItems = ndb.LocalStructuredProperty(MenuItem, repeated=True)
+    sourceItemId = ndb.StringProperty()
+    speakableText = ndb.TextProperty()
+    text = ndb.StringProperty()
+    title = ndb.StringProperty()
+    updated = EndpointsDateTimeProperty(auto_now=True)
 
 
 class ShareEntity(EndpointsModel):

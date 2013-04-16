@@ -24,8 +24,8 @@ import urllib2
 
 from google.appengine.ext import endpoints
 from protorpc import remote
-from models import Card
-from models import CardAction
+from models import TimelineItem
+from models import MenuAction
 from models import ShareEntity
 from models import Subscription
 from models import Action
@@ -46,41 +46,41 @@ API_DESCRIPTION = ("Mirror API implemented using Google Cloud "
 class MirrorApi(remote.Service):
     """Class which defines Mirror API v1."""
 
-    @Card.query_method(query_fields=("limit", "pageToken"),
-                       user_required=True,
-                       path="timeline", name="timeline.list")
+    @TimelineItem.query_method(query_fields=("limit", "pageToken"),
+                               user_required=True,
+                               path="timeline", name="timeline.list")
     def timeline_list(self, query):
         """List timeline cards for the current user."""
 
-        query = query.order(-Card.when)
-        return query.filter(Card.user == endpoints.get_current_user())
+        query = query.order(-TimelineItem.updated)
+        return query.filter(TimelineItem.user == endpoints.get_current_user())
 
-    @Card.method(user_required=True, http_method="POST",
-                 path="timeline", name="timeline.insert")
+    @TimelineItem.method(user_required=True, http_method="POST",
+                         path="timeline", name="timeline.insert")
     def timeline_insert(self, card):
         """Insert a card for the current user."""
 
         if card.id is not None:
             raise endpoints.BadRequestException("ID is not allowed in request body.")
 
-        if card.cardOptions is not None:
-            for cardOption in card.cardOptions:
-                if cardOption.action == CardAction.CUSTOM:
-                    if cardOption.id is None:
+        if card.menuItems is not None:
+            for menuItem in card.menuItems:
+                if menuItem.action == MenuAction.CUSTOM:
+                    if menuItem.id is None:
                         raise endpoints.BadRequestException("For custom actions id needs to be provided.")
-                    if cardOption.values is None or len(cardOption.values) == 0:
+                    if menuItem.values is None or len(menuItem.values) == 0:
                         raise endpoints.BadRequestException("For custom actions at least one value needs to be provided.")
-                    for value in cardOption.values:
+                    for value in menuItem.values:
                         if value.displayName is None or value.iconUrl is None:
                             raise endpoints.BadRequestException("Each value needs to contain displayName and iconUrl.")
 
         card.put()
         return card
 
-    @Card.method(request_fields=("id",),
-                 user_required=True,
-                 path="timeline/{id}", http_method="GET",
-                 name="timeline.get")
+    @TimelineItem.method(request_fields=("id",),
+                         user_required=True,
+                         path="timeline/{id}", http_method="GET",
+                         name="timeline.get")
     def timeline_get(self, card):
         """Get card with ID for the current user"""
 
@@ -88,9 +88,9 @@ class MirrorApi(remote.Service):
             raise endpoints.NotFoundException("Card not found.")
         return card
 
-    @Card.method(user_required=True,
-                 path="timeline/{id}", http_method="PUT",
-                 name="timeline.update")
+    @TimelineItem.method(user_required=True,
+                         path="timeline/{id}", http_method="PUT",
+                         name="timeline.update")
     def timeline_update(self, card):
         """Update card with ID for the current user"""
 
