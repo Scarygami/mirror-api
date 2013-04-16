@@ -257,6 +257,13 @@ class NewCardHandler(BaseHandler):
 
 app = webapp2.WSGIApplication(
     [
+        ('/glass/', GlassHandler)
+    ],
+    debug=True, config=config)
+
+"""
+app = webapp2.WSGIApplication(
+    [
         ('/', IndexHandler),
         ('/glass/', GlassHandler),
         ('/connect', ConnectHandler),
@@ -265,3 +272,4 @@ app = webapp2.WSGIApplication(
         ('/new', NewCardHandler)
     ],
     debug=True, config=config)
+"""
