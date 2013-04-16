@@ -3,10 +3,41 @@
 
   var
     doc = global.document,
-    cardDiv = doc.querySelector(".card");
+    cardDiv = doc.querySelector(".card"),
+    FONT_SIZES = ["text-x-large", "text-large", "text-normal", "text-small", "text-x-small"];
+
+  function autoResizeText(elem) {
+    var prevClass, computedStyle, maxHeight, maxWidth, i, oldStyle, fontSize;
+    computedStyle = doc.defaultView.getComputedStyle(elem, null);
+    maxHeight = parseInt(computedStyle.height, 10);
+    maxWidth = parseInt(computedStyle.width, 10);
+    oldStyle = elem.style;
+
+    prevClass = "text-auto-size";
+    for (i = 0; i < FONT_SIZES.length; i++) {
+      fontSize = FONT_SIZES[i];
+      elem.style.height = "auto";
+      elem.style.width = "auto";
+      elem.classList.remove(prevClass);
+      elem.classList.add(fontSize);
+      elem.dataset.textClass = fontSize;
+      prevClass = fontSize;
+
+      if (elem.scrollHeight <= maxHeight &&
+          elem.scrollWidth <= maxWidth) {
+        break;
+      }
+    }
+    elem.style.height = "";
+    elem.style.width = "";
+
+    if (oldStyle) {
+      elem.style = oldStyle;
+    }
+  }
 
   global.setData = function (text, image, html, date) {
-    var tmpDiv, timeDiv;
+    var tmpDiv, timeDiv, resize, i;
     if (!html) {
       // HTML Contents overwrite all other contents, otherwise create html from text and image
       if (!!image) {
@@ -28,6 +59,10 @@
       tmpDiv.appendChild(timeDiv);
     } else {
       global.console.log("Invalid HTML...");
+    }
+    resize = cardDiv.querySelectorAll(".text-auto-size");
+    for (i = 0; i < resize.length; i++) {
+      autoResizeText(resize[i]);
     }
   };
 
