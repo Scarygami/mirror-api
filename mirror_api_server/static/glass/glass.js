@@ -43,7 +43,7 @@
   function Glass() {
     var
       startCard, shareCards = [], replyCard,
-      demoCards, demoShareEntities, templates, actions,
+      demoCards, demoContacts, templates, actions,
       mirror,
       emulator = this,
       mainDiv = doc.getElementById("glass"),
@@ -190,17 +190,19 @@
       ]
     };
 
-    demoShareEntities = {
+    demoContacts = {
       "items": [
         {
-          "imageUrls": ["https://lh3.googleusercontent.com/-ZO4sujjRC-A/UOIniBoro3I/AAAAAAAAx8s/HQ5EhSH8YuA/s1013/IMG_1720.jpg"],
+          "acceptTypes": ["image/*"],
           "displayName": "Fireworks",
-          "id": "fireworks"
+          "id": "fireworks",
+          "imageUrls": ["https://lh3.googleusercontent.com/-ZO4sujjRC-A/UOIniBoro3I/AAAAAAAAx8s/HQ5EhSH8YuA/s1013/IMG_1720.jpg"]
         },
         {
-          "imageUrls": ["https://lh4.googleusercontent.com/-qmJ8gxQYMkc/T0v4Ker0nRI/AAAAAAAATME/CzdYK65ZSuc/s1013/IMG_7706.JPG"],
+          "acceptTypes": ["image/*"],
           "displayName": "Android",
-          "id": "android"
+          "id": "android",
+          "imageUrls": ["https://lh4.googleusercontent.com/-qmJ8gxQYMkc/T0v4Ker0nRI/AAAAAAAATME/CzdYK65ZSuc/s1013/IMG_7706.JPG"]
         }
       ]
     };
@@ -211,6 +213,7 @@
         "action": "SHARE",
         "id": "SHARE",
         "values": [{
+          "state": "DEFAULT",
           "displayName": "Share",
           "iconUrl": "../images/share.png"
         }]
@@ -219,6 +222,7 @@
         "action": "REPLY",
         "id": "REPLY",
         "values": [{
+          "state": "DEFAULT",
           "displayName": "Reply",
           "iconUrl": "../images/reply.png"
         }]
@@ -227,6 +231,7 @@
         "action": "READ_ALOUD",
         "id": "READ_ALOUD",
         "values": [{
+          "state": "DEFAULT",
           "displayName": "Read aloud",
           "iconUrl": "../images/read_aloud.png"
         }]
@@ -363,6 +368,7 @@
           att = data.attachments[i];
           if (att.contentType.indexOf("image/") === 0) {
             this.image = att.contentUrl;
+            this.imageType = att.contentType;
             break;
           }
         }
@@ -378,7 +384,7 @@
       }
 
       this.createCardElements();
-      if (this.type !== cardType.CARD_BUNDLE_CARD && data.cardOptions && data.cardOptions.length > 0) {
+      if (this.type !== cardType.CARD_BUNDLE_CARD && data.menuItems && data.menuItems.length > 0) {
         this.createActionCards();
       }
       if (this.htmlPages && this.htmlPages.length > 0) {
@@ -410,6 +416,22 @@
         global.setTimeout(closeShare, 2000);
       }
 
+      function sendAction() {
+        var data = {};
+        data.collection = "timeline";
+        data.itemId = sharedCard.id;
+        data.operation = "SHARE";
+        data.value = me.id;
+        mirror.actions.insert({"resource": data}).execute(function (resp) {
+          console.log(resp);
+          if (resp.success) {
+            onSuccess();
+          } else {
+            onError();
+          }
+        });
+      }
+
       /**
        * TODO: Sharing Progress should be separate overlay which can be
        * animated in
@@ -422,16 +444,18 @@
       } else {
         if (sharedCard.localOnly) {
           data = {};
-          if (sharedCard.data.image) {
-            data.image = sharedCard.data.image;
+          if (sharedCard.image) {
+            data.attachments = [{contentType: sharedCard.imageType, contentUrl: sharedCard.image}];
           }
-          if (sharedCard.data.text) {
-            data.text = sharedCard.data.text;
+          if (sharedCard.text) {
+            data.text = sharedCard.text;
           }
-          if (sharedCard.data.cardOptions) {
-            data.cardOptions = sharedCard.data.cardOptions;
+          if (sharedCard.data.menuItems) {
+            data.menuItems = sharedCard.data.menuItems;
           }
-          if (data.image || data.text) {
+          data.recipients = [this.data];
+
+          if (data.attachments || data.text) {
             mirror.timeline.insert({"resource": data}).execute(function (resp) {
               var data;
               console.log(resp);
@@ -439,19 +463,7 @@
                 sharedCard.localOnly = false;
                 sharedCard.id = resp.id;
                 sharedCard.cardDiv.id = "c" + me.id;
-                data = {};
-                data.collection = "timeline";
-                data.itemId = sharedCard.id;
-                data.operation = "SHARE";
-                data.value = me.id;
-                mirror.actions.insert({"resource": data}).execute(function (resp) {
-                  console.log(resp);
-                  if (resp.success) {
-                    onSuccess();
-                  } else {
-                    onError();
-                  }
-                });
+                sendAction();
               } else {
                 onError();
               }
@@ -461,15 +473,12 @@
           }
 
         } else {
-          data = {};
-          data.collection = "timeline";
-          data.itemId = sharedCard.id;
-          data.operation = "SHARE";
-          data.value = this.id;
-          mirror.actions.insert({"resource": data}).execute(function (resp) {
+          sharedCard.data.recipients = sharedCard.data.recipients || [];
+          sharedCard.data.recipients.push(this.data);
+          mirror.timeline.update({"id": sharedCard.id, "resource": sharedCard.data}).execute(function (resp) {
             console.log(resp);
-            if (resp.success) {
-              onSuccess();
+            if (resp.id) {
+              sendAction();
             } else {
               onError();
             }
@@ -564,7 +573,7 @@
       case cardType.CONTENT_CARD:
       case cardType.HTML_BUNDLE_CARD:
       case cardType.CARD_BUNDLE_CARD:
-        if (this.htmlFrame) {
+        if (this.htmlFrame && this.htmlFrame.contentWindow && this.htmlFrame.contentWindow.updateDate) {
           if (this.date) {
             this.htmlFrame.contentWindow.updateDate(this.date.niceDate());
           } else {
@@ -656,6 +665,7 @@
 
     Card.prototype.update = function (data) {
       var i, l, att, tmpDate = data.displayDate || data.updated || data.created;
+      this.data = data;
       if (tmpDate) {
         this.date = new Date(tmpDate);
         this.updateDisplayDate();
@@ -669,11 +679,11 @@
           att = data.attachments[i];
           if (att.contentType.indexOf("image/") === 0) {
             this.image = att.contentUrl;
+            this.imageType = att.contentType;
             break;
           }
         }
       }
-      this.image = data.image;
       if (this.html) {
         // HTML overrides text and image in card, can't be mixed
         this.text = "";
@@ -813,10 +823,10 @@
     Card.prototype.createActionCards = function () {
       var i, l;
       this.actionCards = this.actionCards || [];
-      l = this.data.cardOptions.length;
+      l = this.data.menuItems.length;
       for (i = 0; i < l; i++) {
-        if (this.data.cardOptions[i].action) {
-          this.actionCards.push(new ActionCard(this.id + "_" + this.data.cardOptions[i].action, this, this.data.cardOptions[i]));
+        if (this.data.menuItems[i].action) {
+          this.actionCards.push(new ActionCard(this.id + "_" + this.data.menuItems[i].action, this, this.data.menuItems[i]));
         }
       }
     };
@@ -1019,10 +1029,8 @@
       this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
     };
 
-
     ClockCard.prototype.tap = function () {
-      this.parent.show();
-      this.hide();
+      emulator.switchToCard(this.cards[0]);
     };
 
 
@@ -1163,7 +1171,7 @@
             var card;
             me.textDiv.innerHTML = "";
             me.canvas.width = me.video.offsetWidth;
-            me.canvas.height = me.video.offsetHeight;
+            me.canvas.height = Math.floor(me.canvas.width / 16 * 9);
             me.ctx.drawImage(me.video, 0, 0);
             me.image = me.canvas.toDataURL("image/png");
             me.cardDiv.style.backgroundImage = "url(" + me.image + ")";
@@ -1174,7 +1182,7 @@
               cardType.CONTENT_CARD,
               "new_" + photoCount,
               startCard,
-              {image: me.image, when: new Date(), cardOptions: [{action: "SHARE"}]}
+              {attachments: [{contentType: "image/png", contentUrl: me.image}], created: new Date(), menuItems: [{action: "SHARE"}]}
             );
             card.localOnly = true;
             startCard.addCard(card);
@@ -1329,7 +1337,7 @@
       timer = global.setTimeout(timestep, 1000);
     };
 
-    function handleShareEntities(result) {
+    function handleContacts(result) {
       var i, l;
       if (result && result.items) {
         l = result.items.length;
@@ -1339,10 +1347,10 @@
       }
     }
 
-    function fetchShareEntities() {
-      mirror.shareEntities.list().execute(function (result) {
+    function fetchContacts() {
+      mirror.contacts.list().execute(function (result) {
         console.log(result);
-        handleShareEntities(result);
+        handleContacts(result);
       });
     }
 
@@ -1420,10 +1428,10 @@
       }
 
       if (global.glassDemoMode) {
-        handleShareEntities(demoShareEntities);
+        handleContacts(demoContacts);
         handleCards(demoCards);
       } else {
-        fetchShareEntities();
+        fetchContacts();
       }
 
       activeCard = startCard;

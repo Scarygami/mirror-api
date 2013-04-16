@@ -78,6 +78,21 @@ class TimelineItem(EndpointsModel):
     Since the when property is auto_now_add=True, Cards will document when
     they were inserted immediately after being stored.
     """
+
+    class TimelineContact(EndpointsModel):
+
+        class ContactType(messages.Enum):
+            INDIVIDUAL = 1
+            GROUP = 2
+
+        acceptTypes = ndb.StringProperty(repeated=True)
+        displayName = ndb.StringProperty()
+        id = ndb.StringProperty(required=True)
+        imageUrls = ndb.StringProperty(repeated=True)
+        phoneNumber = ndb.StringProperty()
+        source = ndb.StringProperty()
+        type = msgprop.EnumProperty(ContactType)
+
     _message_fields_schema = (
         "id",
         "attachments",
@@ -92,6 +107,7 @@ class TimelineItem(EndpointsModel):
         "isDeleted",
         "isPinned",
         "menuItems",
+        "recipients",
         "sourceItemId",
         "speakableText",
         "text",
@@ -113,6 +129,7 @@ class TimelineItem(EndpointsModel):
     isDeleted = ndb.BooleanProperty(default=False)
     isPinned = ndb.BooleanProperty(default=False)
     menuItems = ndb.LocalStructuredProperty(MenuItem, repeated=True)
+    recipients = ndb.LocalStructuredProperty(TimelineContact, repeated=True)
     sourceItemId = ndb.StringProperty()
     speakableText = ndb.TextProperty()
     text = ndb.StringProperty()
