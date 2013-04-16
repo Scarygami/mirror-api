@@ -26,7 +26,7 @@ from google.appengine.ext import endpoints
 from protorpc import remote
 from models import TimelineItem
 from models import MenuAction
-from models import ShareEntity
+from models import Contact
 from models import Subscription
 from models import Action
 from models import ActionResponse
@@ -100,52 +100,60 @@ class MirrorApi(remote.Service):
         card.put()
         return card
 
-    @ShareEntity.query_method(query_fields=("limit", "pageToken"),
-                              user_required=True,
-                              path="shareEntities", name="shareEntities.list")
-    def shareEntities_list(self, query):
-        """List all Share entities registered for the current user.
+    @Contact.query_method(query_fields=("limit", "pageToken"),
+                          user_required=True,
+                          path="contacts", name="contacts.list")
+    def contacts_list(self, query):
+        """List all Contacts registered for the current user."""
 
-        This isn't part of the actual Mirror API but necessary for the emulator part
-        to be able to display relevant Share options.
-        """
+        return query.filter(Contact.user == endpoints.get_current_user())
 
-        return query.filter(ShareEntity.user == endpoints.get_current_user())
+    @Contact.method(user_required=True,
+                    path="contacts", name="contacts.insert")
+    def contacts_insert(self, contact):
+        """Insert a new Contact for the current user."""
 
-    @ShareEntity.method(user_required=True,
-                        path="shareEntities", name="shareEntities.insert")
-    def shareEntities_insert(self, shareEntity):
-        """Insert a new ShareEntity for the current user."""
-
-        if shareEntity.id is None:
+        if contact.id is None:
             raise endpoints.BadRequestException("ID needs to be provided.")
-        if shareEntity.displayName is None:
+        if contact.displayName is None:
             raise endpoints.BadRequestException("displayName needs to be provided.")
-        if shareEntity.imageUrls is None or len(shareEntity.imageUrls) == 0:
+        if contact.imageUrls is None or len(contact.imageUrls) == 0:
             raise endpoints.BadRequestException("At least one imageUrl needs to be provided.")
 
-        if shareEntity.from_datastore:
-            name = shareEntity.key.string_id()
-            raise endpoints.BadRequestException("ShareEntity with name %s already exists." % name)
+        if contact.from_datastore:
+            name = contact.key.string_id()
+            raise endpoints.BadRequestException("Contact with id %s already exists." % name)
 
-        shareEntity.put()
-        return shareEntity
+        contact.put()
+        return contact
 
-    @ShareEntity.method(request_fields=("id",),
-                        response_fields=("id",),
-                        user_required=True,
-                        path="shareEntities/{id}", http_method="DELETE",
-                        name="shareEntities.delete")
-    def shareEntities_delete(self, shareEntity):
-        """Remove an existing ShareEntity for the current user."""
+    @Contact.method(request_fields=("id",),
+                    response_fields=("id",),
+                    user_required=True,
+                    path="contacts/{id}", http_method="DELETE",
+                    name="contacts.delete")
+    def contacts_delete(self, contact):
+        """Remove an existing Contact for the current user."""
 
-        if not shareEntity.from_datastore or shareEntity.user != endpoints.get_current_user():
-            raise endpoints.NotFoundException("shareEntity not found.")
+        if not contact.from_datastore or contact.user != endpoints.get_current_user():
+            raise endpoints.NotFoundException("Contact not found.")
 
-        shareEntity.key.delete()
+        contact.key.delete()
 
         # TODO: Check if a success HTTP code can be returned with an empty body
-        return shareEntity
+        return contact
+
+    @Contact.method(user_required=True,
+                    path="contacts/{id}", http_method="PUT",
+                    name="contacts.update")
+    def contacts_update(self, contact):
+        """Update Contact with ID for the current user"""
+
+        if not contact.from_datastore or contact.user != endpoints.get_current_user():
+            raise endpoints.NotFoundException("Card not found.")
+
+        contact.put()
+        return contact
 
     @Subscription.method(user_required=True, http_method="POST",
                          path="subscriptions", name="subscriptions.insert")

@@ -120,20 +120,39 @@ class TimelineItem(EndpointsModel):
     updated = EndpointsDateTimeProperty(auto_now=True)
 
 
-class ShareEntity(EndpointsModel):
-    """Model for share entities"""
+class Contact(EndpointsModel):
+    """A person or group that can be used as a creator or a contact."""
 
-    _message_fields_schema = ("id", "displayName", "imageUrls")
+    class ContactType(messages.Enum):
+        INDIVIDUAL = 1
+        GROUP = 2
 
+    _message_fields_schema = (
+        "id",
+        "acceptTypes",
+        "displayName",
+        "imageUrls",
+        "phoneNumber",
+        "priority",
+        "source",
+        "type"
+    )
+
+    user = EndpointsUserProperty(required=True, raise_unauthorized=True)
+
+    acceptTypes = ndb.StringProperty(repeated=True)
     displayName = ndb.StringProperty(required=True)
     imageUrls = ndb.StringProperty(repeated=True)
-    user = EndpointsUserProperty(required=True, raise_unauthorized=True)
+    phoneNumber = ndb.StringProperty()
+    priority = ndb.IntegerProperty(default=0)
+    source = ndb.StringProperty()
+    type = msgprop.EnumProperty(ContactType)
 
     def IdSet(self, value):
         if not isinstance(value, basestring):
             raise TypeError("ID must be a string.")
 
-        self.UpdateFromKey(ndb.Key("User", self.user.email(), ShareEntity, value))
+        self.UpdateFromKey(ndb.Key("User", self.user.email(), Contact, value))
 
     @EndpointsAliasProperty(setter=IdSet, required=True)
     def id(self):
