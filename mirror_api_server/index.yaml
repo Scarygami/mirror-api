@@ -1,7 +1,7 @@
 indexes:
 
-- kind: Card
+- kind: TimelineItem
   properties:
   - name: user
-  - name: when
+  - name: updated
     direction: desc

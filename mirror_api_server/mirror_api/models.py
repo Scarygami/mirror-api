@@ -150,7 +150,7 @@ class Subscription(EndpointsModel):
     collection = ndb.StringProperty(default="timeline")
     userToken = ndb.StringProperty(required=True)
     verifyToken = ndb.StringProperty(required=True)
-    operation = msgprop.EnumProperty(CardAction, repeated=True)
+    operation = msgprop.EnumProperty(MenuAction, repeated=True)
     callbackUrl = ndb.StringProperty(required=True)
 
 
@@ -163,7 +163,7 @@ class Action(messages.Message):
 
     collection = messages.StringField(1, default="timeline")
     itemId = messages.IntegerField(2, required=True)
-    operation = messages.EnumField(CardAction, 3, required=True)
+    operation = messages.EnumField(MenuAction, 3, required=True)
     value = messages.StringField(4)
 
 
