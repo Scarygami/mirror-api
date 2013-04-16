@@ -1,0 +1,549 @@
+/* Styling for wrapper (not part of the card content) */
+.card {
+  width: 640px;
+  height: 360px;
+  background-color: black;
+}
+
+#map-time-footer {
+  left: 320px;
+}
+
+/*--------------------------------------- */
+/* RESET */
+* {
+ margin: 0;
+ padding: 0;
+ border: 0;
+ font: inherit;
+ color: inherit;
+}
+
+/*--------------------------------------- */
+/* BASIC COMPONENTS */
+
+/* Base card size, colors, and fonts. */
+article {
+  width: 640px;
+  height: 360px;
+  overflow: hidden;
+  position: relative;
+
+  background-color: #000;
+  color: #fff;
+
+  font-family: "Roboto";
+  font-weight: 100;
+  font-size: 40px;
+  text-shadow: 0 1px 1px #000;
+}
+
+/* Main content area, excluding footer. */
+section {
+  margin: 40px 40px 0 40px;
+  padding: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 80px;
+  overflow: hidden;
+}
+
+/* Footer containing timestamp, auxiliary info. */
+footer {
+  margin: 0 40px 27px 40px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40px;
+
+  font-weight: 300;
+  font-size: 26px;
+  line-height: 1.4em;
+  overflow: hidden;
+}
+
+/* Force footer content to be single-line, ellipsized. */
+footer > div, footer > p, footer > time, footer > h1, footer > h2, footer > h3 {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+footer img {
+  padding: 0 10px 10px 10px;
+}
+
+footer img.left {
+  padding-left: 0;
+}
+
+footer img.right {
+  padding-right: 0;
+}
+
+/* Left panel content */
+figure {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 240px;
+  overflow: hidden;
+}
+
+/** If a figure is shown, offset the section and footer to the right. */
+figure ~ section {
+  left: 230px;
+}
+
+figure ~ footer {
+  left: 230px;
+}
+
+
+/*--------------------------------------- */
+/* ICONS */
+
+/* 30x30 icon size */
+img.icon-small {
+  width: 30px;
+  height: 30px;
+}
+
+/* For text sizes smaller than the icon, center the icon vertically. */
+.text-x-small img.icon-small {
+  vertical-align: -4px;
+}
+
+.text-small img.icon-small {
+  vertical-align: -3px;
+}
+
+
+/*--------------------------------------- */
+/* LISTS */
+
+ul {
+  list-style-type: none;
+}
+
+ol {
+  list-style-position: inside;
+}
+
+ul li, ol li {
+  border-bottom: 1px solid #333;
+  padding: 6px 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+ul.no-border li, ol.no-border li {
+  border-bottom: none;
+}
+
+/* Remove top padding for lists that are the first element in a section. */
+section > ul:first-child li:first-child, ol:first-child li:first-child {
+  padding-top: 0;
+}
+
+/* Remove bottom padding for lists that are the last element in a section. */
+section > ul:last-child li:last-child, ol:last-child li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+
+/*--------------------------------------- */
+/* TABLES */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+tr {
+  border-bottom: 1px solid #333;
+  padding: 0;
+}
+
+tr:last-child {
+  border-bottom: none;
+}
+
+table.no-border tr {
+  border-bottom: none;
+}
+
+td {
+  color: #fff;
+  padding: 12px 0.4em;
+  overflow: hidden;
+  vertical-align: baseline;
+}
+
+td:first-child {
+  padding-left: 0;
+}
+
+td:last-child {
+  padding-right: 0;
+}
+
+/* Remove top padding for tables that are the first element in a section. */
+section > table:first-child tr:first-child td, table:first-child th td {
+  padding-top: 0;
+}
+
+/* Remove bottom padding for tables that are the last element in a section. */
+table:last-child tr:last-child td {
+  padding-bottom: 0;
+}
+
+/* When justifying, align the leftmost column to the left, the rightmost column to the right
+   and everything else to the center. */
+table.align-justify {
+  text-align: center;
+}
+
+table.align-justify td:first-child {
+  text-align: left;
+}
+
+table.align-justify td:last-child {
+  text-align: right;
+}
+
+
+/*---------------------------------------
+/* MISC */
+
+hr {
+  clear: both;
+  margin: 8px 0 14px;
+  height: 0;
+  border-top: 1px solid #333;
+}
+
+
+/*--------------------------------------- */
+/* FLOATS */
+
+.left {
+  float: left;
+}
+
+.right {
+  float: right;
+}
+
+footer time {
+  float: right;
+}
+
+
+/*--------------------------------------- */
+/* TYPOGRAPHY */
+
+b, strong {
+  font-weight: 300;
+}
+
+i, em {
+  font-style: italic;
+}
+
+sup {
+  font-size: 0.5em;
+  line-height: 0.3em;
+  vertical-align: super;
+  padding-left: 0.1em;
+}
+
+sub {
+  font-size: 0.5em;
+  line-height: 0.3em;
+  vertical-align: baseline;
+  padding-left: 0.1em;
+}
+
+/* Alignment */
+.align-center {
+  text-align: center;
+}
+
+.align-left {
+  text-align: left;
+}
+
+.align-right {
+  text-align: right;
+}
+
+.align-justify {
+  text-align: justify;
+}
+
+/*
+  Text sizing. We use 5 sizes: 70px, 50px, 40px, 34px, 30px. We additionally have a 90px size for
+  very short, important strings and a 26px size for footers.
+ */
+.text-xx-large {
+  font-weight: 100;
+  font-size: 90px;
+  letter-spacing: -1px;
+  line-height: 1.2em;
+}
+
+.text-x-large {
+  font-weight: 100;
+  font-size: 70px;
+  letter-spacing: -1px;
+  line-height: 1.2em;
+}
+
+.text-large {
+  font-weight: 100;
+  font-size: 50px;
+  letter-spacing: 0;
+  line-height: 1.2em;
+}
+
+.text-normal {
+  font-weight: 100;
+  font-size: 40px;
+  letter-spacing: 0;
+  line-height: 1.2em;
+}
+
+.text-small {
+  font-weight: 100;
+  font-size: 34px;
+  letter-spacing: 0;
+  line-height: 1.2em;
+}
+
+.text-x-small {
+  font-weight: 100;
+  font-size: 30px;
+  letter-spacing: 1px;
+  line-height: 1.18em;
+}
+
+/* Footer-style text. */
+.text-minor {
+  font-weight: 300;
+  font-size: 26px;
+  line-height: 1.2em;
+}
+
+/* Detected by the javascript to automatically size text. */
+.text-auto-size {
+  width: 100%;
+  height: 100%;
+}
+
+/* Forces text onto a single line, ellipsized at the end. */
+.single-line {
+  height: 1.2em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+
+/*---------------------------------------
+/* LAYOUT */
+
+/* Grid boundary for all layouts. */
+[class^="layout-"] {
+  position: relative;
+  left: -29px;
+  right: 29px;
+  width: 618px;
+  height: 100%;
+  overflow: hidden;
+}
+
+[class^="layout-"]:after {
+  clear: both;
+}
+
+/* Div padding and borders for all layouts. */
+[class^="layout-"] > div {
+  float: left;
+  height: 100%;
+  padding: 10px 29px 10px 30px;
+  border-right: 1px solid #666;
+  overflow: hidden;
+}
+
+[class^="layout-"] > div:last-child {
+  border-right: none;
+  padding-right: 30px;
+}
+
+/* Allow the borders to be suppressed */
+[class^="layout-"].no-border > div {
+  border-right: none;
+  padding-right: 30px;
+}
+
+/* Layout with 2 equally-sized columns. */
+.layout-two-column > div {
+  width: 249px;
+}
+
+/* Layout with 3 equally-sized columns. */
+.layout-three-column > div {
+  width: 146px;
+}
+
+/* Layout where the 1st column is as wide as a <figure>, and the 2nd column fills the remainder. */
+.layout-figure > div:first-child {
+  width: 169px;
+}
+
+.layout-figure > div:nth-child(2) {
+  width: 329px;
+}
+
+/* Always suppress borders in the footer. */
+footer [class^="layout-"] > div {
+  border: none;
+  padding-right: 30px;
+}
+
+
+/*---------------------------------------
+/* COLORS */
+
+.red {
+  color: #c33;
+}
+
+.yellow {
+  color: #db1;
+}
+
+.green {
+  color: #9c3;
+}
+
+.blue {
+  color: #34a7ff;
+}
+
+.white {
+  color: #fff;
+}
+
+.gray {
+  color: #808080;
+}
+
+.muted {
+  color: #808080;
+}
+
+
+/*--------------------------------------- */
+/* Default template styling */
+
+/* Force text content to the top of the content area. */
+article:not([class]) .text-xx-large:first-child {
+  position: relative;
+  top: -16px;
+}
+
+article:not([class]) .text-x-large:first-child {
+  position: relative;
+  top: -14px;
+}
+
+article:not([class]) .text-large:first-child {
+  position: relative;
+  top: -8px;
+}
+
+article:not([class]) .text-normal:first-child {
+  position: relative;
+  top: -5px;
+}
+
+article:not([class]) .text-small:first-child {
+  position: relative;
+  top: -5px;
+}
+
+article:not([class]) .text-x-small:first-child {
+  position: relative;
+  top: -5px;
+}
+
+
+/*--------------------------------------- */
+/* Photo template styling */
+
+article.photo section {
+  top: 170px;
+  bottom: 80px;
+}
+
+/* Overlay gradient to allow text to be read over the image. */
+article.photo div.photo-overlay {
+  display: block;
+  position: absolute;
+  top: 108px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: -webkit-linear-gradient(rgba(0,0,0,0.0), rgba(0,0,0,0.9));
+}
+
+article.photo .text-x-large {
+  position: relative;
+  top: -10px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+article.photo .text-large {
+  position: relative;
+  top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+article.photo .text-normal {
+  position: relative;
+  top: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+article.photo .text-small {
+  position: relative;
+  top: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+article.photo .text-x-small {
+  position: relative;
+  top: -2px;
+  overflow: hidden;
+}
+
+article.photo section img.left {
+  margin-right: 10px;
+}
+
+article.photo section img.right {
+  margin-left: 10px;
+}

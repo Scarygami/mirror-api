@@ -113,18 +113,18 @@
           "id": 7
         },
         {
-          "html": "<b>Html Bundle Cards</b><br><p style=\"font-size: 40px\">have a cover page...</p>",
+          "html": "<article><section><p class=\"text-x-large\">Html Bundle Cards</p><p class=\"text-normal\">have a cover page...</p></section></article>",
           "htmlPages": [
-            "<p style=\"color: blue; text-align: left; font-weight: 300;\">...and...</p>",
-            "<p style=\"color: red; text-align: center; font-weight: 300;\">...several...</p>",
-            "<p style=\"color: green; text-align: right; font-weight: 300;\">...pages.</p>"
+            "<article><section><p class=\"text-normal align-left blue\">...and...</p></section></article>",
+            "<article><section><p class=\"text-normal align-center red\">...several...</p></section></article>",
+            "<article><section><p class=\"text-normal align-right green\">...pages.</p></section></article>"
           ],
           "cardOptions": [{"action": "SHARE"}],
           "when": "2013-04-12T15:36:41.000000",
           "id": 6
         },
         {
-          "html": "<ul style=\"font-size: 40px; margin-left: 30px;\"><li>Just</li><li>some</li><li>simple</li><li>html</li></ul><img src=\"http://cdn4.iconfinder.com/data/icons/gnome-desktop-icons-png/PNG/48/Gnome-Face-Smile-48.png\">",
+          "html": "<article><figure><img src=\"https://lh6.googleusercontent.com/-wS9sJ-3oHao/TRnf4MmmlvI/AAAAAAAABX4/BebMZPistPo/s967/2010_09_20+-+Moon.jpg\" style=\"width: 100%\"></figure><section><ul><li>Just</li><li>some</li><li>simple</li><li>html</li></ul></section></article>",
           "when": "2013-04-12T15:35:41.000000",
           "id": 5
         },
@@ -155,7 +155,7 @@
           "bundleId": 123
         },
         {
-          "html": "<p style=\"font-size: 40px\">...or maybe some <b style=\"color: blue\">HTML</b></p>",
+          "html": "<article><section><p class=\"text-normal align-center\">...or maybe some <b class=\"blue\">HTML</b></p></section></article>",
           "cardOptions": [{"action": "READ_ALOUD"}],
           "when": "2013-04-12T15:32:41.000000",
           "id": 2,
@@ -221,8 +221,6 @@
       "<div class=\"card_text\"></div>";
     templates[cardType.CONTENT_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
-      "<div class=\"card_text\"></div>" +
-      "<div class=\"card_date\"></div>" +
       "<div class=\"card_interface\"></div>";
     templates[cardType.ACTION_CARD] =
       "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div>";
@@ -243,8 +241,6 @@
       "<div class=\"card_text\"></div>";
     templates[cardType.HTML_BUNDLE_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
-      "<div class=\"card_text\"></div>" +
-      "<div class=\"card_date\"></div>" +
       "<img class=\"card_icon\" src=\"../images/corner.png\"></div>" +
       "<div class=\"card_interface\"></div>";
     templates[cardType.CARD_BUNDLE_CARD] = templates[cardType.HTML_BUNDLE_CARD];
@@ -538,8 +534,13 @@
       case cardType.CONTENT_CARD:
       case cardType.HTML_BUNDLE_CARD:
       case cardType.CARD_BUNDLE_CARD:
-        this.dateDiv.innerHTML = "";
-        if (this.date) { this.dateDiv.appendChild(doc.createTextNode(this.date.niceDate())); }
+        if (this.htmlFrame) {
+          if (this.date) {
+            this.htmlFrame.contentWindow.updateDate(this.date.niceDate());
+          } else {
+            this.htmlFrame.contentWindow.updateDate("");
+          }
+        }
         break;
       }
     };
@@ -591,19 +592,6 @@
       case cardType.CLOCK_CARD:
         this.cardDiv.classList.add("card_type_clock");
         break;
-      case cardType.CONTENT_CARD:
-      case cardType.HTML_BUNDLE_CARD:
-      case cardType.CARD_BUNDLE_CARD:
-        if (!!this.html) {
-          this.cardDiv.classList.add("card_type_html");
-        } else {
-          if (!!this.image) {
-            this.cardDiv.classList.add("card_type_image");
-          } else {
-            this.cardDiv.classList.add("card_type_text");
-          }
-        }
-        break;
       case cardType.ACTION_CARD:
         this.cardDiv.classList.add("card_type_action");
         break;
@@ -645,31 +633,21 @@
           this.updateDisplayDate();
         }
       }
-      if (this.html !== data.html) {
-        this.html = data.html || "";
-        this.htmlDiv.innerHTML = this.html;
-      }
+      this.html = data.html;
+      this.text = data.text;
+      this.image = data.image;
       if (this.html) {
         // HTML overrides text and image in card, can't be mixed
         this.text = "";
         this.image = undefined;
-        this.cardDiv.style.backgroundImage = "none";
-        this.textDiv.innerHTML = "";
-      } else {
-        if (this.text !== data.text) {
-          this.text = data.text || "";
-          this.textDiv.innerHTML = "";
-          this.textDiv.appendChild(doc.createTextNode(this.text));
+      }
+      if (this.htmlFrame) {
+        if (this.date) {
+          tmpDate = this.date.niceDate();
+        } else {
+          tmpDate = "";
         }
-        if (this.image !== data.image) {
-          if (data.image && !this.html) {
-            this.image = data.image;
-            this.cardDiv.style.backgroundImage = "url(" + this.image + ")";
-          } else {
-            this.image = undefined;
-            this.cardDiv.style.backgroundImage = "none";
-          }
-        }
+        this.htmlFrame.contentWindow.setData(this.text, this.image, this.html, tmpDate);
       }
       this.updateCardStyle();
     };
@@ -776,18 +754,14 @@
       case cardType.CARD_BUNDLE_CARD:
         this.htmlFrame = this.cardDiv.querySelector(".card_iframe");
         this.htmlFrame.onload = function () {
-          me.htmlDiv = me.htmlFrame.contentWindow.document.getElementById("html");
-          if (!!me.html) {
-            me.htmlDiv.innerHTML = me.html;
+          var tmpDate;
+          if (me.date) {
+            tmpDate = me.date.niceDate();
+          } else {
+            tmpDate = "";
           }
+          me.htmlFrame.contentWindow.setData(me.text, me.image, me.html, tmpDate);
         };
-        if (!!this.text) {
-          this.textDiv.appendChild(doc.createTextNode(this.text));
-        }
-        if (this.date) { this.dateDiv.appendChild(doc.createTextNode(this.date.niceDate())); }
-        if (this.image) {
-          this.cardDiv.style.backgroundImage = "url(" + this.image + ")";
-        }
         break;
 
       case cardType.SHARE_CARD:

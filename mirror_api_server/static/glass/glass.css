@@ -10,31 +10,6 @@ body {
   width: 100%;
 }
 
-body.inner {
-  background-color: transparent;
-}
-
-#html {
-  position: absolute;
-  width: 640px; height: 360px;
-  left: 0; top: 0;
-  padding: 10px 20px;
-  font-size: 70px;
-  overflow: hidden;
-  background-color: transparent;
-  color: rgba(255,255,255,0.8);
-  text-shadow: 0 1px 0px rgba(0,0,0,0.8);
-  font-family: "Roboto", Arial, sans-serif;
-  font-weight: 100;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  cursor: pointer;
-}
-
 .card {
   display: block;
   position: absolute;
@@ -158,22 +133,6 @@ body.inner {
 
 /** Card-type-specific Styles */
 
-.card_type_text > .card_iframe {
-  display: none;
-}
-
-.card_type_image {
-  background-size: cover;
-}
-
-.card_type_image > .card_iframe {
-  display: none;
-}
-
-.card_type_html > .card_text {
-  display: none;
-}
-
 .card_type_bundle > .card_icon {
   position: absolute;
   height: 40px;
@@ -181,12 +140,6 @@ body.inner {
   top: 0;
   right: 0;
   z-index: 50;
-}
-
-.card_type_image > .card_text {
-  background-color: rgba(0,0,0,0.4);
-  font-size: 2.4em;
-  font-style: italic;
 }
 
 .card_type_reply {
