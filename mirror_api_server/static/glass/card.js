@@ -20,7 +20,6 @@
       elem.style.width = "auto";
       elem.classList.remove(prevClass);
       elem.classList.add(fontSize);
-      elem.dataset.textClass = fontSize;
       prevClass = fontSize;
 
       if (elem.scrollHeight <= maxHeight &&
