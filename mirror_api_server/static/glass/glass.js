@@ -153,7 +153,7 @@
               "action": "CUSTOM",
               "values": [
                 {
-                  "state": "DEFAULT"
+                  "state": "DEFAULT",
                   "iconUrl": "http://cdn4.iconfinder.com/data/icons/gnome-desktop-icons-png/PNG/48/Gnome-Face-Smile-48.png",
                   "displayName": "Smile"
                 }
@@ -335,6 +335,7 @@
     };
 
     Card.prototype.init = function (type, id, parent, data) {
+      var tmpDate, i, l, att;
       data = data || {};
       this.cards = [];
       this.data = data;
@@ -350,12 +351,22 @@
       this.type = type;
       this.active = false;
       this.parent = parent;
-      if (data.when) {
-        this.date = new Date(data.when);
+      tmpDate = data.displayDate || data.updated || data.created;
+      if (tmpDate) {
+        this.date = new Date(tmpDate);
       } else {
         this.date = undefined;
       }
-      this.image = data.image;
+      if (data.attachments && data.attachments.length > 0) {
+        l = data.attachments.length;
+        for (i = 0; i < l; i++) {
+          att = data.attachments[i];
+          if (att.contentType.indexOf("image/") === 0) {
+            this.image = att.contentUrl;
+            break;
+          }
+        }
+      }
       if (data.imageUrls && data.imageUrls.length > 0) {
         this.image = data.imageUrls[0];
       }
@@ -644,16 +655,24 @@
     };
 
     Card.prototype.update = function (data) {
-      var tmpDate;
-      if (data.when) {
-        tmpDate = new Date(data.when);
-        if (this.date.getTime() !== tmpDate.getTime()) {
-          this.date = tmpDate;
-          this.updateDisplayDate();
-        }
+      var i, l, att, tmpDate = data.displayDate || data.updated || data.created;
+      if (tmpDate) {
+        this.date = new Date(tmpDate);
+        this.updateDisplayDate();
       }
       this.html = data.html;
       this.text = data.text;
+      this.image = undefined;
+      if (data.attachments && data.attachments.length > 0) {
+        l = data.attachments.length;
+        for (i = 0; i < l; i++) {
+          att = data.attachments[i];
+          if (att.contentType.indexOf("image/") === 0) {
+            this.image = att.contentUrl;
+            break;
+          }
+        }
+      }
       this.image = data.image;
       if (this.html) {
         // HTML overrides text and image in card, can't be mixed
