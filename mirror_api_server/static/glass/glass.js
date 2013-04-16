@@ -108,8 +108,9 @@
       "items": [
         {
           "text": "Just some text... easiest Card ever",
-          "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
-          "when": "2013-04-12T16:21:41.000000",
+          "menuItems": [{"action": "SHARE"}, {"action": "REPLY"}],
+          "created": "2013-04-12T16:21:41.000000",
+          "updated": "2013-04-12T16:21:41.000000",
           "id": 7
         },
         {
@@ -119,30 +120,40 @@
             "<article><section><p class=\"text-normal align-center red\">...several...</p></section></article>",
             "<article><section><p class=\"text-normal align-right green\">...pages.</p></section></article>"
           ],
-          "cardOptions": [{"action": "SHARE"}],
-          "when": "2013-04-12T15:36:41.000000",
+          "menuItems": [{"action": "SHARE"}],
+          "created": "2013-04-12T16:21:41.000000",
+          "updated": "2013-04-12T16:21:41.000000",
+          "displayDate": new Date(),
           "id": 6
         },
         {
           "html": "<article><figure><img src=\"https://lh6.googleusercontent.com/-wS9sJ-3oHao/TRnf4MmmlvI/AAAAAAAABX4/BebMZPistPo/s967/2010_09_20+-+Moon.jpg\" style=\"width: 100%\"></figure><section><ul><li>Just</li><li>some</li><li>simple</li><li>html</li></ul></section></article>",
-          "when": "2013-04-12T15:35:41.000000",
+          "created": "2013-04-12T15:35:41.000000",
+          "updated": "2013-04-16T15:35:41.000000",
           "id": 5
         },
         {
           "text": "Card Bundles can have mixed content, like an image...",
-          "image": "https://lh6.googleusercontent.com/-wS9sJ-3oHao/TRnf4MmmlvI/AAAAAAAABX4/BebMZPistPo/s967/2010_09_20+-+Moon.jpg",
-          "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
-          "when": "2013-04-12T15:34:41.000000",
+          "attachments": [
+            {
+              "contentType": "image/jpeg",
+              "contentUrl": "https://lh6.googleusercontent.com/-wS9sJ-3oHao/TRnf4MmmlvI/AAAAAAAABX4/BebMZPistPo/s967/2010_09_20+-+Moon.jpg"
+            }
+          ],
+          "menuItems": [{"action": "SHARE"}, {"action": "REPLY"}],
+          "created": "2013-04-12T15:34:41.000000",
+          "updated": "2013-04-12T15:34:41.000000",
           "bundleId": 123,
           "id": 3
         },
         {
           "text": "...or just text...",
-          "cardOptions": [
+          "menuItems": [
             {
               "action": "CUSTOM",
               "values": [
                 {
+                  "state": "DEFAULT"
                   "iconUrl": "http://cdn4.iconfinder.com/data/icons/gnome-desktop-icons-png/PNG/48/Gnome-Face-Smile-48.png",
                   "displayName": "Smile"
                 }
@@ -150,22 +161,30 @@
               "id": "smile"
             }
           ],
-          "when": "2013-04-12T15:33:41.000000",
+          "created": "2013-04-12T15:33:41.000000",
+          "updated": "2013-04-12T15:33:41.000000",
           "id": 4,
           "bundleId": 123
         },
         {
           "html": "<article><section><p class=\"text-normal align-center\">...or maybe some <b class=\"blue\">HTML</b></p></section></article>",
-          "cardOptions": [{"action": "READ_ALOUD"}],
-          "when": "2013-04-12T15:32:41.000000",
+          "menuItems": [{"action": "READ_ALOUD"}],
+          "created": "2013-04-12T15:32:41.000000",
+          "updated": "2013-04-12T15:32:41.000000",
           "id": 2,
           "bundleId": 123
         },
         {
           "text": "Sample Image Card",
-          "image": "https://lh5.googleusercontent.com/-L7PvYS3WeJQ/TvqB-VcRklI/AAAAAAAAP9U/eEBCbBNS9bY/s1012/IMG_0135-2.jpg",
-          "cardOptions": [{"action": "SHARE"}, {"action": "REPLY"}],
-          "when": "2013-04-12T15:31:41.000000",
+          "attachments": [
+            {
+              "contentType": "image/jpeg",
+              "contentUrl": "https://lh5.googleusercontent.com/-L7PvYS3WeJQ/TvqB-VcRklI/AAAAAAAAP9U/eEBCbBNS9bY/s1012/IMG_0135-2.jpg"
+            }
+          ],
+          "menuItems": [{"action": "SHARE"}, {"action": "REPLY"}],
+          "created": "2013-04-12T15:31:41.000000",
+          "updated": "2013-04-12T15:31:41.000000",
           "id": 1
         }
       ]
