@@ -24,6 +24,7 @@ import urllib2
 
 from google.appengine.ext import endpoints
 from protorpc import remote
+
 from models import TimelineItem
 from models import MenuAction
 from models import Operation
@@ -87,6 +88,7 @@ class MirrorApi(remote.Service):
 
         if not card.from_datastore or card.user != endpoints.get_current_user():
             raise endpoints.NotFoundException("Card not found.")
+
         return card
 
     @TimelineItem.method(user_required=True,
