@@ -57,37 +57,27 @@ class NotifyHandler(utils.BaseHandler):
         result = service.timeline().get(id=data["itemId"]).execute()
         logging.info(result)
 
-        shares = {}
-
-        # TOOD: find a better way to handle this...
+        instaglass_sepia = False
+        add_a_cat = False
 
         if "recipients" in result:
             for rec in result["recipients"]:
                 if rec["id"] == "instaglass_sepia":
-                    if not "instaglass" in shares:
-                        shares["instaglass"] = []
-                    if not "sepia" in shares["instaglass"]:
-                        shares["instaglass"].append("sepia")
-                    break
+                    instaglass_sepia = True
                 if rec["id"] == "add_a_cat":
-                    if not "add_a_cat" in shares:
-                        shares["add_a_cat"] = ["x"]
-                    break
+                    add_a_cat = True
 
-        for share in shares:
-            if share == "instaglass":
-                logging.info("Instaglass")
-                for method in shares[share]:
-                    new_item = instaglass_image(result, method)
-                    if new_item is not None:
-                        result = service.timeline().insert(body=new_item).execute()
-                        logging.info(result)
-            if share == "add_a_cat":
-                logging.info("Add a cat")
-                new_item = cat_image(result)
-                if new_item is not None:
-                    result = service.timeline().insert(body=new_item).execute()
-                    logging.info(result)
+        if instaglass_sepia:
+            new_item = instaglass_image(result, "sepia")
+            if new_item is not None:
+                result = service.timeline().insert(body=new_item).execute()
+                logging.info(result)
+
+        if add_a_cat:
+            new_item = cat_image(result)
+            if new_item is not None:
+                result = service.timeline().insert(body=new_item).execute()
+                logging.info(result)
 
 
 NOTIFY_ROUTES = [
