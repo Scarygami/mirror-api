@@ -26,9 +26,9 @@ import webapp2
 
 from auth import AUTH_ROUTES
 from glass import GLASS_ROUTES
-from instaglass import INSTAGLASS_ROUTES
+from notify import NOTIFY_ROUTES
 from service import SERVICE_ROUTES
 
-ROUTES = (AUTH_ROUTES + GLASS_ROUTES + SERVICE_ROUTES + INSTAGLASS_ROUTES)
+ROUTES = (AUTH_ROUTES + GLASS_ROUTES + SERVICE_ROUTES + NOTIFY_ROUTES)
 
 app = webapp2.WSGIApplication(ROUTES, debug=True, config=config)

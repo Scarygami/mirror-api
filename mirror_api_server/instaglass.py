@@ -13,21 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""RequestHandlers for Instaglass requests"""
+"""Methods for Instaglass service"""
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
-import utils
-from auth import get_auth_service
-
-import json
 import logging
 import Image
 import ImageOps
 import cStringIO
 import re
-
-from google.appengine.ext import ndb
 
 
 def make_linear_ramp(white):
@@ -66,79 +60,41 @@ def apply_sepia_filter(image):
     return image
 
 
-class InstaglassHandler(utils.BaseHandler):
-    def post(self):
-        """Callback for Timeline updates."""
-        message = self.request.body
-        data = json.loads(message)
-        logging.info(data)
+def handle_image(item, method):
+    """Callback for Timeline updates."""
 
-        self.response.status = 200
+    if method != "sepia":
+        logging.info("Unsupported method")
+        return None
 
-        gplus_id = data["userToken"]
-        verifyToken = data["verifyToken"]
-        user = ndb.Key("User", gplus_id).get()
-        if user is None or user.verifyToken != verifyToken:
-            logging.info("Wrong user")
-            return
+    image = None
+    if "attachments" in item:
+        for att in item["attachments"]:
+            if att["contentType"].startswith("image/"):
+                image = att["contentUrl"]
+                break
 
-        if data["operation"] != "UPDATE" or data["userActions"][0]["type"] != "SHARE":
-            logging.info("Wrong operation")
-            return
+    if image is None:
+        logging.info("No suitable attachment")
+        return None
 
-        service = get_auth_service(gplus_id)
+    if not image.startswith("data:image"):
+        logging.info("Can only work with data-uri")
+        return None
 
-        if service is None:
-            logging.info("No valid credentials")
-            return
+    img_data = re.search(r'base64,(.*)', image).group(1)
+    tempimg = cStringIO.StringIO(img_data.decode('base64'))
+    im = Image.open(tempimg)
+    new_im = apply_sepia_filter(im)
 
-        result = service.timeline().get(id=data["itemId"]).execute()
-        logging.info(result)
+    f = cStringIO.StringIO()
+    new_im.save(f, "JPEG")
+    content = f.getvalue()
+    f.close()
+    data_uri = "data:image/jpeg;base64," + content.encode("base64").replace("\n", "")
 
-        shareType = None
-        if "recipients" in result:
-            for rec in result["recipients"]:
-                if rec["id"] == "instaglass_sepia":
-                    shareType = "sepia"
-                    break
+    new_item = {}
+    new_item["attachments"] = [{"contentType": "image/jpeg", "contentUrl": data_uri}]
+    new_item["menuItems"] = [{"action": "SHARE"}]
 
-        if shareType is None:
-            logging.info("Wrong share ID")
-            return
-
-        image = None
-        if "attachments" in result:
-            for att in result["attachments"]:
-                if att["contentType"].startswith("image/"):
-                    image = att["contentUrl"]
-                    break
-
-        if image is None:
-            logging.info("No suitable attachment")
-            return
-
-        if not image.startswith("data:image"):
-            logging.info("Can only work with data-uri")
-            return
-
-        img_data = re.search(r'base64,(.*)', image).group(1)
-        tempimg = cStringIO.StringIO(img_data.decode('base64'))
-        im = Image.open(tempimg)
-        new_im = apply_sepia_filter(im)
-
-        f = cStringIO.StringIO()
-        new_im.save(f, "JPEG")
-        content = f.getvalue()
-        f.close()
-        data_uri = "data:image/jpeg;base64," + content.encode("base64").replace("\n", "")
-
-        body = {}
-        body["attachments"] = [{"contentType": "image/jpeg", "contentUrl": data_uri}]
-        body["menuItems"] = [{"action": "SHARE"}]
-        result = service.timeline().insert(body=body).execute()
-        logging.info(result)
-
-
-INSTAGLASS_ROUTES = [
-    ("/timeline_update", InstaglassHandler)
-]
+    return new_item
