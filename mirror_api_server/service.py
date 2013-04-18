@@ -13,6 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""RequestHandlers for Glass emulator and Demo services"""
+
+__author__ = 'scarygami@gmail.com (Gerwin Sturm)'
+
+# Add the library location to the path
+import sys
+sys.path.insert(0, 'lib')
+
 import random
 import string
 import httplib2
@@ -370,15 +378,18 @@ class UpdateHandler(BaseHandler):
         verifyToken = data["verifyToken"]
         user = ndb.Key("User", gplus_id).get()
         if user is None or user.verifyToken != verifyToken:
+            logging.info("Wrong user")
             return
 
         if data["operation"] != "UPDATE" or data["userActions"][0]["type"] != "SHARE":
+            logging.info("Wrong operation")
             return
 
         storage = StorageByKeyName(User, gplus_id, "credentials")
         credentials = storage.get()
 
         if credentials is None:
+            logging.info("No credentials")
             return
 
         http = httplib2.Http()
