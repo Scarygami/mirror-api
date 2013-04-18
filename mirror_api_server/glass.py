@@ -25,6 +25,7 @@ import random
 import string
 
 from apiclient.discovery import build
+from google.appengine.api import channel
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 
@@ -95,62 +96,10 @@ class GlassConnectHandler(utils.BaseHandler):
             self.response.out.write(utils.createError(401, "Token's client ID does not match the app's client ID"))
             return
 
-        self.session["gplus_id"] = gplus_id
-        storage = StorageByKeyName(User, gplus_id, "credentials")
-        stored_credentials = storage.get()
-        if stored_credentials is not None:
-            self.response.status = 200
-            self.response.out.write(utils.createMessage("Current user is already connected."))
-            return
+        token = channel.create_channel(result["email"])
 
-        try:
-            # Create a new authorized API client.
-            http = httplib2.Http()
-            http = credentials.authorize(http)
-            service = build(
-                "mirror", "v1",
-                discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest",
-                http=http
-            )
-
-            # Register contacts
-            body = {}
-            body["acceptTypes"] = ["image/*"]
-            body["id"] = "instaglass_sepia"
-            body["displayName"] = "Sepia"
-            body["imageUrls"] = ["https://mirror-api.appspot.com/images/sepia.jpg"]
-            result = service.contacts().insert(body=body).execute()
-            logging.info(result)
-
-            # Register subscription
-            verifyToken = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(32))
-            body = {}
-            body["collection"] = "timeline"
-            body["operation"] = "UPDATE"
-            body["userToken"] = gplus_id
-            body["verifyToken"] = verifyToken
-            body["callbackUrl"] = config.base_url + "/timeline_update"
-            result = service.subscriptions().insert(body=body).execute()
-            logging.info(result)
-
-            # Send welcome message
-            body = {}
-            body["text"] = "Welcome to Instaglass!"
-            body["attachments"] = [{"contentType": "image/jpeg", "contentUrl": "https://mirror-api.appspot.com/images/sepia.jpg"}]
-            result = service.timeline().insert(body=body).execute()
-            logging.info(result)
-        except AccessTokenRefreshError:
-            self.response.status = 500
-            self.response.out.write(createError(500, "Failed to refresh access token."))
-            return
-
-        # Store the access, refresh token and verify token
-        storage.put(credentials)
-        user = ndb.Key("User", gplus_id).get()
-        user.verifyToken = verifyToken
-        user.put()
         self.response.status = 200
-        self.response.out.write(createMessage("Successfully connected user."))
+        self.response.out.write(utils.createMessage({"token": token}))
 
 GLASS_ROUTES = [
     ("/glass/connect", GlassConnectHandler),

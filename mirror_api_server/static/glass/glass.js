@@ -49,7 +49,7 @@
       mainDiv = doc.getElementById("glass"),
       activeCard,
       timer, running = false,
-      recognition, mouseX, mouseY, glassevent, cardType, Card, ActionCard, ClockCard, ReplyCard, CameraCard, lastCardSync, timestep,
+      recognition, mouseX, mouseY, glassevent, cardType, Card, ActionCard, ClockCard, ReplyCard, CameraCard, timestep,
       photoCount = 0, Tween;
 
     /**
@@ -1320,18 +1320,10 @@
       });
     }
 
-    lastCardSync = 0;
-    /** Called every 1s - use to schedule updates etc **/
+    /** Called every 1s - use to update timestamps etc **/
     timestep = function () {
-      var now = (new Date());
-
       // Keep clock up to date
       activeCard.updateDisplayDate();
-
-      if (!global.glassDemoMode && ((now - lastCardSync) > 30000)) {
-        lastCardSync = new Date();
-        fetchCards();
-      }
 
       timer = global.setTimeout(timestep, 1000);
     };
@@ -1439,29 +1431,106 @@
       this.setupEvents();
     };
 
+    this.openChannel = function (token) {
+      var channel, socket;
+      channel = new global.goog.appengine.Channel(token);
+      socket = channel.open();
+      socket.onopen = function (e) {
+        console.log("Channel connected");
+        fetchCards();
+      };
+      socket.onmessage = function (message) {
+        var data;
+        if (message && message.data) {
+          data = JSON.parse(message.data);
+          if (data.data) {
+            fetchCards();
+          }
+        }
+      };
+      socket.onerror = function (e) {
+        console.log("Channel error", e);
+      };
+      socket.onclose = function () {
+        console.log("Channel closed");
+      };
+    };
+
     this.initialize();
   }
 
-  global.onSignInCallback = function (authResult) {
-    if (authResult.access_token) {
-      global.gapi.client.load("mirror", "v1", function () {
-        doc.getElementById("signin").style.display = "none";
-        doc.getElementById("signout").style.display = "block";
-        doc.getElementById("glass").style.display = "block";
-        global.glassapp = global.glassapp || new Glass();
-        global.glassapp.start();
-      }, global.discoveryUrl);
-    } else if (authResult.error) {
-      console.log("There was an error: " + authResult.error);
-      doc.getElementById("signin").style.display = "block";
-      doc.getElementById("signout").style.display = "none";
-      doc.getElementById("glass").style.display = "none";
-    }
-  };
+  function ConnectService() {
 
-  global.disconnectCallback = function (data) {
-    console.log(data);
-  };
+    var state;
+
+    function connect(id, code) {
+      var xhr;
+
+      xhr = new global.XMLHttpRequest();
+      xhr.onreadystatechange = function () {
+        var response;
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            console.log("Success: " + xhr.responseText);
+            response = JSON.parse(xhr.responseText);
+            if (response.message && response.message.token) {
+              doc.getElementById("signin").style.display = "none";
+              doc.getElementById("signout").style.display = "block";
+              doc.getElementById("glass").style.display = "block";
+              global.glassapp = global.glassapp || new Glass();
+              global.glassapp.start();
+              global.glassapp.openChannel(response.message.token);
+            }
+          } else {
+            console.log("Error setting up Channel: " + xhr.responseText);
+          }
+        }
+      };
+
+      xhr.open("POST", "/glass/connect?state=" + state + "&gplus_id=" + id, true);
+      xhr.setRequestHeader("Content-Type", "application/octet-stream; charset=utf-8");
+      xhr.send(code);
+    }
+
+    this.connectCallback = function (authResult) {
+      if (authResult.access_token) {
+        global.gapi.client.load("mirror", "v1", function () {
+          global.gapi.client.load("plus", "v1", function () {
+            global.gapi.client.plus.people.get({"userId": "me"}).execute(function (result) {
+              if (result.error) {
+                console.log("There was an error: " + result.error);
+                doc.getElementById("signin").style.display = "block";
+                doc.getElementById("signout").style.display = "none";
+                doc.getElementById("glass").style.display = "none";
+              } else {
+                connect(result.id, authResult.code);
+              }
+            });
+          });
+        }, global.discoveryUrl);
+      } else if (authResult.error) {
+        console.log("There was an error: " + authResult.error);
+        doc.getElementById("signin").style.display = "block";
+        doc.getElementById("signout").style.display = "none";
+        doc.getElementById("glass").style.display = "none";
+      }
+    };
+
+    this.disconnectCallback = function (data) {
+      console.log(data);
+    };
+
+    this.setState = function (s) {
+      if (!state) {
+        state = s;
+      } else {
+        console.log("State variable already set!");
+      }
+    };
+  }
+
+  global.connectService = new ConnectService();
+  global.onSignInCallback = global.connectService.connectCallback;
 
   global.onload = function () {
     if (global.glassDemoMode) {
