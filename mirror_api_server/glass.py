@@ -24,7 +24,6 @@ import json
 import random
 import string
 
-from apiclient.discovery import build
 from google.appengine.api import channel
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError

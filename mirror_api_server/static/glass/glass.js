@@ -1313,10 +1313,18 @@
     }
 
     function fetchCards() {
-      timer = undefined;
       mirror.timeline.list().execute(function (result) {
         console.log(result);
         handleCards(result);
+      });
+    }
+
+    function fetchCard(id) {
+      mirror.timeline.get({"id": id}).execute(function (result) {
+        console.log(result);
+        if (!result.error) {
+          handleCards({"items": [result]});
+        }
       });
     }
 
@@ -1443,8 +1451,8 @@
         var data;
         if (message && message.data) {
           data = JSON.parse(message.data);
-          if (data.data) {
-            fetchCards();
+          if (data.id) {
+            fetchCard(data.id);
           }
         }
       };
