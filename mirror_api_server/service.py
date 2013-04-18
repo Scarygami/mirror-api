@@ -64,7 +64,7 @@ class ConnectHandler(utils.BaseHandler):
 
         if state != self.session.get("state"):
             self.response.status = 401
-            self.response.out.write(createError(401, "Invalid state parameter"))
+            self.response.out.write(utils.createError(401, "Invalid state parameter"))
             return
 
         try:
@@ -73,7 +73,7 @@ class ConnectHandler(utils.BaseHandler):
             credentials = oauth_flow.step2_exchange(code)
         except FlowExchangeError:
             self.response.status = 401
-            self.response.out.write(createError(401, "Failed to upgrade the authorization code."))
+            self.response.out.write(utils.createError(401, "Failed to upgrade the authorization code."))
             return
 
         # Check that the access token is valid.
@@ -91,13 +91,13 @@ class ConnectHandler(utils.BaseHandler):
         # Verify that the access token is used for the intended user.
         if result["user_id"] != gplus_id:
             self.response.status = 401
-            self.response.out.write(createError(401, "Token's user ID doesn't match given user ID."))
+            self.response.out.write(utils.createError(401, "Token's user ID doesn't match given user ID."))
             return
 
         # Verify that the access token is valid for this app.
         if result['issued_to'] != utils.CLIENT_ID:
             self.response.status = 401
-            self.response.out.write(createError(401, "Token's client ID does not match the app's client ID"))
+            self.response.out.write(utils.createError(401, "Token's client ID does not match the app's client ID"))
             return
 
         self.session["gplus_id"] = gplus_id
@@ -105,7 +105,7 @@ class ConnectHandler(utils.BaseHandler):
         stored_credentials = storage.get()
         if stored_credentials is not None:
             self.response.status = 200
-            self.response.out.write(createMessage("Current user is already connected."))
+            self.response.out.write(utils.createMessage("Current user is already connected."))
             return
 
         try:
@@ -146,7 +146,7 @@ class ConnectHandler(utils.BaseHandler):
             logging.info(result)
         except AccessTokenRefreshError:
             self.response.status = 500
-            self.response.out.write(createError(500, "Failed to refresh access token."))
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
             return
 
         # Store the access, refresh token and verify token
@@ -155,7 +155,7 @@ class ConnectHandler(utils.BaseHandler):
         user.verifyToken = verifyToken
         user.put()
         self.response.status = 200
-        self.response.out.write(createMessage("Successfully connected user."))
+        self.response.out.write(utils.createMessage("Successfully connected user."))
 
 
 class DisconnectHandler(utils.BaseHandler):
@@ -171,7 +171,7 @@ class DisconnectHandler(utils.BaseHandler):
         credentials = storage.get()
         if credentials is None:
             self.response.status = 401
-            self.response.out.write(createError(401, "Current user not connected."))
+            self.response.out.write(utils.createError(401, "Current user not connected."))
             return
 
         # Deregister contacts and subscriptions
@@ -208,11 +208,11 @@ class DisconnectHandler(utils.BaseHandler):
         if result["status"] == "200":
             # Reset the user's session.
             self.response.status = 200
-            self.response.out.write(createMessage("Successfully disconnected user."))
+            self.response.out.write(utils.createMessage("Successfully disconnected user."))
         else:
             # For whatever reason, the given token was invalid.
             self.response.status = 400
-            self.response.out.write(createError(400, "Failed to revoke token for given user."))
+            self.response.out.write(utils.createError(400, "Failed to revoke token for given user."))
 
 
 class ListHandler(utils.BaseHandler):
@@ -227,7 +227,7 @@ class ListHandler(utils.BaseHandler):
 
         if credentials is None:
             self.response.status = 401
-            self.response.out.write(createError(401, "Current user not connected."))
+            self.response.out.write(utils.createError(401, "Current user not connected."))
             return
         try:
             # Create a new authorized API client.
@@ -245,7 +245,7 @@ class ListHandler(utils.BaseHandler):
             self.response.out.write(json.dumps(result))
         except AccessTokenRefreshError:
             self.response.status = 500
-            self.response.out.write(createError(500, "Failed to refresh access token."))
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
 
 
 class NewCardHandler(utils.BaseHandler):
@@ -260,7 +260,7 @@ class NewCardHandler(utils.BaseHandler):
 
         if credentials is None:
             self.response.status = 401
-            self.response.out.write(createError(401, "Current user not connected."))
+            self.response.out.write(utils.createError(401, "Current user not connected."))
             return
 
         message = self.request.body
@@ -289,7 +289,7 @@ class NewCardHandler(utils.BaseHandler):
             self.response.out.write(json.dumps(result))
         except AccessTokenRefreshError:
             self.response.status = 500
-            self.response.out.write(createError(500, "Failed to refresh access token."))
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
 
 
 def make_linear_ramp(white):
