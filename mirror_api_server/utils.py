@@ -23,6 +23,8 @@ import os
 import webapp2
 
 from google.appengine.api.app_identity import get_application_id
+from google.appengine.ext import ndb
+from oauth2client.appengine import CredentialsNDBProperty
 from webapp2_extras import sessions
 from webapp2_extras.appengine import sessions_memcache
 
@@ -65,3 +67,8 @@ class BaseHandler(webapp2.RequestHandler):
     @webapp2.cached_property
     def session(self):
         return self.session_store.get_session(name='mirror_session', factory=sessions_memcache.MemcacheSessionFactory)
+
+
+class User(ndb.Model):
+    verifyToken = ndb.StringProperty()
+    credentials = CredentialsNDBProperty()

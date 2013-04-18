@@ -24,9 +24,10 @@ sys.path.insert(0, 'lib')
 from utils import config
 import webapp2
 
+from auth import AUTH_ROUTES
 from glass import GLASS_ROUTES
 from service import SERVICE_ROUTES
 
-ROUTES = (GLASS_ROUTES + SERVICE_ROUTES)
+ROUTES = (AUTH_ROUTES + GLASS_ROUTES + SERVICE_ROUTES)
 
 app = webapp2.WSGIApplication(ROUTES, debug=True, config=config)

@@ -100,6 +100,7 @@ class GlassConnectHandler(utils.BaseHandler):
         self.response.status = 200
         self.response.out.write(utils.createMessage({"token": token}))
 
+
 GLASS_ROUTES = [
     ("/glass/connect", GlassConnectHandler),
     ("/glass/", GlassHandler)
