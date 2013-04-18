@@ -13,21 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""RequestHandlers for Glass emulator and Demo services"""
+"""RequestHandlers for Demo services"""
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
-# Add the library location to the path
-import sys
-sys.path.insert(0, 'lib')
+import utils
 
 import random
 import string
 import httplib2
-import os
-import webapp2
 import json
-import jinja2
 import logging
 import Image
 import ImageOps
@@ -36,36 +31,11 @@ import re
 
 from apiclient.discovery import build
 from google.appengine.ext import ndb
-from google.appengine.api.app_identity import get_application_id
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 from oauth2client.appengine import CredentialsNDBProperty
 from oauth2client.appengine import StorageByKeyName
-from webapp2_extras import sessions
-from webapp2_extras.appengine import sessions_memcache
-
-JINJA = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file__)))
-
-appname = get_application_id()
-base_url = "https://" + appname + ".appspot.com"
-discovery_url = base_url + "/_ah/api"
-
-config = {}
-config["webapp2_extras.sessions"] = {
-    "secret_key": "ajksdlj1029jlksndajsaskd7298hkajsbdkaukjassnkjankj",
-}
-
-with open("client_secrets.json", "r") as fh:
-    CLIENT_ID = json.load(fh)["web"]["client_id"]
-
-
-def createError(code, message):
-    return json.dumps({"error": {"code": code, "message": message}})
-
-
-def createMessage(message):
-    return json.dumps({"message": message})
 
 
 class User(ndb.Model):
@@ -73,38 +43,15 @@ class User(ndb.Model):
     credentials = CredentialsNDBProperty()
 
 
-class BaseHandler(webapp2.RequestHandler):
-    def dispatch(self):
-        # Get a session store for this request.
-        self.session_store = sessions.get_store(request=self.request)
-
-        try:
-            # Dispatch the request.
-            webapp2.RequestHandler.dispatch(self)
-        finally:
-            # Save all sessions.
-            self.session_store.save_sessions(self.response)
-
-    @webapp2.cached_property
-    def session(self):
-        return self.session_store.get_session(name='mirror_session', factory=sessions_memcache.MemcacheSessionFactory)
-
-
-class IndexHandler(BaseHandler):
+class IndexHandler(utils.BaseHandler):
     def get(self):
-        template = JINJA.get_template("templates/service.html")
+        template = utils.JINJA.get_template("templates/service.html")
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
         self.session["state"] = state
-        self.response.out.write(template.render({"client_id": CLIENT_ID, "state": state}))
+        self.response.out.write(template.render({"client_id": utils.CLIENT_ID, "state": state}))
 
 
-class GlassHandler(BaseHandler):
-    def get(self):
-        template = JINJA.get_template("templates/glass.html")
-        self.response.out.write(template.render({"client_id": CLIENT_ID, "discovery_url": discovery_url}))
-
-
-class ConnectHandler(BaseHandler):
+class ConnectHandler(utils.BaseHandler):
     def post(self):
         """Exchange the one-time authorization code for a token and
         store the token in the session."""
@@ -148,7 +95,7 @@ class ConnectHandler(BaseHandler):
             return
 
         # Verify that the access token is valid for this app.
-        if result['issued_to'] != CLIENT_ID:
+        if result['issued_to'] != utils.CLIENT_ID:
             self.response.status = 401
             self.response.out.write(createError(401, "Token's client ID does not match the app's client ID"))
             return
@@ -165,7 +112,11 @@ class ConnectHandler(BaseHandler):
             # Create a new authorized API client.
             http = httplib2.Http()
             http = credentials.authorize(http)
-            service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
+            service = build(
+                "mirror", "v1",
+                discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest",
+                http=http
+            )
 
             # Register contacts
             body = {}
@@ -183,7 +134,7 @@ class ConnectHandler(BaseHandler):
             body["operation"] = "UPDATE"
             body["userToken"] = gplus_id
             body["verifyToken"] = verifyToken
-            body["callbackUrl"] = base_url + "/timeline_update"
+            body["callbackUrl"] = utils.base_url + "/timeline_update"
             result = service.subscriptions().insert(body=body).execute()
             logging.info(result)
 
@@ -207,7 +158,7 @@ class ConnectHandler(BaseHandler):
         self.response.out.write(createMessage("Successfully connected user."))
 
 
-class DisconnectHandler(BaseHandler):
+class DisconnectHandler(utils.BaseHandler):
     def post(self):
         """Revoke current user's token and reset their session."""
 
@@ -226,7 +177,11 @@ class DisconnectHandler(BaseHandler):
         # Deregister contacts and subscriptions
         http = httplib2.Http()
         http = credentials.authorize(http)
-        service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
+        service = build(
+            "mirror", "v1",
+            discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest",
+            http=http
+        )
 
         result = service.contacts().list().execute()
         logging.info(result)
@@ -260,7 +215,7 @@ class DisconnectHandler(BaseHandler):
             self.response.out.write(createError(400, "Failed to revoke token for given user."))
 
 
-class ListHandler(BaseHandler):
+class ListHandler(utils.BaseHandler):
     def get(self):
         """Retrieve timeline cards for the current user."""
 
@@ -278,7 +233,11 @@ class ListHandler(BaseHandler):
             # Create a new authorized API client.
             http = httplib2.Http()
             http = credentials.authorize(http)
-            service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
+            service = build(
+                "mirror", "v1",
+                discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest",
+                http=http
+            )
 
             # Retrieve timeline cards and return as reponse
             result = service.timeline().list().execute()
@@ -289,7 +248,7 @@ class ListHandler(BaseHandler):
             self.response.out.write(createError(500, "Failed to refresh access token."))
 
 
-class NewCardHandler(BaseHandler):
+class NewCardHandler(utils.BaseHandler):
     def post(self):
         """Create a new timeline card for the current user."""
 
@@ -318,7 +277,11 @@ class NewCardHandler(BaseHandler):
             # Create a new authorized API client.
             http = httplib2.Http()
             http = credentials.authorize(http)
-            service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
+            service = build(
+                "mirror", "v1",
+                discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest",
+                http=http
+            )
 
             # Retrieve timeline cards and return as reponse
             result = service.timeline().insert(body=body).execute()
@@ -365,7 +328,7 @@ def apply_sepia_filter(image):
     return image
 
 
-class UpdateHandler(BaseHandler):
+class UpdateHandler(utils.BaseHandler):
     def post(self):
         """Callback for Timeline updates."""
         message = self.request.body
@@ -394,7 +357,11 @@ class UpdateHandler(BaseHandler):
 
         http = httplib2.Http()
         http = credentials.authorize(http)
-        service = build("mirror", "v1", discoveryServiceUrl=discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest", http=http)
+        service = build(
+            "mirror", "v1",
+            discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest",
+            http=http
+        )
 
         result = service.timeline().get(id=data["itemId"]).execute()
         logging.info(result)
@@ -443,14 +410,11 @@ class UpdateHandler(BaseHandler):
         logging.info(result)
 
 
-app = webapp2.WSGIApplication(
-    [
-        ("/", IndexHandler),
-        ("/glass/", GlassHandler),
-        ("/connect", ConnectHandler),
-        ("/disconnect", DisconnectHandler),
-        ("/list", ListHandler),
-        ("/new", NewCardHandler),
-        ("/timeline_update", UpdateHandler)
-    ],
-    debug=True, config=config)
+SERVICE_ROUTES = [
+    ("/", IndexHandler),
+    ("/connect", ConnectHandler),
+    ("/disconnect", DisconnectHandler),
+    ("/list", ListHandler),
+    ("/new", NewCardHandler),
+    ("/timeline_update", UpdateHandler)
+]

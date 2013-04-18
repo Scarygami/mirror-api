@@ -25,7 +25,7 @@ handlers:
   script: apis.ApiServer
 
 - url: .*
-  script: service.app
+  script: main.app
 
 libraries:
 - name: pycrypto

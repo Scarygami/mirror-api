@@ -22,6 +22,7 @@ import os
 import logging
 import urllib2
 
+from google.appengine.api import channel
 from google.appengine.ext import endpoints
 from protorpc import remote
 
@@ -77,6 +78,9 @@ class MirrorApi(remote.Service):
                             raise endpoints.BadRequestException("Each value needs to contain displayName and iconUrl.")
 
         card.put()
+
+        channel.send_message(card.user.email(), json.dumps({"data": True}))
+
         return card
 
     @TimelineItem.method(request_fields=("id",),
@@ -101,6 +105,9 @@ class MirrorApi(remote.Service):
             raise endpoints.NotFoundException("Card not found.")
 
         card.put()
+
+        channel.send_message(card.user.email(), json.dumps({"data": True}))
+
         return card
 
     @Contact.query_method(query_fields=("limit", "pageToken"),
