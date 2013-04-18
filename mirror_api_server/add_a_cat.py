@@ -51,7 +51,14 @@ def handle_image(item):
     cat = random.randint(1, NUM_CATS)
     cat_image = Image.open("res/cat%s.png" % cat)
 
-    im.paste(cat_image, (0, 0), cat_image)
+    zoom = im.size[0] / 640
+
+    cat_image.resize((cat_image.size[0] * zoom, cat_image.size[1] * zoom), Image.ANTIALIAS)
+
+    x = random.randint(0, im.size[0] - cat_image.size[0])
+    y = random.randint(0, im.size[1] - cat_image.size[1])
+
+    im.paste(cat_image, (x, y), cat_image)
 
     f = cStringIO.StringIO()
     im.save(f, "JPEG")
