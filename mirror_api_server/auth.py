@@ -111,15 +111,42 @@ class ConnectHandler(utils.BaseHandler):
 
         self.session["gplus_id"] = gplus_id
         stored_credentials = get_credentials(gplus_id)
+        if stored_credentials is None:
+            store_credentials(gplus_id, credentials)
+
+        # Create a new authorized API client
+        service = get_auth_service(gplus_id)
+
+        # Re-register contacts just in case new ones have been added
+        try:
+            # Register contacts
+            body = {}
+            body["acceptTypes"] = ["image/*"]
+            body["id"] = "instaglass_sepia"
+            body["displayName"] = "Sepia"
+            body["imageUrls"] = ["https://mirror-api.appspot.com/images/sepia.jpg"]
+            result = service.contacts().insert(body=body).execute()
+            logging.info(result)
+
+            body = {}
+            body["acceptTypes"] = ["image/*"]
+            body["id"] = "add_a_cat"
+            body["displayName"] = "Add a Cat to that"
+            body["imageUrls"] = ["https://mirror-api.appspot.com/images/cat.png"]
+            result = service.contacts().insert(body=body).execute()
+            logging.info(result)
+
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            return
+
         if stored_credentials is not None:
             self.response.status = 200
             self.response.out.write(utils.createMessage("Current user is already connected."))
             return
 
         try:
-            # Create a new authorized API client.
-            service = get_auth_service(gplus_id)
-
             # Register contacts
             body = {}
             body["acceptTypes"] = ["image/*"]
@@ -152,7 +179,6 @@ class ConnectHandler(utils.BaseHandler):
             return
 
         # Store the access, refresh token and verify token
-        store_credentials(gplus_id, credentials)
         user = ndb.Key("User", gplus_id).get()
         user.verifyToken = verifyToken
         user.put()

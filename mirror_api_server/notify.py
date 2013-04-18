@@ -20,6 +20,7 @@ __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 import utils
 from auth import get_auth_service
 from instaglass import handle_image as instaglass_image
+from add_a_cat import handle_image as cat_image
 
 import json
 import logging
@@ -58,6 +59,8 @@ class NotifyHandler(utils.BaseHandler):
 
         shares = {}
 
+        # TOOD: find a better way to handle this...
+
         if "recipients" in result:
             for rec in result["recipients"]:
                 if rec["id"] == "instaglass_sepia":
@@ -66,14 +69,25 @@ class NotifyHandler(utils.BaseHandler):
                     if not "sepia" in shares["instaglass"]:
                         shares["instaglass"].append("sepia")
                     break
+                if rec["id"] == "add_a_cat":
+                    if not "add_a_cat" in shares:
+                        shares["add_a_cat"] = ["x"]
+                    break
 
         for share in shares:
             if share == "instaglass":
+                logging.info("Instaglass")
                 for method in shares[share]:
                     new_item = instaglass_image(result, method)
                     if new_item is not None:
                         result = service.timeline().insert(body=new_item).execute()
                         logging.info(result)
+            if share == "add_a_cat":
+                logging.info("Add a cat")
+                new_item = cat_image(result)
+                if new_item is not None:
+                    result = service.timeline().insert(body=new_item).execute()
+                    logging.info(result)
 
 
 NOTIFY_ROUTES = [
