@@ -13,14 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Methods for Instaglass service"""
+"""
+Notification/subscription handler
+
+Handles subscription post requests coming from the Mirror API and forwards
+the requests to the relevant demo services.
+
+"""
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
 import utils
 from auth import get_auth_service
-from instaglass import handle_image as instaglass_image
-from add_a_cat import handle_image as cat_image
+from demos.instaglass import handle_image as instaglass_image
+from demos.add_a_cat import handle_image as cat_image
 
 import json
 import logging

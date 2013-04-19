@@ -41,6 +41,19 @@ contains a browser based emulator for Glass.
 is a simple playground implementation for a Web Application that makes use of
 the Mirror API.
 
+`auth.py`
+handles all authentication and storing of credentials when a user signs up
+for the demo services. Sets up contacts and subscriptions when the user
+first connects. Also handles disconnection by removing all contacts and
+subscriptions and deleting credentials when the user wants to disconnect.
+
+`notify.py`
+handles subscription post requests coming from the Mirror API and forwards
+the requests to the relevant demo services.
+
+`demos/*.py`
+are demo services that react to incoming notifications.
+
 ### Getting the code - The proper way
 
 1) Clone (or fork and clone) this repository
@@ -72,9 +85,9 @@ cd mirror_api_server
 mklink /D endpoints_proto_datastore ..\endpoints-proto-datastore\endpoints_proto_datastore\
 ```
 
-Alternatively (because the appcfg.py deploy script sometimes doesn't recognize the symlink correctly)
-copy the folder `endpoints-proto-datastore/endpoints_proto_datastore/` over to `mirror_api_server`
-so that you get this folder structure:
+Alternatively (because the appcfg.py deploy script sometimes doesn't recognize
+the symlink correctly) copy the folder `endpoints-proto-datastore/endpoints_proto_datastore/`
+over to `mirror_api_server` so that you get this folder structure:
 ```
 mirror_api_server/
 - endpoints_proto_datastore/

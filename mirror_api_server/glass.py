@@ -13,7 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""RequestHandlers for Glass emulator"""
+"""
+RequestHandlers for Glass emulator
+
+Renders the glass emulator and handles authentication and setting up
+push notifications via the Channel API
+
+"""
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 

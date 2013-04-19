@@ -13,7 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""RequestHandlers and helper functions for authentication"""
+"""
+
+RequestHandlers and helper functions for authentication
+
+Handles all authentication and storing of credentials when a user signs up
+for the demo services. Sets up Contacts and Subscriptions when the user
+first connects. Also handles disconnection by removing all contacts and
+subscriptions and deleting credentials when the user wants to disconnect.
+
+"""
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
