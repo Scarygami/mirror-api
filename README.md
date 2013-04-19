@@ -85,19 +85,22 @@ cd mirror_api_server
 mklink /D endpoints_proto_datastore ..\endpoints-proto-datastore\endpoints_proto_datastore\
 ```
 
-Alternatively (because the appcfg.py deploy script sometimes doesn't recognize
-the symlink correctly) copy the folder `endpoints-proto-datastore/endpoints_proto_datastore/`
-over to `mirror_api_server` so that you get this folder structure:
+In case you can't get the symlink to work correctly (meaning the API won't work correctly
+after deploying because of the missing endpoints_proto_datastore library) you can
+alternatively copy the folder `endpoints-proto-datastore/endpoints_proto_datastore/`
+over to `mirror_api_server` manually so that you get this folder structure:
 ```
 mirror_api_server/
 - endpoints_proto_datastore/
   - ndb/
 ```
+You will need to repeat this copy step whenever there are changes in the
+endpoints_proto_datastore library.
 
 ### Getting the code - The easy way
 
 Download the latest zip file from https://www.googledrive.com/host/0B1pwzJXH7GP8Z3VRcnVudERPQ2M/ and extract it.
-This includes all dependencies.
+This includes all dependencies, but won't always be the newest available version.
 
 ### Setup
 
