@@ -65,14 +65,14 @@ are demo services that react to incoming notifications.
     cd mirror-api
     ```
 
-1.  Fetch the endpoints_proto_datastore repository:
+2.  Fetch the endpoints_proto_datastore repository:
 
     ```
     git submodule init
     git submodule update
     ```
 
-1.  Create symlink `mirror_api_server/endpoints_proto_datastore` to 
+3.  Create symlink `mirror_api_server/endpoints_proto_datastore` to
     `endpoints-proto-datastore/endpoints_proto_datastore`
 
     Linux/Unix-based systems:
@@ -109,27 +109,27 @@ This includes all dependencies, but won't always be the newest available version
 1.  Create a new App Engine application at https://appengine.google.com/
     The name of the application will be referred to as `yourapp` for the following steps.
 
-1.  Create a new project in the [Google APIs Console](https://code.google.com/apis/console/)
+2.  Create a new project in the [Google APIs Console](https://code.google.com/apis/console/)
 
-1.  Activate the Google+ API in `Services`
+3.  Activate the Google+ API in `Services`
 
-1.  Create a new Client ID for web applications in `API Access`
+4.  Create a new Client ID for web applications in `API Access`
 
-1.  Leave Redirect URIs empty but set Javascript origin to
+5.  Leave Redirect URIs empty but set Javascript origin to
     `https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
 
-1.  Edit `mirror_api_server/client_secrets.json` and change `YOUR_CLIENT_ID` and
+6.  Edit `mirror_api_server/client_secrets.json` and change `YOUR_CLIENT_ID` and
     `YOUR_CLIENT_SECRET` to the information from the APIs Console.
 
     Important: Don't commit that file if you contribute to this project. One possible
     solution to prevent this: http://blog.bossylobster.com/2011/10/protecting.html
 
-1.  Edit `mirror_api_server/app.yaml` to change the name of the application to `yourapp`.
+7.  Edit `mirror_api_server/app.yaml` to change the name of the application to `yourapp`.
 
-1.  Follow the steps in the [Google App Engine Python 2.7 Getting Started](https://developers.google.com/appengine/docs/python/gettingstartedpython27/)
-to install the necessary dependencies and deploy the application. Specifically you will need the steps
-[The Development Environment](https://developers.google.com/appengine/docs/python/gettingstartedpython27/devenvironment) and
-[Uploading Your Application](https://developers.google.com/appengine/docs/python/gettingstartedpython27/uploading)
+8.  Follow the steps in the [Google App Engine Python 2.7 Getting Started](https://developers.google.com/appengine/docs/python/gettingstartedpython27/)
+    to install the necessary dependencies and deploy the application. Specifically you will need the steps
+    [The Development Environment](https://developers.google.com/appengine/docs/python/gettingstartedpython27/devenvironment) and
+    [Uploading Your Application](https://developers.google.com/appengine/docs/python/gettingstartedpython27/uploading)
 
 
 ### Testing
