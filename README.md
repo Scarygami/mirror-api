@@ -58,46 +58,46 @@ are demo services that react to incoming notifications.
 
 ### Getting the code - The proper way
 
-1) Clone (or fork and clone) this repository
+1.  Clone (or fork and clone) this repository
 
-```
-git clone https://github.com/Scarygami/mirror-api.git
-cd mirror-api
-```
+    ```
+    git clone https://github.com/Scarygami/mirror-api.git
+    cd mirror-api
+    ```
 
-2) Fetch the endpoints_proto_datastore repository:
+1.  Fetch the endpoints_proto_datastore repository:
 
-```
-git submodule init
-git submodule update
-```
+    ```
+    git submodule init
+    git submodule update
+    ```
 
-3) Create symlink `mirror_api_server/endpoints_proto_datastore`
-to `endpoints-proto-datastore/endpoints_proto_datastore`
+1.  Create symlink `mirror_api_server/endpoints_proto_datastore` to 
+    `endpoints-proto-datastore/endpoints_proto_datastore`
 
-Linux/Unix-based systems:
-```
-cd mirror_api_server
-ln -s ../endpoints-proto-datastore/endpoints_proto_datastore/ endpoints_proto_datastore
-```
+    Linux/Unix-based systems:
+    ```
+    cd mirror_api_server
+    ln -s ../endpoints-proto-datastore/endpoints_proto_datastore/ endpoints_proto_datastore
+    ```
 
-Windows systems: (run cmd as Administrator)
-```
-cd mirror_api_server
-mklink /D endpoints_proto_datastore ..\endpoints-proto-datastore\endpoints_proto_datastore\
-```
+    Windows systems: (run cmd as Administrator)
+    ```
+    cd mirror_api_server
+    mklink /D endpoints_proto_datastore ..\endpoints-proto-datastore\endpoints_proto_datastore\
+    ```
 
-In case you can't get the symlink to work correctly (meaning the API won't work correctly
-after deploying because of the missing endpoints_proto_datastore library) you can
-alternatively copy the folder `endpoints-proto-datastore/endpoints_proto_datastore/`
-over to `mirror_api_server` manually so that you get this folder structure:
-```
-mirror_api_server/
-- endpoints_proto_datastore/
-  - ndb/
-```
-You will need to repeat this copy step whenever there are changes in the
-endpoints_proto_datastore library.
+    In case you can't get the symlink to work correctly (meaning the API won't work correctly
+    after deploying because of the missing endpoints_proto_datastore library) you can
+    alternatively copy the folder `endpoints-proto-datastore/endpoints_proto_datastore/`
+    over to `mirror_api_server` manually so that you get this folder structure:
+    ```
+    mirror_api_server/
+    - endpoints_proto_datastore/
+      - ndb/
+    ```
+    You will need to repeat this copy step whenever there are changes in the
+    endpoints_proto_datastore library.
 
 ### Getting the code - The easy way
 
@@ -106,27 +106,27 @@ This includes all dependencies, but won't always be the newest available version
 
 ### Setup
 
-Create a new App Engine application at https://appengine.google.com/
-The name of the application will be referred to as `yourapp` for the following steps.
+1.  Create a new App Engine application at https://appengine.google.com/
+    The name of the application will be referred to as `yourapp` for the following steps.
 
-Create a new project in the [Google APIs Console](https://code.google.com/apis/console/)
+1.  Create a new project in the [Google APIs Console](https://code.google.com/apis/console/)
 
-Activate the Google+ API in `Services`
+1.  Activate the Google+ API in `Services`
 
-Create a new Client ID for web applications in `API Access`
+1.  Create a new Client ID for web applications in `API Access`
 
-Leave Redirect URIs empty but set Javascript origin to
-`https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
+1.  Leave Redirect URIs empty but set Javascript origin to
+    `https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
 
-Edit `mirror_api_server/client_secrets.json` and change `YOUR_CLIENT_ID` and
-`YOUR_CLIENT_SECRET` to the information from the APIs Console.
+1.  Edit `mirror_api_server/client_secrets.json` and change `YOUR_CLIENT_ID` and
+    `YOUR_CLIENT_SECRET` to the information from the APIs Console.
 
-Important: Don't commit that file if you contribute to this project. One possible
-solution to prevent this: http://blog.bossylobster.com/2011/10/protecting.html
+    Important: Don't commit that file if you contribute to this project. One possible
+    solution to prevent this: http://blog.bossylobster.com/2011/10/protecting.html
 
-Edit `mirror_api_server/app.yaml` to change the name of the application to `yourapp`.
+1.  Edit `mirror_api_server/app.yaml` to change the name of the application to `yourapp`.
 
-Follow the steps in the [Google App Engine Python 2.7 Getting Started](https://developers.google.com/appengine/docs/python/gettingstartedpython27/)
+1.  Follow the steps in the [Google App Engine Python 2.7 Getting Started](https://developers.google.com/appengine/docs/python/gettingstartedpython27/)
 to install the necessary dependencies and deploy the application. Specifically you will need the steps
 [The Development Environment](https://developers.google.com/appengine/docs/python/gettingstartedpython27/devenvironment) and
 [Uploading Your Application](https://developers.google.com/appengine/docs/python/gettingstartedpython27/uploading)
