@@ -2,10 +2,10 @@
 
 ### Description
 
-This is an attempt to recreate the behaviour of the Mirror API (based on public
-information available) to allow developers like me who aren't part of the Glass
-Explorer program, to test potential applications that could be feasible using
-Glass.
+This is an attempt to recreate the behaviour of the Mirror API
+(based on the [official documentation](https://developers.google.com/glass/))
+to allow developers like me who can't be  part of the Glass Explorer program,
+to test potential applications that could be feasible using Glass.
 
 And even if the real Mirror API turns out to be completely different from what
 I envision it to be you can use this as a learning place for different Google
@@ -18,6 +18,8 @@ technologies:
 - Google+ Sign-in, server-side flow (Web app)
 
 - Google App Engine for Web applications in general
+
+- Channel API for push notifications to the browser-based emulator
 
 - And how they all can work together
 
@@ -135,7 +137,9 @@ to install the necessary dependencies and deploy the application. Specifically y
 At the moment the only functionality of the web app hosted at
 `https://yourapp.appspot.com/` is to send text and image cards
 to the Glass emulator available at `https://yourapp.appspot.com/glass/`
-but I'm planning to add more functionality to it.
+but I'm planning to add more functionality to it. Using the login on
+the web app also sets up the necessary contacts and subscriptions
+for the demo services and stores credentials for offline access of the services.
 
 You can also use the API Explorer at `https://yourapp.appspot.com/_ah/api/explorer`
 to directly send requests to the API.
@@ -156,24 +160,11 @@ real Mirror API you would only have access to cards created by or shared with yo
 The real Mirror API supports Multipart-bodies to attach images to cards.
 Since this isn't possible using Google Cloud Endpoints
 (they only support `application/json` as request/response bodies),
-I went for a different solution with an `image` field inside of a card which takes any image URL.
-Also works with Data-URIs if the image isn't available online,
-which will be the case mostly when uploading images from Glass itself.
+I went for a different solution with filling the contentUrl in attachments directly
+with any URL, which also works with Data-URIs if the image isn't available online.
 
-The probably unclearest part so far is how subscriptions actually work,
-so I make some assumptions here which might turn out to be very far from the truth:
-
-- You can subscribe to Actions, which can be SHARE, REPLY or CUSTOM.
-
-- I added an additional `value` field to actions which isn't listed in the demo,
-  to make Actions and subscriptions work the way I think they can work.
-
-- This `value` will contain the ID of the ShareEntity for SHARE actions and the
-  ID of the registered Action for CUSTOM actions.
-
-- REPLY will first create a new Timeline Card with the text of the reply and send
-  the ID of this card as `itemId`. The card which was replied to will be listed as `value`.
-
+Not all features of the Mirror API are implemented yet. Location data is missing and not
+all available fields for timeline cards are used yet.
 
 ### Disclaimer
 
