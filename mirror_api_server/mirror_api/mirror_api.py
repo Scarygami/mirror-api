@@ -232,7 +232,7 @@ class MirrorApi(remote.Service):
             raise endpoints.BadRequestException("ID is not allowed in request body.")
 
         if subscription.operation is None or len(subscription.operation) == 0:
-            raise endpoints.BadRequestException("At least one operation needs to be provided.")
+            subscription.operation = [Operation.UPDATE, Operation.INSERT, Operation.DELETE]
 
         subscription.put()
         return subscription
