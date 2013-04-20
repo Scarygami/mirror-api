@@ -50,7 +50,7 @@
       activeCard,
       timer, running = false,
       recognition, mouseX, mouseY, glassevent, cardType, Card, ActionCard, ClockCard, ReplyCard, CameraCard, timestep,
-      photoCount = 0, Tween;
+      photoCount = 0, lastLocationUpdate = 0, Tween;
 
     /**
      * Basic tween object
@@ -1331,7 +1331,27 @@
     /** Called every 1s - use to update timestamps etc **/
     timestep = function () {
       // Keep clock up to date
+      var now = new Date().getTime();
       activeCard.updateDisplayDate();
+
+      if (now - lastLocationUpdate > 600000) {
+        lastLocationUpdate = now;
+        if (global.navigator.geolocation) {
+          global.navigator.geolocation.getCurrentPosition(function (loc) {
+            var data = {};
+            if (!global.glassDemoMode) {
+              if (loc.coords) {
+                if (loc.coords.accuracy) { data.accuracy = loc.coords.accuracy; }
+                if (loc.coords.longitude) { data.accuracy = loc.coords.longitude; }
+                if (loc.coords.latitude) { data.accuracy = loc.coords.latitude; }
+                mirror.locations.insert({"resource": data}).execute(function (resp) {
+                  console.log(resp);
+                });
+              }
+            }
+          });
+        }
+      }
 
       timer = global.setTimeout(timestep, 1000);
     };
