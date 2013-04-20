@@ -245,6 +245,7 @@
       "<div class=\"card_text\"></div>";
     templates[cardType.CONTENT_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
+      "<img class=\"card_icon\" src=\"../images/corner.png\"></div>" +
       "<div class=\"card_interface\"></div>";
     templates[cardType.ACTION_CARD] =
       "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div>";
@@ -263,11 +264,8 @@
       "<video class=\"card_video\"></video>" +
       "<canvas style=\"display: none\" class=\"card_canvas\"></canvas>" +
       "<div class=\"card_text\"></div>";
-    templates[cardType.HTML_BUNDLE_CARD] =
-      "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
-      "<img class=\"card_icon\" src=\"../images/corner.png\"></div>" +
-      "<div class=\"card_interface\"></div>";
-    templates[cardType.CARD_BUNDLE_CARD] = templates[cardType.HTML_BUNDLE_CARD];
+    templates[cardType.HTML_BUNDLE_CARD] = templates[cardType.CONTENT_CARD];
+    templates[cardType.CARD_BUNDLE_CARD] = templates[cardType.CONTENT_CARD];
 
     if (!global.glassDemoMode) {
       mirror = global.gapi.client.mirror;
@@ -356,6 +354,8 @@
       this.type = type;
       this.active = false;
       this.parent = parent;
+      this.bundleId = data.bundleId;
+      this.isBundleCover = !!data.isBundleCover;
       tmpDate = data.displayDate || data.updated || data.created;
       if (tmpDate) {
         this.date = new Date(tmpDate);
@@ -688,6 +688,20 @@
         this.text = "";
         this.image = undefined;
       }
+
+      if (!data.bundleId) {
+        data.isBundleCover = false;
+      }
+      this.bundleId = data.bundleId;
+      this.isBundleCover = !!data.isBundleCover;
+
+      if (this.type === cardType.CONTENT_CARD && this.isBundleCover) {
+        this.type === cardType.CARD_BUNDLE_CARD;
+      }
+      if (this.type === cardType.CARD_BUNDLE_CARD && !this.isBundleCover) {
+        this.type === cardType.CONTENT_CARD;
+      }
+
       if (this.htmlFrame) {
         if (this.date) {
           tmpDate = this.date.niceDate();
@@ -699,7 +713,9 @@
       this.updateCardStyle();
     };
 
-    /** Traverse the card tree looking for a card */
+    /**
+     * Traverse the card tree looking for a card
+     */
     Card.prototype.findCard = function (id) {
       var i, l, card;
       l = this.cards.length;
@@ -715,6 +731,23 @@
         }
       }
       return undefined;
+    };
+
+    /**
+     * Traverse the card tree looking for cards with bundleId
+     */
+    Card.prototype.findBundleCards = function (bundleId) {
+      var i, l, cards = [];
+      l = this.cards.length;
+      for (i = 0; i < l; i++) {
+        if (this.cards[i].bundleId === bundleId) {
+          cards.push(this.cards[i]);
+        }
+        if (this.cards[i].type === cardType.CARD_BUNDLE_CARD) {
+          cards.concat(this.cards[i].findBundleCards(bundleId));
+        }
+      }
+      return cards;
     };
 
     Card.prototype.cardCount = function (action) {
@@ -763,6 +796,17 @@
 
     Card.prototype.addCard = function (card) {
       this.cards.push(card);
+    };
+
+    Card.prototype.removeCard = function (id) {
+      var i, l;
+      l = this.cards.length;
+      for (i = 0; i < l; i++) {
+        if (this.cards[i].id === id) {
+          this.cards.splice(i, 1);
+          break;
+        }
+      }
     };
 
     Card.prototype.hasActions = function () {
@@ -819,6 +863,40 @@
       this.updateCardStyle();
     };
 
+    /*
+     * Remove card from the timeline.
+     * Removes the full bundle for HTML Bundles.
+     * Removes all action cards associated with the card.
+     */
+    Card.prototype.remove = function () {
+      var i, l;
+      if (this.type === cardType.HTML_BUNDLE_CARD) {
+        l = this.cards.length;
+        for (i = 0; i < l; i++) {
+          this.cards[i].remove();
+        }
+      }
+      l = this.actionCards.length;
+      for (i = 0; i < l; i++) {
+        this.actionCards[i].remove();
+      }
+      this.cards = [];
+      this.actionCards = [];
+      this.cardDiv.parentNode.removeChild(this.cardDiv);
+      if (this.type === cardType.CONTENT_CARD ||
+          this.type === cardType.HTML_BUNDLE_CARD ||
+          this.type === cardType.CONTENT_CARD) {
+        if (!!this.parent) {
+          // wrap in try/catch just in case the parent has been removed before the child card
+          try {
+            this.parent.removeCard(this.id);
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      }
+    };
+
     Card.prototype.createActionCards = function () {
       var i, l;
       this.actionCards = this.actionCards || [];
@@ -837,6 +915,7 @@
         this.cards.push(new Card(cardType.CONTENT_CARD, this.id + "_" + i, this, {"html": this.htmlPages[i]}));
       }
     };
+
 
     /** @constructor */
     ActionCard = function (id, parent, data) {
@@ -900,7 +979,6 @@
       activeCard = this.parent;
       activeCard.show();
     };
-
 
     ActionCard.prototype.tap = function () {
       this.startAction();
@@ -1274,30 +1352,12 @@
       }
     }
 
-    function handleCards(result) {
-      var i, l, card, bundles = {}, bundleId, bundleCard;
-      if (result && result.items) {
-        l = result.items.length;
-        for (i = 0; i < l; i++) {
-          card = startCard.findCard(result.items[i].id);
-          if (card) {
-            card.update(result.items[i]);
-          } else {
-            if (result.items[i].bundleId) {
-              bundleId = "b" + result.items[i].bundleId;
-              // handle card bundels separately
-              if (!bundles[bundleId]) {
-                bundles[bundleId] = [];
-              }
-              bundles[bundleId].push(result.items[i]);
-            } else {
-              card = new Card(cardType.CONTENT_CARD, result.items[i].id, startCard, result.items[i]);
-              startCard.addCard(card);
-            }
-          }
-        }
-      }
-      for (bundleId in bundles) {
+    function handleBundle(bundleId) {
+      var bundleCards = [], bundleCover;
+
+      bundleCards = startCard.findBundleCards(bundleId);
+
+      /*for (bundleId in bundles) {
         if (bundles.hasOwnProperty(bundleId)) {
           bundleCard = startCard.findCard(bundleId);
           if (!bundleCard) {
@@ -1309,6 +1369,46 @@
             bundleCard.addCard(new Card(cardType.CONTENT_CARD, bundles[bundleId][i].id, bundleCard, bundles[bundleId][i]));
           }
         }
+      }*/
+
+    }
+
+    function handleCards(result) {
+      var i, l, card, updatedBundles = [], bundleId, bundleCard;
+      if (result && result.items) {
+        l = result.items.length;
+        for (i = 0; i < l; i++) {
+          card = startCard.findCard(result.items[i].id);
+          if (card) {
+            if (card.bundleId || result.items[i].bundleId) {
+              bundleId = (card.bundleId || result.items[i].bundleId);
+              if (updatedBundles.indexOf(bundleId) === -1) {
+                updatedBundles.push(bundleId);
+              }
+            }
+            if (result.items[i].isDeleted) {
+              card.remove();
+            } else {
+              card.update(result.items[i]);
+            }
+          } else {
+            if (!result.items[i].isDeleted) {
+              card = new Card(cardType.CONTENT_CARD, result.items[i].id, startCard, result.items[i]);
+              startCard.addCard(card);
+              if (result.items[i].bundleId) {
+                bundleId = result.items[i].bundleId;
+                if (updatedBundles.indexOf(bundleId) === -1) {
+                  updatedBundles.push(bundleId);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      l = updatedBundles.length;
+      for (i = 0; i < l; i++) {
+        handleBundle(updatedBundles[i]);
       }
     }
 
