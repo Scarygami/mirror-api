@@ -1342,8 +1342,8 @@
             if (!global.glassDemoMode) {
               if (loc.coords) {
                 if (loc.coords.accuracy) { data.accuracy = loc.coords.accuracy; }
-                if (loc.coords.longitude) { data.accuracy = loc.coords.longitude; }
-                if (loc.coords.latitude) { data.accuracy = loc.coords.latitude; }
+                if (loc.coords.longitude) { data.longitude = loc.coords.longitude; }
+                if (loc.coords.latitude) { data.latitude = loc.coords.latitude; }
                 mirror.locations.insert({"resource": data}).execute(function (resp) {
                   console.log(resp);
                 });

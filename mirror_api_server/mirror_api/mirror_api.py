@@ -59,7 +59,7 @@ class MirrorApi(remote.Service):
 
         query = query.order(-TimelineItem.updated)
         query = query.filter(TimelineItem.user == endpoints.get_current_user())
-        query = query.filter(TimelineItem.isDeleted is False)
+        query = query.filter(TimelineItem.isDeleted == False)
         return query
 
     @TimelineItem.method(request_fields=("id",),
