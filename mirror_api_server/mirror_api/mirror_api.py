@@ -217,7 +217,11 @@ class MirrorApi(remote.Service):
                      path="locations/{id}", http_method="GET",
                      name="locations.get")
     def locations_get(self, location):
-        """Retrieve a single location for the current user"""
+        """Retrieve a single location for the current user.
+
+        ID can be a specific location ID or "latest" to retrieve the
+        latest known position of the user.
+        """
 
         if not location.from_datastore or location.user != endpoints.get_current_user():
             raise endpoints.NotFoundException("Location not found.")

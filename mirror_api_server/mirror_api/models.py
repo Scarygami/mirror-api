@@ -17,7 +17,6 @@
 """Model definition for the Mirror API."""
 
 
-from google.appengine.ext import endpoints
 from google.appengine.ext import ndb
 from google.appengine.ext.ndb import msgprop
 from protorpc import messages
@@ -76,7 +75,7 @@ class Attachment(EndpointsModel):
 class TimelineItem(EndpointsModel):
     """Model for timeline cards.
 
-    Since the when property is auto_now_add=True, Cards will document when
+    Since the created property is auto_now_add=True, Cards will document when
     they were inserted immediately after being stored.
     """
 
