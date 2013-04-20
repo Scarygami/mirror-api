@@ -49,7 +49,7 @@ API_DESCRIPTION = ("Mirror API implemented using Google Cloud "
                description=API_DESCRIPTION,
                allowed_client_ids=[CLIENT_ID, endpoints.API_EXPLORER_CLIENT_ID])
 class MirrorApi(remote.Service):
-    """Class which defines Mirror API v1."""
+    """Class which defines the Mirror API v1."""
 
     @TimelineItem.query_method(query_fields=("limit", "pageToken"),
                                user_required=True,
@@ -58,7 +58,21 @@ class MirrorApi(remote.Service):
         """List timeline cards for the current user."""
 
         query = query.order(-TimelineItem.updated)
-        return query.filter(TimelineItem.user == endpoints.get_current_user())
+        query = query.filter(TimelineItem.user == endpoints.get_current_user())
+        query = query.filter(TimelineItem.isDeleted is False)
+        return query
+
+    @TimelineItem.method(request_fields=("id",),
+                         user_required=True,
+                         path="timeline/{id}", http_method="GET",
+                         name="timeline.get")
+    def timeline_get(self, card):
+        """Get card with ID for the current user"""
+
+        if not card.from_datastore or card.user != endpoints.get_current_user():
+            raise endpoints.NotFoundException("Card not found.")
+
+        return card
 
     @TimelineItem.method(user_required=True, http_method="POST",
                          path="timeline", name="timeline.insert")
@@ -85,18 +99,6 @@ class MirrorApi(remote.Service):
 
         return card
 
-    @TimelineItem.method(request_fields=("id",),
-                         user_required=True,
-                         path="timeline/{id}", http_method="GET",
-                         name="timeline.get")
-    def timeline_get(self, card):
-        """Get card with ID for the current user"""
-
-        if not card.from_datastore or card.user != endpoints.get_current_user():
-            raise endpoints.NotFoundException("Card not found.")
-
-        return card
-
     @TimelineItem.method(user_required=True,
                          path="timeline/{id}", http_method="PUT",
                          name="timeline.update")
@@ -106,9 +108,56 @@ class MirrorApi(remote.Service):
         if not card.from_datastore or card.user != endpoints.get_current_user():
             raise endpoints.NotFoundException("Card not found.")
 
+        if card.isDeleted:
+            raise endpoints.NotFoundException("Card has been deleted")
+
         card.put()
 
         channel.send_message(card.user.email(), json.dumps({"id": card.id}))
+
+        return card
+
+    @TimelineItem.method(request_fields=("id",),
+                         response_fields=("id",),
+                         user_required=True,
+                         path="timeline/{id}", http_method="DELETE",
+                         name="timeline.delete")
+    def timeline_delete(self, card):
+        """Remove an existing card for the current user.
+
+        This will set all properties except the ID to None and set isDeleted to true
+        """
+
+        if not card.from_datastore or card.user != endpoints.get_current_user():
+            raise endpoints.NotFoundException("Contact not found.")
+
+        if card.isDeleted:
+            raise endpoints.NotFoundException("Card has been deleted")
+
+        card.attachments = None
+        card.bundleId = None
+        card.canonicalUrl = None
+        card.created = None
+        card.displayTime = None
+        card.html = None
+        card.htmlPages = None
+        card.inReplyTo = None
+        card.isBundleCover = None
+        card.isPinned = None
+        card.menuItems = None
+        card.recipients = None
+        card.sourceItemId = None
+        card.speakableText = None
+        card.text = None
+        card.title = None
+        card.updated = None
+
+        card.isDeleted = True
+
+        # Notify Glass emulator
+        channel.send_message(card.user.email(), json.dumps({"id": card.id}))
+
+        # TODO: Notify subscriptions
 
         return card
 
