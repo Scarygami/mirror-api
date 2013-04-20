@@ -33,6 +33,7 @@ from models import Contact
 from models import Subscription
 from models import Action
 from models import ActionResponse
+from models import Location
 
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -201,6 +202,44 @@ class MirrorApi(remote.Service):
 
         # TODO: Check if a success HTTP code can be returned with an empty body
         return subscription
+
+    @Location.query_method(query_fields=("limit", "pageToken"),
+                           user_required=True,
+                           path="locations", name="locations.list")
+    def locations_list(self, query):
+        """List locations for the current user."""
+
+        query = query.order(-Location.timestamp)
+        return query.filter(TimelineItem.user == endpoints.get_current_user())
+
+    @Location.method(request_fields=("id",),
+                     user_required=True,
+                     path="locations/{id}", http_method="GET",
+                     name="locations.get")
+    def locations_get(self, location):
+        """Retrieve a single location for the current user"""
+
+        if not location.from_datastore or location.user != endpoints.get_current_user():
+            raise endpoints.NotFoundException("Location not found.")
+
+        return location
+
+    @Location.method(user_required=True, http_method="POST",
+                     path="locations", name="locations.insert")
+    def locations_insert(self, location):
+        """Insert a new location for the current user.
+
+        Not part of the actual mirror API but used by the emulator.
+        """
+
+        if location.id is not None:
+            raise endpoints.BadRequestException("ID is not allowed in request body.")
+
+        location.put()
+
+        # TODO: notify location subscriptions
+
+        return location
 
     @endpoints.method(Action, ActionResponse,
                       path='actions', http_method='POST',

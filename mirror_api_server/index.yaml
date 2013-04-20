@@ -8,3 +8,9 @@ indexes:
   - name: user
   - name: updated
     direction: desc
+
+- kind: Location
+  properties:
+  - name: user
+  - name: timestamp
+    direction: desc
