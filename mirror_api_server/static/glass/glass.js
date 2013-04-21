@@ -692,14 +692,23 @@
       if (!data.bundleId) {
         data.isBundleCover = false;
       }
-      this.bundleId = data.bundleId;
+      if (this.bundleId !== data.bundleId) {
+        this.bundleId = data.bundleId;
+        if (!this.bundleId) {
+          if (this.parent) {
+            this.parent.removeCard(this.id);
+          }
+          startCard.addCard(this);
+          this.parent = startCard;
+        }
+      }
       this.isBundleCover = !!data.isBundleCover;
 
       if (this.type === cardType.CONTENT_CARD && this.isBundleCover) {
-        this.type === cardType.CARD_BUNDLE_CARD;
+        this.type = cardType.CARD_BUNDLE_CARD;
       }
       if (this.type === cardType.CARD_BUNDLE_CARD && !this.isBundleCover) {
-        this.type === cardType.CONTENT_CARD;
+        this.type = cardType.CONTENT_CARD;
       }
 
       if (this.htmlFrame) {
@@ -716,14 +725,14 @@
     /**
      * Traverse the card tree looking for a card
      */
-    Card.prototype.findCard = function (id) {
+    Card.prototype.findCard = function (id, nonRecursive) {
       var i, l, card;
       l = this.cards.length;
       for (i = 0; i < l; i++) {
         if (this.cards[i].id === id) {
           return this.cards[i];
         }
-        if (this.cards[i].type === cardType.CARD_BUNDLE_CARD) {
+        if (this.cards[i].type === cardType.CARD_BUNDLE_CARD && !!nonRecursive) {
           card = this.cards[i].findCard(id);
           if (card) {
             return card;
@@ -795,7 +804,9 @@
     };
 
     Card.prototype.addCard = function (card) {
-      this.cards.push(card);
+      if (!this.findCard(card.id, true)) {
+        this.cards.push(card);
+      }
     };
 
     Card.prototype.removeCard = function (id) {
@@ -1353,24 +1364,40 @@
     }
 
     function handleBundle(bundleId) {
-      var bundleCards = [], bundleCover;
+      var i, l, bundleCards, bundleCover;
 
       bundleCards = startCard.findBundleCards(bundleId);
 
-      /*for (bundleId in bundles) {
-        if (bundles.hasOwnProperty(bundleId)) {
-          bundleCard = startCard.findCard(bundleId);
-          if (!bundleCard) {
-            bundleCard = new Card(cardType.CARD_BUNDLE_CARD, bundleId, startCard, bundles[bundleId][0]);
-            startCard.addCard(bundleCard);
-          }
-          l = bundles[bundleId].length;
-          for (i = 0; i < l; i++) {
-            bundleCard.addCard(new Card(cardType.CONTENT_CARD, bundles[bundleId][i].id, bundleCard, bundles[bundleId][i]));
-          }
-        }
-      }*/
+      if (bundleCards.length === 0) { return; }
 
+      bundleCards.sort(cardSort);
+      l = bundleCards.length;
+      for (i = 0; i < l; i++) {
+        if (bundleCards[i].isBundleCover) {
+          bundleCover = bundleCards[i];
+          break;
+        }
+      }
+
+      if (!bundleCover) {
+        bundleCover = bundleCards[0];
+      }
+
+      bundleCover.cards = [];
+      bundleCover.isBundleCover = true;
+      bundleCover.type = cardType.CARD_BUNDLE_CARD;
+      bundleCover.parent = startCard;
+      startCard.addCard(bundleCover);
+      for (i = 0; i < l; i++) {
+        if (bundleCards[i].id !== bundleCover.id) {
+          bundleCards[i].cards = [];
+          bundleCards[i].isBundleCover = false;
+          bundleCards[i].type = cardType.CONTENT_CARD;
+          bundleCards[i].parent = bundleCover;
+          bundleCover.addCard(bundleCards[i]);
+        }
+        bundleCards[i].updateCardStyle();
+      }
     }
 
     function handleCards(result) {
@@ -1381,9 +1408,17 @@
           card = startCard.findCard(result.items[i].id);
           if (card) {
             if (card.bundleId || result.items[i].bundleId) {
-              bundleId = (card.bundleId || result.items[i].bundleId);
-              if (updatedBundles.indexOf(bundleId) === -1) {
-                updatedBundles.push(bundleId);
+              if (!!card.bundleId) {
+                bundleId = card.bundleId;
+                if (updatedBundles.indexOf(bundleId) === -1) {
+                  updatedBundles.push(bundleId);
+                }
+              }
+              if (!!result.items[i].bundleId) {
+                bundleId = result.items[i].bundleId;
+                if (updatedBundles.indexOf(bundleId) === -1) {
+                  updatedBundles.push(bundleId);
+                }
               }
             }
             if (result.items[i].isDeleted) {

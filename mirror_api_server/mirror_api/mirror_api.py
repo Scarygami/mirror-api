@@ -93,6 +93,9 @@ class MirrorApi(remote.Service):
                         if value.displayName is None or value.iconUrl is None:
                             raise endpoints.BadRequestException("Each value needs to contain displayName and iconUrl.")
 
+        if card.htmlPages is not None and card.bundleId is not None:
+            raise endpoints.BadRequestException("Can't mix HTML and Card bundle.")
+
         card.put()
 
         channel.send_message(card.user.email(), json.dumps({"id": card.id}))
@@ -110,6 +113,9 @@ class MirrorApi(remote.Service):
 
         if card.isDeleted:
             raise endpoints.NotFoundException("Card has been deleted")
+
+        if card.htmlPages is not None and card.bundleId is not None:
+            raise endpoints.BadRequestException("Can't mix HTML and Card bundle.")
 
         card.put()
 
