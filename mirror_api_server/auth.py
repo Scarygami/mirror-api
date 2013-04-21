@@ -35,6 +35,8 @@ import json
 import logging
 
 from apiclient.discovery import build
+from apiclient.errors import HttpError
+from apiclient.errors import UnknownApiNameOrVersion
 from google.appengine.ext import ndb
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import flow_from_clientsecrets
@@ -120,77 +122,145 @@ class ConnectHandler(utils.BaseHandler):
 
         self.session["gplus_id"] = gplus_id
         stored_credentials = get_credentials(gplus_id)
+        new_user = False
         if stored_credentials is None:
+            new_user = True
             store_credentials(gplus_id, credentials)
 
+        # TODO: handle cases where credentials don't have a refresh token
+
         # Create a new authorized API client
-        service = get_auth_service(gplus_id)
-
-        # Re-register contacts just in case new ones have been added
         try:
-            # Register contacts
-            body = {}
-            body["acceptTypes"] = ["image/*"]
-            body["id"] = "instaglass_sepia"
-            body["displayName"] = "Sepia"
-            body["imageUrls"] = ["https://mirror-api.appspot.com/images/sepia.jpg"]
-            result = service.contacts().insert(body=body).execute()
-            logging.info(result)
-
-            body = {}
-            body["acceptTypes"] = ["image/*"]
-            body["id"] = "add_a_cat"
-            body["displayName"] = "Add a Cat to that"
-            body["imageUrls"] = ["https://mirror-api.appspot.com/images/cat.png"]
-            result = service.contacts().insert(body=body).execute()
-            logging.info(result)
-
+            service = get_auth_service(gplus_id)
         except AccessTokenRefreshError:
             self.response.status = 500
             self.response.out.write(utils.createError(500, "Failed to refresh access token."))
             return
+        except UnknownApiNameOrVersion:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. Discovery document not found."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            return
 
-        if stored_credentials is not None:
+        # Re-register contacts just in case new ones have been added
+        # TODO: include description of contacts in demo services and read from there
+        body = {}
+        body["acceptTypes"] = ["image/*"]
+        body["id"] = "instaglass_sepia"
+        body["displayName"] = "Sepia"
+        body["imageUrls"] = [utils.base_url + "/images/sepia.jpg"]
+        try:
+            result = service.contacts().insert(body=body).execute()
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            return
+
+        body = {}
+        body["acceptTypes"] = ["image/*"]
+        body["id"] = "add_a_cat"
+        body["displayName"] = "Add a Cat to that"
+        body["imageUrls"] = [utils.base_url + "/images/cat.png"]
+        try:
+            result = service.contacts().insert(body=body).execute()
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            return
+
+        """
+        Re-register subscriptions to make sure all of them are available.
+        Normally it would be best to use subscriptions.list first to check.
+        For the purposes of this demo service all possible subscriptions are made.
+        Normally you would only set-up subscriptions for the services you need.
+        """
+
+        # Delete all existing subscriptions
+        try:
+            result = service.subscriptions().list().execute()
+            if "items" in result:
+                for subscription in result["items"]:
+                    del_result = service.subscriptions().delete(id=subscription["id"]).execute()
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            return
+
+        # Generate random verifyToken and store it in User entity
+        verifyToken = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(32))
+        user = ndb.Key("User", gplus_id).get()
+        user.verifyToken = verifyToken
+        user.put()
+
+        # Subscribe to all timeline inserts/updates/deletes
+        body = {}
+        body["collection"] = "timeline"
+        body["userToken"] = gplus_id
+        body["verifyToken"] = verifyToken
+        body["callbackUrl"] = utils.base_url + "/timeline_update"
+        try:
+            result = service.subscriptions().insert(body=body).execute()
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            return
+
+        # Subscribe to all location updates
+        body = {}
+        body["collection"] = "locations"
+        body["userToken"] = gplus_id
+        body["verifyToken"] = verifyToken
+        body["callbackUrl"] = utils.base_url + "/locations_update"
+        try:
+            result = service.subscriptions().insert(body=body).execute()
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            return
+
+        if not new_user:
             self.response.status = 200
             self.response.out.write(utils.createMessage("Current user is already connected."))
             return
 
+        # Send welcome messages for new users
+        body = {}
+        body["text"] = "Welcome to Instaglass!"
+        body["attachments"] = [{"contentType": "image/jpeg", "contentUrl": utils.base_url + "/images/sepia.jpg"}]
         try:
-            # Register contacts
-            body = {}
-            body["acceptTypes"] = ["image/*"]
-            body["id"] = "instaglass_sepia"
-            body["displayName"] = "Sepia"
-            body["imageUrls"] = ["https://mirror-api.appspot.com/images/sepia.jpg"]
-            result = service.contacts().insert(body=body).execute()
-            logging.info(result)
-
-            # Register subscription
-            verifyToken = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(32))
-            body = {}
-            body["collection"] = "timeline"
-            body["operation"] = "UPDATE"
-            body["userToken"] = gplus_id
-            body["verifyToken"] = verifyToken
-            body["callbackUrl"] = utils.base_url + "/timeline_update"
-            result = service.subscriptions().insert(body=body).execute()
-            logging.info(result)
-
-            # Send welcome message
-            body = {}
-            body["text"] = "Welcome to Instaglass!"
-            body["attachments"] = [{"contentType": "image/jpeg", "contentUrl": "https://mirror-api.appspot.com/images/sepia.jpg"}]
             result = service.timeline().insert(body=body).execute()
-            logging.info(result)
         except AccessTokenRefreshError:
             self.response.status = 500
             self.response.out.write(utils.createError(500, "Failed to refresh access token."))
             return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            return
 
-        # Store the access, refresh token and verify token
-        user = ndb.Key("User", gplus_id).get()
-        user.verifyToken = verifyToken
-        user.put()
         self.response.status = 200
         self.response.out.write(utils.createMessage("Successfully connected user."))
 
@@ -210,39 +280,72 @@ class DisconnectHandler(utils.BaseHandler):
             self.response.out.write(utils.createError(401, "Current user not connected."))
             return
 
-        # Deregister contacts and subscriptions
-        service = get_auth_service(gplus_id)
+        # Create a new authorized API client
+        try:
+            service = get_auth_service(gplus_id)
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            return
+        except UnknownApiNameOrVersion:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. Discovery document not found."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            return
 
-        result = service.contacts().list().execute()
-        logging.info(result)
-        if "items" in result:
-            for contact in result["items"]:
-                del_result = service.contacts().delete(id=contact["id"]).execute()
-                logging.info(del_result)
+        # De-register contacts
+        try:
+            result = service.contacts().list().execute()
+            if "items" in result:
+                for contact in result["items"]:
+                    del_result = service.contacts().delete(id=contact["id"]).execute()
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            return
 
-        result = service.subscriptions().list().execute()
-        logging.info(result)
-        if "items" in result:
-            for subscription in result["items"]:
-                del_result = service.subscriptions().delete(id=subscription["id"]).execute()
-                logging.info(del_result)
+        # De-register subscriptions
+        try:
+            result = service.subscriptions().list().execute()
+            if "items" in result:
+                for subscription in result["items"]:
+                    del_result = service.subscriptions().delete(id=subscription["id"]).execute()
+        except AccessTokenRefreshError:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            return
 
         # Execute HTTP GET request to revoke current token.
         access_token = credentials.access_token
         url = "https://accounts.google.com/o/oauth2/revoke?token=%s" % access_token
         h = httplib2.Http()
-        result = h.request(url, "GET")[0]
+        try:
+            result = h.request(url, "GET")[0]
+            if result["status"] == "200":
+                # Reset the user's session.
+                self.response.status = 200
+                self.response.out.write(utils.createMessage("Successfully disconnected user."))
+            else:
+                # For whatever reason, the given token was invalid.
+                self.response.status = 400
+                self.response.out.write(utils.createError(400, "Failed to revoke token for given user."))
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            return
 
         ndb.Key("User", gplus_id).delete()
-
-        if result["status"] == "200":
-            # Reset the user's session.
-            self.response.status = 200
-            self.response.out.write(utils.createMessage("Successfully disconnected user."))
-        else:
-            # For whatever reason, the given token was invalid.
-            self.response.status = 400
-            self.response.out.write(utils.createError(400, "Failed to revoke token for given user."))
 
 
 AUTH_ROUTES = [
