@@ -34,7 +34,7 @@ import logging
 from google.appengine.ext import ndb
 
 
-class NotifyHandler(utils.BaseHandler):
+class TimelineNotifyHandler(utils.BaseHandler):
     def post(self):
         """Callback for Timeline updates."""
         message = self.request.body
@@ -63,6 +63,8 @@ class NotifyHandler(utils.BaseHandler):
         result = service.timeline().get(id=data["itemId"]).execute()
         logging.info(result)
 
+        # TODO: better handling of different contacts
+
         instaglass_sepia = False
         add_a_cat = False
 
@@ -86,6 +88,44 @@ class NotifyHandler(utils.BaseHandler):
                 logging.info(result)
 
 
+class LocationNotifyHandler(utils.BaseHandler):
+    def post(self):
+        """Callback for Location updates."""
+        message = self.request.body
+        data = json.loads(message)
+
+        self.response.status = 200
+
+        gplus_id = data["userToken"]
+        verifyToken = data["verifyToken"]
+        user = ndb.Key("User", gplus_id).get()
+        if user is None or user.verifyToken != verifyToken:
+            logging.info("Wrong user")
+            return
+
+        if data["collection"] != "locations":
+            logging.info("Wrong collection")
+            return
+
+        if data["operation"] != "UPDATE":
+            logging.info("Wrong operation")
+            return
+
+        service = get_auth_service(gplus_id)
+
+        if service is None:
+            logging.info("No valid credentials")
+            return
+
+        result = service.locations().get(id=data["itemId"]).execute()
+        logging.info(result)
+
+        # TODO: Update user entity with current location
+
+        # TODO: Forward information to relevant demo services
+
+
 NOTIFY_ROUTES = [
-    ("/timeline_update", NotifyHandler)
+    ("/timeline_update", TimelineNotifyHandler),
+    ("/locations_update", LocationNotifyHandler)
 ]
