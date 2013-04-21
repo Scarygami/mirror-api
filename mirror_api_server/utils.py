@@ -72,3 +72,6 @@ class BaseHandler(webapp2.RequestHandler):
 class User(ndb.Model):
     verifyToken = ndb.StringProperty()
     credentials = CredentialsNDBProperty()
+    latitude = ndb.FloatProperty()
+    longitude = ndb.FloatProperty()
+    locationUpdate = ndb.DateTimeProperty()

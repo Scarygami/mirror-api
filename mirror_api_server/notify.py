@@ -31,6 +31,7 @@ from demos.add_a_cat import handle_image as cat_image
 import json
 import logging
 
+from datetime import datetime
 from google.appengine.ext import ndb
 
 
@@ -120,7 +121,11 @@ class LocationNotifyHandler(utils.BaseHandler):
         result = service.locations().get(id=data["itemId"]).execute()
         logging.info(result)
 
-        # TODO: Update user entity with current location
+        if "longitude" in result and "latitude" in result:
+            user.lontitude = result["longitude"]
+            user.latitude = result["longitude"]
+            user.locationUpdate = datetime.utcnow()
+            user.put()
 
         # TODO: Forward information to relevant demo services
 
