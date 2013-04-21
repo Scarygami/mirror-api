@@ -55,7 +55,7 @@ class MenuValue(EndpointsModel):
 class MenuItem(EndpointsModel):
     action = msgprop.EnumProperty(MenuAction, required=True)
     id = ndb.StringProperty()
-    removeWhenSelected = ndb.BooleanProperty(default=False)
+    removeWhenSelected = ndb.BooleanProperty()
     values = ndb.LocalStructuredProperty(MenuValue, repeated=True)
 
 
@@ -126,9 +126,9 @@ class TimelineItem(EndpointsModel):
     html = ndb.TextProperty()
     htmlPages = ndb.TextProperty(repeated=True)
     inReplyTo = ndb.IntegerProperty()
-    isBundleCover = ndb.BooleanProperty(default=False)
-    isDeleted = ndb.BooleanProperty(default=False)
-    isPinned = ndb.BooleanProperty(default=False)
+    isBundleCover = ndb.BooleanProperty()
+    isDeleted = ndb.BooleanProperty()
+    isPinned = ndb.BooleanProperty()
     menuItems = ndb.LocalStructuredProperty(MenuItem, repeated=True)
     recipients = ndb.LocalStructuredProperty(TimelineContact, repeated=True)
     sourceItemId = ndb.StringProperty()
@@ -162,7 +162,7 @@ class Contact(EndpointsModel):
     displayName = ndb.StringProperty(required=True)
     imageUrls = ndb.StringProperty(repeated=True)
     phoneNumber = ndb.StringProperty()
-    priority = ndb.IntegerProperty(default=0)
+    priority = ndb.IntegerProperty()
     source = ndb.StringProperty()
     type = msgprop.EnumProperty(ContactType)
 
@@ -190,7 +190,7 @@ class Subscription(EndpointsModel):
     _message_fields_schema = ("id", "collection", "userToken", "verifyToken", "operation", "callbackUrl")
 
     user = EndpointsUserProperty(required=True, raise_unauthorized=True)
-    collection = ndb.StringProperty(default="timeline")
+    collection = ndb.StringProperty(required=True)
     userToken = ndb.StringProperty(required=True)
     verifyToken = ndb.StringProperty(required=True)
     operation = msgprop.EnumProperty(Operation, repeated=True)
