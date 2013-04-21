@@ -725,14 +725,14 @@
     /**
      * Traverse the card tree looking for a card
      */
-    Card.prototype.findCard = function (id, nonRecursive) {
+    Card.prototype.findCard = function (id, local) {
       var i, l, card;
       l = this.cards.length;
       for (i = 0; i < l; i++) {
         if (this.cards[i].id === id) {
           return this.cards[i];
         }
-        if (this.cards[i].type === cardType.CARD_BUNDLE_CARD && !!nonRecursive) {
+        if (!local) {
           card = this.cards[i].findCard(id);
           if (card) {
             return card;
@@ -752,9 +752,7 @@
         if (this.cards[i].bundleId === bundleId) {
           cards.push(this.cards[i]);
         }
-        if (this.cards[i].type === cardType.CARD_BUNDLE_CARD) {
-          cards.concat(this.cards[i].findBundleCards(bundleId));
-        }
+        cards = cards.concat(this.cards[i].findBundleCards(bundleId));
       }
       return cards;
     };
@@ -1371,9 +1369,10 @@
       if (bundleCards.length === 0) { return; }
 
       bundleCards.sort(cardSort);
+
       l = bundleCards.length;
       for (i = 0; i < l; i++) {
-        if (bundleCards[i].isBundleCover) {
+        if (bundleCards[i].data.isBundleCover) {
           bundleCover = bundleCards[i];
           break;
         }
@@ -1383,6 +1382,9 @@
         bundleCover = bundleCards[0];
       }
 
+      if (!!bundleCover.parent) {
+        bundleCover.parent.removeCard(bundleCover.id);
+      }
       bundleCover.cards = [];
       bundleCover.isBundleCover = true;
       bundleCover.type = cardType.CARD_BUNDLE_CARD;
@@ -1390,6 +1392,9 @@
       startCard.addCard(bundleCover);
       for (i = 0; i < l; i++) {
         if (bundleCards[i].id !== bundleCover.id) {
+          if (!!bundleCards[i].parent) {
+            bundleCards[i].parent.removeCard(bundleCards[i].id);
+          }
           bundleCards[i].cards = [];
           bundleCards[i].isBundleCover = false;
           bundleCards[i].type = cardType.CONTENT_CARD;
