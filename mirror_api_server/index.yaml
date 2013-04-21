@@ -2,9 +2,7 @@ indexes:
 
 - kind: TimelineItem
   properties:
-  - name: isBundleCover
   - name: isDeleted
-  - name: isPinned
   - name: user
   - name: updated
     direction: desc
