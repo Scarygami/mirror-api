@@ -1065,11 +1065,11 @@
       function showMap(lat1, long1, lat2, long2) {
         var url;
         // https://maps.googleapis.com/maps/api/staticmap?
-        url = "https://maps.googleapis.com/maps/api/staticmap?sensor=false&size=640x360";
+        url = "https://maps.googleapis.com/maps/api/staticmap?sensor=false&size=640x360&style=feature:all|element:all|saturation:-100|lightness:-25|gamma:0.5|visibility:simplified&style=feature:roads|element:geometry&style=feature:landscape|element:geometry|lightness:-25";
         if (!!lat2 && !!long2) {
-          url += "&markers=color:blue%7C" + lat2 + "," + long2;
+          url += "&markers=color:0xF7594A%7C" + lat2 + "," + long2;
           if (!!lat1 && !!long1) {
-            url += "&path=color:0xff0000ff%7Cweight:5%7C" + lat1 + "," + long1 + "%7C" + lat2 + "," + long2;
+            url += "&path=color:0x1871ADFF%7Cweight:8%7C" + lat1 + "," + long1 + "%7C" + lat2 + "," + long2;
           }
         }
 

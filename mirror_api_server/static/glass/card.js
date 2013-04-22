@@ -42,7 +42,9 @@
       if (!!image) {
         html = "<article class=\"photo\">";
         html += "<img src=\"" + image + "\" style=\"width: 100%; height: 100%;\">";
-        html += "<div class=\"photo-overlay\"></div>";
+        if (!!text || !!date) {
+          html += "<div class=\"photo-overlay\"></div>";
+        }
       } else {
         html = "<article>";
       }
