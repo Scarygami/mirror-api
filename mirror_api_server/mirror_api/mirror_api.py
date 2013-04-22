@@ -96,6 +96,9 @@ class MirrorApi(remote.Service):
         if card.htmlPages is not None and len(card.htmlPages) > 0 and card.bundleId is not None:
             raise endpoints.BadRequestException("Can't mix HTML and Card bundle.")
 
+        # TODO: Temporary fix until default values are fixed
+        card.isDeleted = False
+
         card.put()
 
         channel.send_message(card.user.email(), json.dumps({"id": card.id}))
