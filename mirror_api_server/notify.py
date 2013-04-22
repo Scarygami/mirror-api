@@ -49,8 +49,8 @@ class TimelineNotifyHandler(utils.BaseHandler):
             logging.info("Wrong user")
             return
 
-        if data["operation"] != "UPDATE" or data["userActions"][0]["type"] != "SHARE":
-            logging.info("Wrong operation")
+        if data["collection"] != "timeline":
+            logging.info("Wrong collection")
             return
 
         service = get_auth_service(gplus_id)
@@ -108,7 +108,12 @@ class LocationNotifyHandler(utils.BaseHandler):
             user.locationUpdate = datetime.utcnow()
             user.put()
 
-        # TODO: Forward information to relevant demo services
+        for demo_service in demo_services:
+            if hasattr(demo_service, "handle_location"):
+                new_item = demo_service.handle_location(result)
+                if new_item is not None:
+                    new_result = service.timeline().insert(body=new_item).execute()
+                    logging.info(new_result)
 
 
 NOTIFY_ROUTES = [
