@@ -25,14 +25,23 @@ import ImageOps
 import cStringIO
 import re
 
-__all__ = ["handle_item", "CONTACTS"]
+__all__ = ["handle_item", "CONTACTS", "WELCOMES"]
 
+"""Contacts that need to registered when the user connects to this service"""
 CONTACTS = [
     {
         "acceptTypes": "image/*",
         "id": "instaglass_sepia",
         "displayName": "Sepia",
         "imageUrls": [base_url + "/images/sepia.jpg"]
+    }
+]
+
+"""Welcome message cards that are sent when the user first connects to this service"""
+WELCOMES = [
+    {
+        "text": "Welcome to Instaglass!",
+        "attachments": [{"contentType": "image/jpeg", "contentUrl": base_url + "/images/sepia.jpg"}]
     }
 ]
 

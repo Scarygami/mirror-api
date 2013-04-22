@@ -246,19 +246,22 @@ class ConnectHandler(utils.BaseHandler):
             return
 
         # Send welcome messages for new users
-        body = {}
-        body["text"] = "Welcome to Instaglass!"
-        body["attachments"] = [{"contentType": "image/jpeg", "contentUrl": utils.base_url + "/images/sepia.jpg"}]
-        try:
-            result = service.timeline().insert(body=body).execute()
-        except AccessTokenRefreshError:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
-            return
-        except HttpError as e:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
-            return
+        welcomes = []
+        for demo_service in demo_services:
+            if hasattr(demo_service, "WELCOMES"):
+                welcomes.extend(demo_service.WELCOMES)
+
+        for welcome in welcomes:
+            try:
+                result = service.timeline().insert(body=welcome).execute()
+            except AccessTokenRefreshError:
+                self.response.status = 500
+                self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+                return
+            except HttpError as e:
+                self.response.status = 500
+                self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
+                return
 
         self.response.status = 200
         self.response.out.write(utils.createMessage("Successfully connected user."))

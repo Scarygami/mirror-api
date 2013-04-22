@@ -25,10 +25,9 @@ import cStringIO
 import re
 import random
 
-__all__ = ["handle_item", "CONTACTS"]
+__all__ = ["handle_item", "CONTACTS", "WELCOMES"]
 
-_NUM_CATS = 6
-
+"""Contacts that need to registered when the user connects to this service"""
 CONTACTS = [
     {
         "acceptTypes": "image/*",
@@ -37,6 +36,16 @@ CONTACTS = [
         "imageUrls": [base_url + "/images/cat.png"]
     }
 ]
+
+"""Welcome message cards that are sent when the user first connects to this service"""
+WELCOMES = [
+    {
+        "text": "Welcome to Add a Cat!",
+        "attachments": [{"contentType": "image/jpeg", "contentUrl": base_url + "/images/cat.png"}]
+    }
+]
+
+_NUM_CATS = 6
 
 
 def handle_item(item):
