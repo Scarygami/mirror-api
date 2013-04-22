@@ -24,17 +24,13 @@ the requests to the relevant demo services.
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
 import utils
+from demos import demo_services
 from auth import get_auth_service
-from demos import DEMOS
 
-import logging
 import json
+import logging
 from datetime import datetime
 from google.appengine.ext import ndb
-
-demo_services = []
-for demo in DEMOS:
-    demo_services.append(__import__("demos." + demo, fromlist="*"))
 
 
 class TimelineNotifyHandler(utils.BaseHandler):

@@ -17,13 +17,24 @@
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
+from utils import base_url
+
 import logging
 import Image
 import ImageOps
 import cStringIO
 import re
 
-__all__ = ["handle_item"]
+__all__ = ["handle_item", "CONTACTS"]
+
+CONTACTS = [
+    {
+        "acceptTypes": "image/*",
+        "id": "instaglass_sepia",
+        "displayName": "Sepia",
+        "imageUrls": [base_url + "/images/sepia.jpg"]
+    }
+]
 
 
 def _make_linear_ramp(white):

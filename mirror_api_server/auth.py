@@ -27,12 +27,12 @@ subscriptions and deleting credentials when the user wants to disconnect.
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
 import utils
+from demos import demo_services
 
 import random
 import string
 import httplib2
 import json
-import logging
 
 from apiclient.discovery import build
 from apiclient.errors import HttpError
@@ -145,39 +145,38 @@ class ConnectHandler(utils.BaseHandler):
             self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
             return
 
-        # Re-register contacts just in case new ones have been added
-        # TODO: include description of contacts in demo services and read from there
-        body = {}
-        body["acceptTypes"] = ["image/*"]
-        body["id"] = "instaglass_sepia"
-        body["displayName"] = "Sepia"
-        body["imageUrls"] = [utils.base_url + "/images/sepia.jpg"]
+        # Delete all existing contacts
         try:
-            result = service.contacts().insert(body=body).execute()
+            result = service.contacts().list().execute()
+            if "items" in result:
+                for contact in result["items"]:
+                    del_result = service.contacts().delete(id=contact["id"]).execute()
         except AccessTokenRefreshError:
             self.response.status = 500
             self.response.out.write(utils.createError(500, "Failed to refresh access token."))
             return
         except HttpError as e:
             self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
             return
 
-        body = {}
-        body["acceptTypes"] = ["image/*"]
-        body["id"] = "add_a_cat"
-        body["displayName"] = "Add a Cat to that"
-        body["imageUrls"] = [utils.base_url + "/images/cat.png"]
-        try:
-            result = service.contacts().insert(body=body).execute()
-        except AccessTokenRefreshError:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
-            return
-        except HttpError as e:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
-            return
+        # Register contacts defined in the demo services
+        contacts = []
+        for demo_service in demo_services:
+            if hasattr(demo_service, "CONTACTS"):
+                contacts.extend(demo_service.CONTACTS)
+
+        for contact in contacts:
+            try:
+                result = service.contacts().insert(body=contact).execute()
+            except AccessTokenRefreshError:
+                self.response.status = 500
+                self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+                return
+            except HttpError as e:
+                self.response.status = 500
+                self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
+                return
 
         """
         Re-register subscriptions to make sure all of them are available.
@@ -198,7 +197,7 @@ class ConnectHandler(utils.BaseHandler):
             return
         except HttpError as e:
             self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
             return
 
         # Generate random verifyToken and store it in User entity
@@ -221,7 +220,7 @@ class ConnectHandler(utils.BaseHandler):
             return
         except HttpError as e:
             self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
             return
 
         # Subscribe to all location updates
@@ -238,7 +237,7 @@ class ConnectHandler(utils.BaseHandler):
             return
         except HttpError as e:
             self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
             return
 
         if not new_user:
@@ -258,7 +257,7 @@ class ConnectHandler(utils.BaseHandler):
             return
         except HttpError as e:
             self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
             return
 
         self.response.status = 200
@@ -308,7 +307,7 @@ class DisconnectHandler(utils.BaseHandler):
             return
         except HttpError as e:
             self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
             return
 
         # De-register subscriptions
@@ -323,7 +322,7 @@ class DisconnectHandler(utils.BaseHandler):
             return
         except HttpError as e:
             self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
             return
 
         # Execute HTTP GET request to revoke current token.
@@ -342,7 +341,7 @@ class DisconnectHandler(utils.BaseHandler):
                 self.response.out.write(utils.createError(400, "Failed to revoke token for given user."))
         except HttpError as e:
             self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
             return
 
         ndb.Key("User", gplus_id).delete()

@@ -17,15 +17,26 @@
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
+from utils import base_url
+
 import logging
 import Image
 import cStringIO
 import re
 import random
 
-__all__ = ["handle_item"]
+__all__ = ["handle_item", "CONTACTS"]
 
 _NUM_CATS = 6
+
+CONTACTS = [
+    {
+        "acceptTypes": "image/*",
+        "id": "add_a_cat",
+        "displayName": "Add a Cat to that",
+        "imageUrls": [base_url + "/images/cat.png"]
+    }
+]
 
 
 def handle_item(item):
