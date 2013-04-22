@@ -25,6 +25,12 @@ __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
 import utils
 from auth import get_auth_service
+#from demos import DEMOS
+
+#demo_services = []
+#for demo in DEMOS:
+#    demo_services.append(__import__(demo))
+
 from demos.instaglass import handle_image as instaglass_image
 from demos.add_a_cat import handle_image as cat_image
 
