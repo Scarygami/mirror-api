@@ -221,6 +221,7 @@ body {
 }
 
 .card_type_action > .card_action > .card_icon, .card_progress_icon {
+  display: inline-block;
   height: 50px;
   margin-right: 10px;
 }
