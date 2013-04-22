@@ -218,6 +218,15 @@
           "iconUrl": "../images/share.png"
         }]
       },
+      "NAVIGATE": {
+        "action": "NAVIGATE",
+        "id": "NAVIGATE",
+        "values": [{
+          "state": "DEFAULT",
+          "displayName": "Navigate",
+          "iconUrl": "../images/navigate.png"
+        }]
+      },
       "REPLY": {
         "action": "REPLY",
         "id": "REPLY",

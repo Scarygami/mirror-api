@@ -73,6 +73,53 @@ class Attachment(EndpointsModel):
     contentUrl = ndb.TextProperty()
 
 
+class Location(EndpointsModel):
+    """Model for location"""
+
+    _latest = False
+
+    _message_fields_schema = (
+        "id",
+        "timestamp",
+        "latitude",
+        "longitude",
+        "accuracy",
+        "displayName",
+        "address"
+    )
+
+    user = EndpointsUserProperty(required=True, raise_unauthorized=True)
+    timestamp = EndpointsDateTimeProperty(auto_now_add=True)
+    latitude = ndb.FloatProperty()
+    longitude = ndb.FloatProperty()
+    accuracy = ndb.FloatProperty()
+    displayName = ndb.StringProperty()
+    address = ndb.StringProperty()
+
+    def IdSet(self, value):
+        if not isinstance(value, basestring):
+            raise TypeError("ID must be a string.")
+
+        if value == "latest":
+            self._latest = True
+            loc_query = Location.query().order(-Location.timestamp)
+            loc_query = loc_query.filter(Location.user == self.user)
+            loc = loc_query.get()
+            if loc is not None:
+                self.UpdateFromKey(loc.key)
+            return
+
+        if value.isdigit():
+            self.UpdateFromKey(ndb.Key(Location, int(value)))
+
+    @EndpointsAliasProperty(setter=IdSet, required=False)
+    def id(self):
+        if self._latest:
+            return "latest"
+        if self.key is not None:
+            return str(self.key.integer_id())
+
+
 class TimelineItem(EndpointsModel):
     """Model for timeline cards.
 
@@ -107,6 +154,7 @@ class TimelineItem(EndpointsModel):
         "isBundleCover",
         "isDeleted",
         "isPinned",
+        "location",
         "menuItems",
         "recipients",
         "sourceItemId",
@@ -129,6 +177,7 @@ class TimelineItem(EndpointsModel):
     isBundleCover = ndb.BooleanProperty()
     isDeleted = ndb.BooleanProperty()
     isPinned = ndb.BooleanProperty()
+    location = ndb.LocalStructuredProperty(Location)
     menuItems = ndb.LocalStructuredProperty(MenuItem, repeated=True)
     recipients = ndb.LocalStructuredProperty(TimelineContact, repeated=True)
     sourceItemId = ndb.StringProperty()
@@ -195,53 +244,6 @@ class Subscription(EndpointsModel):
     verifyToken = ndb.StringProperty(required=True)
     operation = msgprop.EnumProperty(Operation, repeated=True)
     callbackUrl = ndb.StringProperty(required=True)
-
-
-class Location(EndpointsModel):
-    """Model for location"""
-
-    _latest = False
-
-    _message_fields_schema = (
-        "id",
-        "timestamp",
-        "latitude",
-        "longitude",
-        "accuracy",
-        "displayName",
-        "address"
-    )
-
-    user = EndpointsUserProperty(required=True, raise_unauthorized=True)
-    timestamp = EndpointsDateTimeProperty(auto_now_add=True)
-    latitude = ndb.FloatProperty()
-    longitude = ndb.FloatProperty()
-    accuracy = ndb.FloatProperty()
-    displayName = ndb.StringProperty()
-    address = ndb.StringProperty()
-
-    def IdSet(self, value):
-        if not isinstance(value, basestring):
-            raise TypeError("ID must be a string.")
-
-        if value == "latest":
-            self._latest = True
-            loc_query = Location.query().order(-Location.timestamp)
-            loc_query = loc_query.filter(Location.user == self.user)
-            loc = loc_query.get()
-            if loc is not None:
-                self.UpdateFromKey(loc.key)
-            return
-
-        if value.isdigit():
-            self.UpdateFromKey(ndb.Key(Location, int(value)))
-
-    @EndpointsAliasProperty(setter=IdSet, required=False)
-    def id(self):
-        if self._latest:
-            return "latest"
-        if self.key is not None:
-            return str(self.key.integer_id())
 
 
 class Action(messages.Message):
