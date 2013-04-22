@@ -297,7 +297,28 @@ class MirrorApi(remote.Service):
 
         location.put()
 
-        # TODO: notify location subscriptions
+        # Notify location subscriptions
+
+        data = {}
+        data["collection"] = "locations"
+        data["itemId"] = "latest"
+        operation = Operation.UPDATE
+        data["operation"] = operation.name
+
+        header = {"Content-type": "application/json"}
+
+        query = Subscription.query().filter(Subscription.user == endpoints.get_current_user())
+        query = query.filter(Subscription.collection == "locations")
+        query = query.filter(Subscription.operation == operation)
+        for subscription in query.fetch():
+            data["userToken"] = subscription.userToken
+            data["verifyToken"] = subscription.verifyToken
+
+            req = urllib2.Request(subscription.callbackUrl, json.dumps(data), header)
+            try:
+                urllib2.urlopen(req)
+            except urllib2.URLError as e:
+                logging.error(e)
 
         return location
 
@@ -357,7 +378,9 @@ class MirrorApi(remote.Service):
         if data is not None and operation is not None:
             header = {"Content-type": "application/json"}
 
-            query = Subscription.query().filter(Subscription.user == current_user).filter(Subscription.operation == operation)
+            query = Subscription.query().filter(Subscription.user == current_user)
+            query = query.filter(Subscription.collection == "timeline")
+            query = query.filter(Subscription.operation == operation)
             for subscription in query.fetch():
                 data["userToken"] = subscription.userToken
                 data["verifyToken"] = subscription.verifyToken

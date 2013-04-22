@@ -107,8 +107,8 @@ class LocationNotifyHandler(utils.BaseHandler):
         logging.info(result)
 
         if "longitude" in result and "latitude" in result:
-            user.lontitude = result["longitude"]
-            user.latitude = result["longitude"]
+            user.longitude = result["longitude"]
+            user.latitude = result["latitude"]
             user.locationUpdate = datetime.utcnow()
             user.put()
 
