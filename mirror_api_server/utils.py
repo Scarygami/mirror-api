@@ -38,21 +38,25 @@ with open("client_secrets.json", "r") as fh:
     CLIENT_ID = json.load(fh)["web"]["client_id"]
 
 config = {}
-# TODO: load sesseion secret from a file
+# TODO: load session secret from a file
 config["webapp2_extras.sessions"] = {
     "secret_key": "ajksdlj1029jlksndajsaskd7298hkajsbdkaukjassnkjankj",
 }
 
 
 def createError(code, message):
+    """Create a JSON string to be returned as error response to requests"""
     return json.dumps({"error": {"code": code, "message": message}})
 
 
 def createMessage(message):
+    """Create a JSON string to be returned as response to requests"""
     return json.dumps({"message": message})
 
 
 class BaseHandler(webapp2.RequestHandler):
+    """Base request handler to enable session storage for all handlers"""
+
     def dispatch(self):
         # Get a session store for this request.
         self.session_store = sessions.get_store(request=self.request)
@@ -70,8 +74,24 @@ class BaseHandler(webapp2.RequestHandler):
 
 
 class User(ndb.Model):
+    """Datastore model to keep all relevant information about a user
+
+    Properties:
+        displayName     Name of the user as returned by the Google+ API
+        imageUrl        Avatar image of the user as returned by the Google+ API
+        verifyToken     Random token generated for each user to check validity of incoming notifications
+        credentials     OAuth2 Access and refresh token to be used for requests against the Mirror API
+        latitude        Latest recorded latitude of the user
+        longitude       Latest recorded longitude of the user
+        locationUpdate  DateTime at which the location of the user was last update
+        friends         List of Google+ friends id, as returned by the Google+ API
+    """
+
+    displayName = ndb.StringProperty()
+    imageUrl = ndb.StringProperty()
     verifyToken = ndb.StringProperty()
     credentials = CredentialsNDBProperty()
     latitude = ndb.FloatProperty()
     longitude = ndb.FloatProperty()
     locationUpdate = ndb.DateTimeProperty()
+    friends = ndb.StringProperty(repeated=True)
