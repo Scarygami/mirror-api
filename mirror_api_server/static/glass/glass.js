@@ -42,7 +42,7 @@
    */
   function Glass() {
     var
-      startCard, shareCards = [], replyCard,
+      startCard, shareCards = [], replyCard, mapCard,
       demoCards, demoContacts, templates, actions,
       mirror,
       emulator = this,
@@ -921,6 +921,17 @@
       l = this.data.menuItems.length;
       for (i = 0; i < l; i++) {
         if (this.data.menuItems[i].action) {
+          // For menuItem NAVIGATE a location has to be attached to the card
+          if (this.data.menuItems[i].action == "NAVIGATE" &&
+              (!this.data.location || !this.data.location.latitude || !this.data.location.longitude)) {
+            continue;
+          }
+          // For menuItem READ_ALOUD speakableText or text have to be set
+          if (this.data.menuItems[i].action == "READ_ALOUD" &&
+              !this.data.text &&
+              !this.data.speakableText) {
+            continue;
+          }
           this.actionCards.push(new ActionCard(this.id + "_" + this.data.menuItems[i].action, this, this.data.menuItems[i]));
         }
       }
@@ -1047,6 +1058,46 @@
       }
     };
 
+
+    ActionCard.prototype.startNavigation = function () {
+      var me = this;
+
+      function showMap(lat1, long1, lat2, long2) {
+        var url;
+        // https://maps.googleapis.com/maps/api/staticmap?
+        url = "https://maps.googleapis.com/maps/api/staticmap?sensor=false&size=640x360";
+        if (!!lat2 && !!long2) {
+          url += "&markers=color:blue%7C" + lat2 + "," + long2;
+          if (!!lat1 && !!long1) {
+            url += "&path=color:0xff0000ff%7Cweight:5%7C" + lat1 + "," + long1 + "%7C" + lat2 + "," + long2;
+          }
+        }
+
+        mapCard.update({id: "map", attachments: [{contentType: "image/png", contentUrl: url}]});
+        mapCard.parent = me.parent;
+        mapCard.show();
+        me.parent.hide();
+        me.animateOut();
+      }
+
+      if (global.navigator.geolocation) {
+        global.navigator.geolocation.getCurrentPosition(function (loc) {
+          var data = {};
+          if (!global.glassDemoMode) {
+            if (loc.coords && loc.coords.longitude && loc.coords.latitude) {
+              showMap(loc.coords.latitude, loc.coords.longitude, me.parent.data.location.latitude, me.parent.data.location.longitude);
+            } else {
+              showMap(null, null, me.parent.location.latitude, me.parent.data.location.longitude);
+            }
+          }
+        }, function () {
+          showMap(null, null, me.parent.location.latitude, me.parent.data.location.longitude);
+        });
+      } else {
+        showMap(null, null, this.parent.location.latitude, this.parent.data.location.longitude);
+      }
+    };
+
     ActionCard.prototype.startAction = function () {
       var i, l;
       switch (this.action) {
@@ -1066,6 +1117,9 @@
         break;
       case "CUSTOM":
         this.sendCustomAction();
+        break;
+      case "NAVIGATE":
+        this.startNavigation();
         break;
       }
     };
@@ -1594,6 +1648,8 @@
       if (!!global.navigator.getUserMedia) {
         card.addCard(new CameraCard("camera", card));
       }
+
+      mapCard = new Card(cardType.CONTENT_CARD, "map", undefined, {"id": "map"});
 
       if (global.glassDemoMode) {
         handleContacts(demoContacts);
