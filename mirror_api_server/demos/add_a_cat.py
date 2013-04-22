@@ -57,10 +57,10 @@ def handle_item(item):
                 break
         else:
             # Item not meant for this service
-            return None
+            return (None, None, None)
     else:
         # Item not meant for this service
-        return None
+        return (None, None, None)
 
     image = None
     if "attachments" in item:
@@ -71,11 +71,11 @@ def handle_item(item):
 
     if image is None:
         logging.info("No suitable attachment")
-        return None
+        return (None, None, None)
 
     if not image.startswith("data:image"):
         logging.info("Can only work with data-uri")
-        return None
+        return (None, None, None)
 
     img_data = re.search(r'base64,(.*)', image).group(1)
     tempimg = cStringIO.StringIO(img_data.decode('base64'))
@@ -103,4 +103,4 @@ def handle_item(item):
     new_item["attachments"] = [{"contentType": "image/jpeg", "contentUrl": data_uri}]
     new_item["menuItems"] = [{"action": "SHARE"}]
 
-    return new_item
+    return ([new_item], None, None)
