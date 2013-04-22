@@ -33,6 +33,7 @@ import random
 import string
 import httplib2
 import json
+import logging
 
 from apiclient.discovery import build
 from apiclient.errors import HttpError
@@ -69,6 +70,12 @@ def get_auth_service(gplus_id):
     )
 
     return service
+
+
+def _disconnect(gplus_id):
+    """Delete credentials in case of errors"""
+
+    store_credentials(gplus_id, None)
 
 
 class ConnectHandler(utils.BaseHandler):
@@ -127,14 +134,24 @@ class ConnectHandler(utils.BaseHandler):
             new_user = True
             store_credentials(gplus_id, credentials)
 
-        # TODO: handle cases where credentials don't have a refresh token
+        # handle cases where credentials don't have a refresh token
+        credentials = get_credentials(gplus_id)
+        logging.info(credentials)
+        logging.info(credentials.refresh_token)
+
+        if credentials.refresh_token is None:
+            _disconnect(gplus_id)
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "No Refresh token available, need to reauthenticate"))
+            return
 
         # Create a new authorized API client
         try:
             service = get_auth_service(gplus_id)
         except AccessTokenRefreshError:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            _disconnect(gplus_id)
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
         except UnknownApiNameOrVersion:
             self.response.status = 500
@@ -152,8 +169,9 @@ class ConnectHandler(utils.BaseHandler):
                 for contact in result["items"]:
                     del_result = service.contacts().delete(id=contact["id"]).execute()
         except AccessTokenRefreshError:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            _disconnect(gplus_id)
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
         except HttpError as e:
             self.response.status = 500
@@ -170,8 +188,9 @@ class ConnectHandler(utils.BaseHandler):
             try:
                 result = service.contacts().insert(body=contact).execute()
             except AccessTokenRefreshError:
-                self.response.status = 500
-                self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+                _disconnect(gplus_id)
+                self.response.status = 401
+                self.response.out.write(utils.createError(401, "Failed to refresh access token."))
                 return
             except HttpError as e:
                 self.response.status = 500
@@ -192,8 +211,9 @@ class ConnectHandler(utils.BaseHandler):
                 for subscription in result["items"]:
                     del_result = service.subscriptions().delete(id=subscription["id"]).execute()
         except AccessTokenRefreshError:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            _disconnect(gplus_id)
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
         except HttpError as e:
             self.response.status = 500
@@ -215,8 +235,9 @@ class ConnectHandler(utils.BaseHandler):
         try:
             result = service.subscriptions().insert(body=body).execute()
         except AccessTokenRefreshError:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            _disconnect(gplus_id)
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
         except HttpError as e:
             self.response.status = 500
@@ -232,8 +253,9 @@ class ConnectHandler(utils.BaseHandler):
         try:
             result = service.subscriptions().insert(body=body).execute()
         except AccessTokenRefreshError:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+            _disconnect(gplus_id)
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
         except HttpError as e:
             self.response.status = 500
@@ -255,8 +277,9 @@ class ConnectHandler(utils.BaseHandler):
             try:
                 result = service.timeline().insert(body=welcome).execute()
             except AccessTokenRefreshError:
-                self.response.status = 500
-                self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+                _disconnect(gplus_id)
+                self.response.status = 401
+                self.response.out.write(utils.createError(401, "Failed to refresh access token."))
                 return
             except HttpError as e:
                 self.response.status = 500

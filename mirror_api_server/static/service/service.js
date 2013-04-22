@@ -38,8 +38,8 @@
       xhr = new global.XMLHttpRequest();
       xhr.onreadystatechange = function () {
         var response, json;
-        if (xhr.readyState == 4) {
-          if (xhr.status == 200) {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
             console.log("Success: " + xhr.responseText);
             json = JSON.parse(xhr.responseText);
             listCards(json.items);
@@ -62,8 +62,8 @@
       xhr = new global.XMLHttpRequest();
       xhr.onreadystatechange = function () {
         var response;
-        if (xhr.readyState == 4) {
-          if (xhr.status == 200) {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
             console.log("Success: " + xhr.responseText);
             doc.getElementById("signin").style.display = "none";
             doc.getElementById("signout").style.display = "block";
@@ -77,6 +77,9 @@
             doc.getElementById("signin").style.display = "block";
             doc.getElementById("signout").style.display = "none";
             doc.getElementById("glass").style.display = "none";
+            if (xhr.status === 401) {
+              global.location.href = "/?reconnect=true";
+            }
           }
         }
       };
@@ -92,8 +95,8 @@
       xhr = new global.XMLHttpRequest();
       xhr.onreadystatechange = function () {
         var response;
-        if (xhr.readyState == 4) {
-          if (xhr.status == 200) {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
             console.log("Success: " + xhr.responseText);
           } else {
             console.log("Error " + xhr.status + ": " + xhr.statusText);
@@ -166,8 +169,8 @@
         xhr = new global.XMLHttpRequest();
         xhr.onreadystatechange = function () {
           var response;
-          if (xhr.readyState == 4) {
-            if (xhr.status == 200) {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
               console.log("Success: " + xhr.responseText);
               requestCards();
             } else {

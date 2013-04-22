@@ -13,6 +13,7 @@
         data-clientId="{{ client_id }}"
         data-callback="onSignInCallback"
         data-redirecturi="postmessage"
+        {% if reconnect %}data-approvalprompt="force"{% endif %}
         data-accesstype="offline"
         data-theme="dark"
         data-cookiepolicy="single_host_origin">

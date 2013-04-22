@@ -29,10 +29,11 @@ from oauth2client.client import AccessTokenRefreshError
 
 class IndexHandler(utils.BaseHandler):
     def get(self):
+        reconnect = (self.request.get("reconnect") == "true")
         template = utils.JINJA.get_template("templates/service.html")
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
         self.session["state"] = state
-        self.response.out.write(template.render({"client_id": utils.CLIENT_ID, "state": state}))
+        self.response.out.write(template.render({"client_id": utils.CLIENT_ID, "state": state, "reconnect": reconnect}))
 
 
 class ListHandler(utils.BaseHandler):
