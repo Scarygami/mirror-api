@@ -23,11 +23,24 @@ import cStringIO
 import re
 import random
 
-NUM_CATS = 6
+__all__ = ["handle_item"]
+
+_NUM_CATS = 6
 
 
-def handle_image(item):
+def handle_item(item):
     """Callback for Timeline updates."""
+
+    if "recipients" in item:
+        for rec in item["recipients"]:
+            if rec["id"] == "add_a_cat":
+                break
+        else:
+            # Item not meant for this service
+            return None
+    else:
+        # Item not meant for this service
+        return None
 
     image = None
     if "attachments" in item:
@@ -48,7 +61,7 @@ def handle_image(item):
     tempimg = cStringIO.StringIO(img_data.decode('base64'))
     im = Image.open(tempimg)
 
-    cat = random.randint(1, NUM_CATS)
+    cat = random.randint(1, _NUM_CATS)
     cat_image = Image.open("res/cat%s.png" % cat)
 
     zoom = im.size[0] / 640

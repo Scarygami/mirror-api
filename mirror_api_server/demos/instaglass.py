@@ -23,8 +23,10 @@ import ImageOps
 import cStringIO
 import re
 
+__all__ = ["handle_item"]
 
-def make_linear_ramp(white):
+
+def _make_linear_ramp(white):
     """ generate a palette in a format acceptable for `putpalette`, which
         expects [r,g,b,r,g,b,...]
     """
@@ -35,12 +37,12 @@ def make_linear_ramp(white):
     return ramp
 
 
-def apply_sepia_filter(image):
+def _apply_sepia_filter(image):
     """ Apply a sepia-tone filter to the given PIL Image
         Based on code at: http://effbot.org/zone/pil-sepia.htm
     """
     # make sepia ramp (tweak color as necessary)
-    sepia = make_linear_ramp((255, 240, 192))
+    sepia = _make_linear_ramp((255, 240, 192))
 
     # convert to grayscale
     orig_mode = image.mode
@@ -60,11 +62,18 @@ def apply_sepia_filter(image):
     return image
 
 
-def handle_image(item, method):
+def handle_item(item):
     """Callback for Timeline updates."""
 
-    if method != "sepia":
-        logging.info("Unsupported method")
+    if "recipients" in item:
+        for rec in item["recipients"]:
+            if rec["id"] == "instaglass_sepia":
+                break
+        else:
+            # Item not meant for this service
+            return None
+    else:
+        # Item not meant for this service
         return None
 
     image = None
@@ -85,7 +94,7 @@ def handle_image(item, method):
     img_data = re.search(r'base64,(.*)', image).group(1)
     tempimg = cStringIO.StringIO(img_data.decode('base64'))
     im = Image.open(tempimg)
-    new_im = apply_sepia_filter(im)
+    new_im = _apply_sepia_filter(im)
 
     f = cStringIO.StringIO()
     new_im.save(f, "JPEG")

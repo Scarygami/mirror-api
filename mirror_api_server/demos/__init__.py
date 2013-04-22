@@ -1,2 +1,2 @@
 
-DEMOS = ["demos.add_a_cat", "demos.instaglass"]
+DEMOS = ["add_a_cat", "instaglass"]
