@@ -56,7 +56,7 @@ def store_credentials(gplus_id, credentials):
     storage.put(credentials)
 
 
-def get_auth_service(gplus_id):
+def get_auth_service(gplus_id, api="mirror", version="v1", discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest"):
     credentials = get_credentials(gplus_id)
     if credentials is None:
         return None
@@ -64,8 +64,8 @@ def get_auth_service(gplus_id):
     http = httplib2.Http()
     http = credentials.authorize(http)
     service = build(
-        "mirror", "v1",
-        discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest",
+        api, version,
+        discoveryServiceUrl=discoveryServiceUrl,
         http=http
     )
 
@@ -148,6 +148,7 @@ class ConnectHandler(utils.BaseHandler):
         # Create a new authorized API client
         try:
             service = get_auth_service(gplus_id)
+            plus_service = get_auth_service(gplus_id, "plus", "v1", "https://www.googleapis.com/discovery/v1/apis/{api}/{apiVersion}/rest")
         except AccessTokenRefreshError:
             _disconnect(gplus_id)
             self.response.status = 401
@@ -161,6 +162,45 @@ class ConnectHandler(utils.BaseHandler):
             self.response.status = 500
             self.response.out.write(utils.createError(500, "Failed to initialize client library. %s" % e))
             return
+
+        # Fetch user information
+        try:
+            result = plus_service.people().get(userId="me", fields="displayName,image").execute()
+        except AccessTokenRefreshError:
+            _disconnect(gplus_id)
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
+            return
+
+        user = ndb.Key("User", gplus_id).get()
+        user.displayName = result["displayName"]
+        user.imageUrl = result["image"]["url"]
+        user.put()
+
+        # Fetch user friends
+        try:
+            result = plus_service.people().list(userId="me", collection="visible", maxResults=100, orderBy="best", fields="items/id").execute()
+        except AccessTokenRefreshError:
+            _disconnect(gplus_id)
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
+            return
+
+        friends = []
+        if "items" in result:
+            for item in result["items"]:
+                friends.append(item["id"])
+
+        user.friends = friends
+        user.put()
 
         # Delete all existing contacts
         try:
@@ -222,7 +262,6 @@ class ConnectHandler(utils.BaseHandler):
 
         # Generate random verifyToken and store it in User entity
         verifyToken = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(32))
-        user = ndb.Key("User", gplus_id).get()
         user.verifyToken = verifyToken
         user.put()
 
