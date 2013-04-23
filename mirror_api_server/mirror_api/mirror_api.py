@@ -51,7 +51,7 @@ API_DESCRIPTION = ("Mirror API implemented using Google Cloud "
 class MirrorApi(remote.Service):
     """Class which defines the Mirror API v1."""
 
-    @TimelineItem.query_method(query_fields=("limit", "pageToken"),
+    @TimelineItem.query_method(query_fields=("limit", "pageToken", "bundleId", "includeDeleted", "sourceItemId"),
                                user_required=True,
                                path="timeline", name="timeline.list")
     def timeline_list(self, query):
@@ -59,7 +59,6 @@ class MirrorApi(remote.Service):
 
         query = query.order(-TimelineItem.updated)
         query = query.filter(TimelineItem.user == endpoints.get_current_user())
-        query = query.filter(TimelineItem.isDeleted == False)
         return query
 
     @TimelineItem.method(request_fields=("id",),
@@ -143,25 +142,25 @@ class MirrorApi(remote.Service):
         if card.isDeleted:
             raise endpoints.NotFoundException("Card has been deleted")
 
-        card.attachments = None
+        card.attachments = []
         card.bundleId = None
         card.canonicalUrl = None
         card.created = None
         card.displayTime = None
         card.html = None
-        card.htmlPages = None
+        card.htmlPages = []
         card.inReplyTo = None
         card.isBundleCover = None
         card.isPinned = None
-        card.menuItems = None
-        card.recipients = None
+        card.menuItems = []
+        card.recipients = []
         card.sourceItemId = None
         card.speakableText = None
         card.text = None
         card.title = None
         card.updated = None
-
         card.isDeleted = True
+        card.put()
 
         # Notify Glass emulator
         channel.send_message(card.user.email(), json.dumps({"id": card.id}))

@@ -3,7 +3,24 @@ indexes:
 - kind: TimelineItem
   properties:
   - name: isDeleted
+  - name: updated
+    direction: desc
+
+- kind: TimelineItem
+  properties:
   - name: user
+  - name: updated
+    direction: desc
+
+- kind: TimelineItem
+  properties:
+  - name: bundleId
+  - name: updated
+    direction: desc
+
+- kind: TimelineItem
+  properties:
+  - name: sourceItemId
   - name: updated
     direction: desc
 

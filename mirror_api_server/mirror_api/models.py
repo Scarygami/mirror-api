@@ -186,6 +186,22 @@ class TimelineItem(EndpointsModel):
     title = ndb.StringProperty()
     updated = EndpointsDateTimeProperty(auto_now=True)
 
+    def IncludeDeletedSet(self, value):
+        """
+        If value is true all timelineItems will be returned.
+        Otherwise a filter for non-deleted items is necessary for the query.
+        """
+        if value is None or value is False:
+            self._endpoints_query_info._AddFilter(TimelineItem.isDeleted == False)
+
+    @EndpointsAliasProperty(setter=IncludeDeletedSet, property_type=messages.BooleanField, default=False)
+    def includeDeleted(self):
+        """
+        includedDeleted is only used as parameter in query_methods
+        so there should never be a reason to actually retrieve the value
+        """
+        return None
+
 
 class Contact(EndpointsModel):
     """A person or group that can be used as a creator or a contact."""
