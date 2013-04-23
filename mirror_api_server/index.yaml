@@ -29,3 +29,9 @@ indexes:
   - name: user
   - name: timestamp
     direction: desc
+
+- kind: TimelineItem
+  properties:
+  - name: isPinned
+  - name: updated
+    direction: desc

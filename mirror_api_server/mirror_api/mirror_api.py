@@ -51,7 +51,7 @@ API_DESCRIPTION = ("Mirror API implemented using Google Cloud "
 class MirrorApi(remote.Service):
     """Class which defines the Mirror API v1."""
 
-    @TimelineItem.query_method(query_fields=("limit", "pageToken", "bundleId", "includeDeleted", "sourceItemId"),
+    @TimelineItem.query_method(query_fields=("limit", "pageToken", "bundleId", "includeDeleted", "pinnedOnly", "sourceItemId"),
                                user_required=True,
                                path="timeline", name="timeline.list")
     def timeline_list(self, query):

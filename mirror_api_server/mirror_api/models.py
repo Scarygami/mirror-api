@@ -202,6 +202,22 @@ class TimelineItem(EndpointsModel):
         """
         return None
 
+    def PinnedOnlySet(self, value):
+        """
+        If value is true only pinned timelineItems will be returned.
+        Otherwise all timelineItems are returned.
+        """
+        if value is True:
+            self._endpoints_query_info._AddFilter(TimelineItem.isPinned == True)
+
+    @EndpointsAliasProperty(setter=PinnedOnlySet, property_type=messages.BooleanField, default=False)
+    def pinnedOnly(self):
+        """
+        pinnedOnly is only used as parameter in query_methods
+        so there should never be a reason to actually retrieve the value
+        """
+        return None
+
 
 class Contact(EndpointsModel):
     """A person or group that can be used as a creator or a contact."""
