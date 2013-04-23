@@ -39,11 +39,8 @@
     var src, parts, part, i, l, width = 640, height = 360, elements = [], marker, coords, polyline, polystyle, tmp;
 
     src = image.src;
-
     if (src.indexOf("glass://map?") !== 0) { return; }
-
     src = src.substring(12);
-
     parts = src.split("&");
 
     l = parts.length;
@@ -62,7 +59,14 @@
         if (marker.length === 2) {
           coords = marker[1].split(",");
           if (coords.length === 2) {
-            elements.push("markers=color:0xF7594A|" + coords[0] + "," + coords[1]);
+            tmp = "markers=";
+            if (marker[0] === "0") {
+              tmp += "color:0xF7594A";
+            } else {
+              tmp += "icon:http://" + global.location.host + "/images/map_dot.png|shadow:false";
+            }
+            tmp += "|" + coords[0] + "," + coords[1];
+            elements.push(tmp);
           }
         }
         break;
