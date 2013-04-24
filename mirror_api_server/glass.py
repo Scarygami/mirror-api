@@ -36,6 +36,8 @@ from oauth2client.client import FlowExchangeError
 
 
 class GlassHandler(utils.BaseHandler):
+    """Renders the Glass emulator"""
+
     def get(self):
         template = utils.JINJA.get_template("templates/glass.html")
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
@@ -50,11 +52,12 @@ class GlassHandler(utils.BaseHandler):
 
 
 class GlassConnectHandler(utils.BaseHandler):
+    """Handles connection requests coming from the emulator"""
+
     def post(self):
         """
-            Exchange the one-time authorization code for a token and verify user.
-
-            Return a channel token for push notifications on success
+        Exchange the one-time authorization code for a token and verify user.
+        Return a channel token for push notifications on success
         """
 
         self.response.content_type = "application/json"

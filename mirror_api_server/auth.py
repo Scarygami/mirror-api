@@ -46,17 +46,21 @@ from oauth2client.appengine import StorageByKeyName
 
 
 def get_credentials(gplus_id):
+    """Retrieves credentials for the provided Google+ User ID from the Datastore"""
     storage = StorageByKeyName(utils.User, gplus_id, "credentials")
     credentials = storage.get()
     return credentials
 
 
 def store_credentials(gplus_id, credentials):
+    """Stores credentials for the provide Google+ User ID to Datastore"""
     storage = StorageByKeyName(utils.User, gplus_id, "credentials")
     storage.put(credentials)
 
 
 def get_auth_service(gplus_id, api="mirror", version="v1", discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest"):
+    """Creates a new authenticated API client using the stored credentials"""
+
     credentials = get_credentials(gplus_id)
     if credentials is None:
         return None
@@ -80,8 +84,12 @@ def _disconnect(gplus_id):
 
 class ConnectHandler(utils.BaseHandler):
     def post(self):
-        """Exchange the one-time authorization code for a token and
-        store the token in the session."""
+        """
+        Exchange the one-time authorization code for a token and
+        store the credentials for later access.
+
+        Setup all contacts and subscriptions necessary for the hosted services.
+        """
 
         self.response.content_type = "application/json"
 
@@ -127,6 +135,7 @@ class ConnectHandler(utils.BaseHandler):
             self.response.out.write(utils.createError(401, "Token's client ID does not match the app's client ID"))
             return
 
+        # Store credentials associated with the User ID for later use
         self.session["gplus_id"] = gplus_id
         stored_credentials = get_credentials(gplus_id)
         new_user = False
@@ -136,8 +145,6 @@ class ConnectHandler(utils.BaseHandler):
 
         # handle cases where credentials don't have a refresh token
         credentials = get_credentials(gplus_id)
-        logging.info(credentials)
-        logging.info(credentials.refresh_token)
 
         if credentials.refresh_token is None:
             _disconnect(gplus_id)
@@ -145,7 +152,7 @@ class ConnectHandler(utils.BaseHandler):
             self.response.out.write(utils.createError(401, "No Refresh token available, need to reauthenticate"))
             return
 
-        # Create a new authorized API client
+        # Create new authorized API clients for the Mirror API and Google+ API
         try:
             service = get_auth_service(gplus_id)
             plus_service = get_auth_service(gplus_id, "plus", "v1", "https://www.googleapis.com/discovery/v1/apis/{api}/{apiVersion}/rest")
@@ -176,12 +183,13 @@ class ConnectHandler(utils.BaseHandler):
             self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
             return
 
+        # Store some public user information for later user
         user = ndb.Key("User", gplus_id).get()
         user.displayName = result["displayName"]
         user.imageUrl = result["image"]["url"]
         user.put()
 
-        # Fetch user friends
+        # Fetch user friends and store for later user
         try:
             result = plus_service.people().list(userId="me", collection="visible", maxResults=100, orderBy="best", fields="items/id").execute()
         except AccessTokenRefreshError:
@@ -202,7 +210,7 @@ class ConnectHandler(utils.BaseHandler):
         user.friends = friends
         user.put()
 
-        # Delete all existing contacts
+        # Delete all existing contacts, so only the currently implemented ones are available
         try:
             result = service.contacts().list().execute()
             if "items" in result:
@@ -331,7 +339,11 @@ class ConnectHandler(utils.BaseHandler):
 
 class DisconnectHandler(utils.BaseHandler):
     def post(self):
-        """Revoke current user's token and reset their session."""
+        """
+        Remove contacts and subscriptions registered for the user.
+        Revoke current user's token and reset their session.
+        Delete User entity from Data store.
+        """
 
         self.response.content_type = "application/json"
 
@@ -409,6 +421,7 @@ class DisconnectHandler(utils.BaseHandler):
             self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
             return
 
+        # Delete User entity from datastore
         ndb.Key("User", gplus_id).delete()
 
 

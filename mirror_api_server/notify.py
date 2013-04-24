@@ -34,8 +34,14 @@ from google.appengine.ext import ndb
 
 
 class TimelineNotifyHandler(utils.BaseHandler):
+    """
+    Handles all timeline notifications (updates, deletes, inserts)
+    Forwards the information to implemented demo services
+    """
+
     def post(self):
         """Callback for Timeline updates."""
+
         message = self.request.body
         data = json.loads(message)
         logging.info(data)
@@ -73,8 +79,14 @@ class TimelineNotifyHandler(utils.BaseHandler):
 
 
 class LocationNotifyHandler(utils.BaseHandler):
+    """
+    Handles all location notifications
+    Forwards the information to implemented demo services
+    """
+
     def post(self):
         """Callback for Location updates."""
+
         message = self.request.body
         data = json.loads(message)
 

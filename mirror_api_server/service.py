@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""RequestHandlers for Demo services"""
+"""RequestHandlers for Web service"""
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
@@ -28,6 +28,8 @@ from oauth2client.client import AccessTokenRefreshError
 
 
 class IndexHandler(utils.BaseHandler):
+    """Renders the main page that is mainly used for authentication only so far"""
+
     def get(self):
         reconnect = (self.request.get("reconnect") == "true")
         template = utils.JINJA.get_template("templates/service.html")
@@ -37,6 +39,7 @@ class IndexHandler(utils.BaseHandler):
 
 
 class ListHandler(utils.BaseHandler):
+
     def get(self):
         """Retrieve timeline cards for the current user."""
 
@@ -60,6 +63,7 @@ class ListHandler(utils.BaseHandler):
 
 
 class NewCardHandler(utils.BaseHandler):
+
     def post(self):
         """Create a new timeline card for the current user."""
 
