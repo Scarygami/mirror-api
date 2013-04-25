@@ -1,3 +1,3 @@
 [submodule "endpoints-proto-datastore"]
 	path = endpoints-proto-datastore
-	url = https://code.google.com/p/endpoints-proto-datastore/
+	url = https://github.com/GoogleCloudPlatform/endpoints-proto-datastore.git
