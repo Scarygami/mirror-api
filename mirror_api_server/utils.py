@@ -17,6 +17,8 @@
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
+TEST_ENV = True
+
 import jinja2
 import json
 import os
@@ -37,11 +39,11 @@ discovery_url = base_url + "/_ah/api"
 with open("client_secrets.json", "r") as fh:
     CLIENT_ID = json.load(fh)["web"]["client_id"]
 
+# TODO: read session secret from file
+SESSION_KEY = "sdjalasjdakjhskdauh3o8h4ofihskjdhfow38fhoaihoa2udjlakj"
+
 config = {}
-# TODO: load session secret from a file
-config["webapp2_extras.sessions"] = {
-    "secret_key": "ajksdlj1029jlksndajsaskd7298hkajsbdkaukjassnkjankj",
-}
+config["webapp2_extras.sessions"] = {"secret_key": SESSION_KEY}
 
 
 def createError(code, message):
