@@ -14,6 +14,6 @@
 # limitations under the License.
 
 from google.appengine.ext import endpoints
-from mirror_api.mirror_api import MirrorApi
+from mirror_api import MirrorApi
 
 ApiServer = endpoints.api_server([MirrorApi], restricted=False)

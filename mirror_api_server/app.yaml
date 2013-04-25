@@ -22,7 +22,10 @@ handlers:
   upload: static/service/service\.css
 
 - url: /_ah/spi/.*
-  script: apis.ApiServer
+  script: mirror_api.api.ApiServer
+
+- url: /upload/.*
+  script: mirror_api.upload.app
 
 - url: .*
   script: main.app
