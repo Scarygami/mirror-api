@@ -5,9 +5,30 @@
   margin: 0;
 }
 
+html {
+  width: 100%;
+  height: 100%;
+}
+
 body {
   background-color: #222;
   width: 100%;
+  height: 100%;
+}
+
+#footer {
+  position: absolute;
+  width: 800px;
+  bottom: 0px;
+  padding: 5px;
+  text-align: center;
+  left: 50%;
+  margin-left: -400px;
+  color: #CCC;
+}
+
+#footer a {
+  color: #CCC;
 }
 
 .card {
