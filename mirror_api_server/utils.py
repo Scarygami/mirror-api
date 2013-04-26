@@ -33,6 +33,7 @@ JINJA = jinja2.Environment(loader=jinja2.FileSystemLoader(os.path.dirname(__file
 appname = get_application_id()
 base_url = "https://" + appname + ".appspot.com"
 discovery_url = base_url + "/_ah/api"
+discovery_service_url = discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest"
 
 with open("client_secrets.json", "r") as fh:
     CLIENT_ID = json.load(fh)["web"]["client_id"]

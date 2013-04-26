@@ -64,8 +64,15 @@ def store_credentials(gplus_id, test, credentials):
     storage.put(credentials)
 
 
-def get_auth_service(gplus_id, test, api="mirror", version="v1", discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest"):
+def get_auth_service(gplus_id, test, api="mirror", version="v1"):
     """Creates a new authenticated API client using the stored credentials"""
+
+    if test is not None and api == "mirror" and version == "v1":
+        # Use internal API for mirror API in test mode
+        discovery_service_url = utils.discovery_service_url
+    else:
+        # Use Google APIs in all other cases
+        discovery_service_url = None
 
     credentials = get_credentials(gplus_id, test)
     if credentials is None:
@@ -73,11 +80,11 @@ def get_auth_service(gplus_id, test, api="mirror", version="v1", discoveryServic
 
     http = httplib2.Http()
     http = credentials.authorize(http)
-    service = build(
-        api, version,
-        discoveryServiceUrl=discoveryServiceUrl,
-        http=http
-    )
+
+    if discovery_service_url is None:
+        service = build(api, version, http=http)
+    else:
+        service = build(api, version, http=http, discoveryServiceUrl=discovery_service_url)
 
     return service
 
@@ -161,7 +168,7 @@ class ConnectHandler(utils.BaseHandler):
         # Create new authorized API clients for the Mirror API and Google+ API
         try:
             service = get_auth_service(gplus_id, test)
-            plus_service = get_auth_service(gplus_id, test, "plus", "v1", "https://www.googleapis.com/discovery/v1/apis/{api}/{apiVersion}/rest")
+            plus_service = get_auth_service(gplus_id, test, "plus", "v1")
         except AccessTokenRefreshError:
             _disconnect(gplus_id, test)
             self.response.status = 401
