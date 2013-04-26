@@ -436,7 +436,7 @@
         data.collection = "timeline";
         data.itemId = sharedCard.id;
         data.action = "SHARE";
-        mirror.actions.insert({"resource": data}).execute(function (resp) {
+        mirror.internal.actions.insert({"resource": data}).execute(function (resp) {
           console.log(resp);
           if (resp.success) {
             onSuccess();
@@ -470,7 +470,7 @@
           data.recipients = [this.data];
 
           if (data.attachments || data.text) {
-            mirror.timeline.insert({"resource": data}).execute(function (resp) {
+            mirror.internal.timeline.insert({"resource": data}).execute(function (resp) {
               var data;
               console.log(resp);
               if (resp.id) {
@@ -489,7 +489,7 @@
         } else {
           sharedCard.data.recipients = sharedCard.data.recipients || [];
           sharedCard.data.recipients.push(this.data);
-          mirror.timeline.update({"id": sharedCard.id, "resource": sharedCard.data}).execute(function (resp) {
+          mirror.internal.timeline.update({"id": sharedCard.id, "resource": sharedCard.data}).execute(function (resp) {
             console.log(resp);
             if (resp.id) {
               sendAction();
@@ -1053,7 +1053,7 @@
         data.itemId = this.parent.id;
         data.action = "CUSTOM";
         data.value = this.actionId;
-        mirror.actions.insert({"resource": data}).execute(function (resp) {
+        mirror.internal.actions.insert({"resource": data}).execute(function (resp) {
           console.log(resp);
           if (resp.success) {
             onSuccess();
@@ -1264,7 +1264,7 @@
               data = {};
               data.text = result;
               data.inReplyTo = me.parent.parent.id;
-              mirror.timeline.insert({"resource": data}).execute(function (resp) {
+              mirror.internal.timeline.insert({"resource": data}).execute(function (resp) {
                 var action;
                 console.log(resp);
                 if (resp.id) {
@@ -1273,7 +1273,7 @@
                   action.collection = "timeline";
                   action.itemId = resp.id;
                   action.action = "REPLY";
-                  mirror.actions.insert({"resource": action}).execute(function (actionResp) {
+                  mirror.internal.actions.insert({"resource": action}).execute(function (actionResp) {
                     console.log(actionResp);
                     if (actionResp.success) {
                       onSuccess();
@@ -1553,7 +1553,7 @@
                 if (loc.coords.accuracy) { data.accuracy = loc.coords.accuracy; }
                 if (loc.coords.longitude) { data.longitude = loc.coords.longitude; }
                 if (loc.coords.latitude) { data.latitude = loc.coords.latitude; }
-                mirror.locations.insert({"resource": data}).execute(function (resp) {
+                mirror.internal.locations.insert({"resource": data}).execute(function (resp) {
                   console.log(resp);
                 });
               }

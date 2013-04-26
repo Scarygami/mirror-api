@@ -74,6 +74,20 @@ class MirrorApi(remote.Service):
         return card
 
     @TimelineItem.method(user_required=True, http_method="POST",
+                         request_fields=("bundleId",
+                                         "canonicalUrl",
+                                         "displayTime",
+                                         "html",
+                                         "htmlPages",
+                                         "inReplyTo",
+                                         "isBundleCover",
+                                         "location",
+                                         "menuItems",
+                                         "recipients",
+                                         "sourceItemId",
+                                         "speakableText",
+                                         "text",
+                                         "title"),
                          path="timeline", name="timeline.insert")
     def timeline_insert(self, card):
         """Insert a card for the current user."""
@@ -104,11 +118,81 @@ class MirrorApi(remote.Service):
 
         return card
 
+    @TimelineItem.method(user_required=True, http_method="POST",
+                         path="internal/timeline", name="internal.timeline.insert")
+    def timeline_internal_insert(self, card):
+        """Insert a card for the current user. Internal method for the Emulator to work.
+        Not part of the actual Mirror API and shouldn't be used.
+        """
+
+        if card.id is not None:
+            raise endpoints.BadRequestException("ID is not allowed in request body.")
+
+        if card.menuItems is not None:
+            for menuItem in card.menuItems:
+                if menuItem.action == MenuAction.CUSTOM:
+                    if menuItem.id is None:
+                        raise endpoints.BadRequestException("For custom actions id needs to be provided.")
+                    if menuItem.values is None or len(menuItem.values) == 0:
+                        raise endpoints.BadRequestException("For custom actions at least one value needs to be provided.")
+                    for value in menuItem.values:
+                        if value.displayName is None or value.iconUrl is None:
+                            raise endpoints.BadRequestException("Each value needs to contain displayName and iconUrl.")
+
+        if card.htmlPages is not None and len(card.htmlPages) > 0 and card.bundleId is not None:
+            raise endpoints.BadRequestException("Can't mix HTML and Card bundle.")
+
+        card.isDeleted = False
+
+        card.put()
+
+        channel.send_message(card.user.email(), json.dumps({"id": card.id}))
+
+        return card
+
     @TimelineItem.method(user_required=True,
+                         request_fields=("id",
+                                         "bundleId",
+                                         "canonicalUrl",
+                                         "displayTime",
+                                         "html",
+                                         "htmlPages",
+                                         "inReplyTo",
+                                         "isBundleCover",
+                                         "location",
+                                         "menuItems",
+                                         "recipients",
+                                         "sourceItemId",
+                                         "speakableText",
+                                         "text",
+                                         "title"),
                          path="timeline/{id}", http_method="PUT",
                          name="timeline.update")
     def timeline_update(self, card):
         """Update card with ID for the current user"""
+
+        if not card.from_datastore or card.user != endpoints.get_current_user():
+            raise endpoints.NotFoundException("Card not found.")
+
+        if card.isDeleted:
+            raise endpoints.NotFoundException("Card has been deleted")
+
+        if card.htmlPages is not None and len(card.htmlPages) > 0 and card.bundleId is not None:
+            raise endpoints.BadRequestException("Can't mix HTML and Card bundle.")
+
+        card.put()
+
+        channel.send_message(card.user.email(), json.dumps({"id": card.id}))
+
+        return card
+
+    @TimelineItem.method(user_required=True,
+                         path="internal/timeline/{id}", http_method="PUT",
+                         name="internal.timeline.update")
+    def timeline_internal_update(self, card):
+        """Update card with ID for the current user.  Internal method for the Emulator to work.
+        Not part of the actual Mirror API and shouldn't be used.
+        """
 
         if not card.from_datastore or card.user != endpoints.get_current_user():
             raise endpoints.NotFoundException("Card not found.")
@@ -287,7 +371,7 @@ class MirrorApi(remote.Service):
         return location
 
     @Location.method(user_required=True, http_method="POST",
-                     path="locations", name="locations.insert")
+                     path="internal/locations", name="internal.locations.insert")
     def locations_insert(self, location):
         """Insert a new location for the current user.
 
@@ -325,8 +409,8 @@ class MirrorApi(remote.Service):
         return location
 
     @endpoints.method(Action, ActionResponse,
-                      path='actions', http_method='POST',
-                      name='actions.insert')
+                      path='internal/actions', http_method='POST',
+                      name='internal.actions.insert')
     def action_insert(self, action):
         """Perform an action on a timeline card for the current user.
 

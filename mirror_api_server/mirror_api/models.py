@@ -69,6 +69,7 @@ class Attachment(EndpointsModel):
     URL or Data-URI and can be added/retrieved/updated directly by filling
     the attachments field in the timeline.insert method.
     """
+    id = ndb.StringProperty()
     contentType = ndb.StringProperty()
     contentUrl = ndb.TextProperty()
 
@@ -166,7 +167,7 @@ class TimelineItem(EndpointsModel):
 
     user = EndpointsUserProperty(required=True, raise_unauthorized=True)
 
-    attachments = ndb.StructuredProperty(Attachment, repeated=True)
+    attachments = ndb.LocalStructuredProperty(Attachment, repeated=True)
     bundleId = ndb.StringProperty()
     canonicalUrl = ndb.StringProperty()
     created = EndpointsDateTimeProperty(auto_now_add=True)
