@@ -50,7 +50,10 @@ class TimelineNotifyHandler(utils.BaseHandler):
 
         gplus_id = data["userToken"]
         verifyToken = data["verifyToken"]
-        user = ndb.Key("User", gplus_id).get()
+        if test is not None:
+            user = ndb.Key("TestUser", gplus_id).get()
+        else:
+            user = ndb.Key("User", gplus_id).get()
         if user is None or user.verifyToken != verifyToken:
             logging.info("Wrong user")
             return
@@ -59,7 +62,7 @@ class TimelineNotifyHandler(utils.BaseHandler):
             logging.info("Wrong collection")
             return
 
-        service = get_auth_service(gplus_id)
+        service = get_auth_service(gplus_id, test)
 
         if service is None:
             logging.info("No valid credentials")
@@ -94,7 +97,11 @@ class LocationNotifyHandler(utils.BaseHandler):
 
         gplus_id = data["userToken"]
         verifyToken = data["verifyToken"]
-        user = ndb.Key("User", gplus_id).get()
+        if test is not None:
+            user = ndb.Key("TestUser", gplus_id).get()
+        else:
+            user = ndb.Key("User", gplus_id).get()
+
         if user is None or user.verifyToken != verifyToken:
             logging.info("Wrong user")
             return
@@ -107,7 +114,7 @@ class LocationNotifyHandler(utils.BaseHandler):
             logging.info("Wrong operation")
             return
 
-        service = get_auth_service(gplus_id)
+        service = get_auth_service(gplus_id, test)
 
         if service is None:
             logging.info("No valid credentials")

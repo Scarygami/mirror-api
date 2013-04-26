@@ -95,3 +95,8 @@ class User(ndb.Model):
     longitude = ndb.FloatProperty()
     locationUpdate = ndb.DateTimeProperty()
     friends = ndb.StringProperty(repeated=True)
+
+
+class TestUser(User):
+
+    _testUser = True

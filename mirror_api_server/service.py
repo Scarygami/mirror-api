@@ -47,7 +47,7 @@ class ListHandler(utils.BaseHandler):
         self.response.content_type = "application/json"
 
         gplus_id = self.session.get("gplus_id")
-        service = get_auth_service(gplus_id)
+        service = get_auth_service(gplus_id, test)
 
         if service is None:
             self.response.status = 401
@@ -71,7 +71,7 @@ class NewCardHandler(utils.BaseHandler):
         self.response.content_type = "application/json"
 
         gplus_id = self.session.get("gplus_id")
-        service = get_auth_service(gplus_id)
+        service = get_auth_service(gplus_id, test)
 
         if service is None:
             self.response.status = 401

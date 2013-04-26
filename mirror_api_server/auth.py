@@ -45,23 +45,29 @@ from oauth2client.client import FlowExchangeError
 from oauth2client.appengine import StorageByKeyName
 
 
-def get_credentials(gplus_id):
+def get_credentials(gplus_id, test):
     """Retrieves credentials for the provided Google+ User ID from the Datastore"""
-    storage = StorageByKeyName(utils.User, gplus_id, "credentials")
+    if test is not None:
+        storage = StorageByKeyName(utils.TestUser, gplus_id, "credentials")
+    else:
+        storage = StorageByKeyName(utils.User, gplus_id, "credentials")
     credentials = storage.get()
     return credentials
 
 
-def store_credentials(gplus_id, credentials):
+def store_credentials(gplus_id, test, credentials):
     """Stores credentials for the provide Google+ User ID to Datastore"""
-    storage = StorageByKeyName(utils.User, gplus_id, "credentials")
+    if test is not None:
+        storage = StorageByKeyName(utils.TestUser, gplus_id, "credentials")
+    else:
+        storage = StorageByKeyName(utils.User, gplus_id, "credentials")
     storage.put(credentials)
 
 
-def get_auth_service(gplus_id, api="mirror", version="v1", discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest"):
+def get_auth_service(gplus_id, test, api="mirror", version="v1", discoveryServiceUrl=utils.discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest"):
     """Creates a new authenticated API client using the stored credentials"""
 
-    credentials = get_credentials(gplus_id)
+    credentials = get_credentials(gplus_id, test)
     if credentials is None:
         return None
 
@@ -76,10 +82,10 @@ def get_auth_service(gplus_id, api="mirror", version="v1", discoveryServiceUrl=u
     return service
 
 
-def _disconnect(gplus_id):
+def _disconnect(gplus_id, test):
     """Delete credentials in case of errors"""
 
-    store_credentials(gplus_id, None)
+    store_credentials(gplus_id, test, None)
 
 
 class ConnectHandler(utils.BaseHandler):
@@ -137,27 +143,27 @@ class ConnectHandler(utils.BaseHandler):
 
         # Store credentials associated with the User ID for later use
         self.session["gplus_id"] = gplus_id
-        stored_credentials = get_credentials(gplus_id)
+        stored_credentials = get_credentials(gplus_id, test)
         new_user = False
         if stored_credentials is None:
             new_user = True
-            store_credentials(gplus_id, credentials)
+            store_credentials(gplus_id, test, credentials)
 
         # handle cases where credentials don't have a refresh token
-        credentials = get_credentials(gplus_id)
+        credentials = get_credentials(gplus_id, test)
 
         if credentials.refresh_token is None:
-            _disconnect(gplus_id)
+            _disconnect(gplus_id, test)
             self.response.status = 401
             self.response.out.write(utils.createError(401, "No Refresh token available, need to reauthenticate"))
             return
 
         # Create new authorized API clients for the Mirror API and Google+ API
         try:
-            service = get_auth_service(gplus_id)
-            plus_service = get_auth_service(gplus_id, "plus", "v1", "https://www.googleapis.com/discovery/v1/apis/{api}/{apiVersion}/rest")
+            service = get_auth_service(gplus_id, test)
+            plus_service = get_auth_service(gplus_id, test, "plus", "v1", "https://www.googleapis.com/discovery/v1/apis/{api}/{apiVersion}/rest")
         except AccessTokenRefreshError:
-            _disconnect(gplus_id)
+            _disconnect(gplus_id, test)
             self.response.status = 401
             self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
@@ -174,7 +180,7 @@ class ConnectHandler(utils.BaseHandler):
         try:
             result = plus_service.people().get(userId="me", fields="displayName,image").execute()
         except AccessTokenRefreshError:
-            _disconnect(gplus_id)
+            _disconnect(gplus_id, test)
             self.response.status = 401
             self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
@@ -184,7 +190,10 @@ class ConnectHandler(utils.BaseHandler):
             return
 
         # Store some public user information for later user
-        user = ndb.Key("User", gplus_id).get()
+        if test is not None:
+            user = ndb.Key("TestUser", gplus_id).get()
+        else:
+            user = ndb.Key("User", gplus_id).get()
         user.displayName = result["displayName"]
         user.imageUrl = result["image"]["url"]
         user.put()
@@ -193,7 +202,7 @@ class ConnectHandler(utils.BaseHandler):
         try:
             result = plus_service.people().list(userId="me", collection="visible", maxResults=100, orderBy="best", fields="items/id").execute()
         except AccessTokenRefreshError:
-            _disconnect(gplus_id)
+            _disconnect(gplus_id, test)
             self.response.status = 401
             self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
@@ -217,7 +226,7 @@ class ConnectHandler(utils.BaseHandler):
                 for contact in result["items"]:
                     del_result = service.contacts().delete(id=contact["id"]).execute()
         except AccessTokenRefreshError:
-            _disconnect(gplus_id)
+            _disconnect(gplus_id, test)
             self.response.status = 401
             self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
@@ -236,7 +245,7 @@ class ConnectHandler(utils.BaseHandler):
             try:
                 result = service.contacts().insert(body=contact).execute()
             except AccessTokenRefreshError:
-                _disconnect(gplus_id)
+                _disconnect(gplus_id, test)
                 self.response.status = 401
                 self.response.out.write(utils.createError(401, "Failed to refresh access token."))
                 return
@@ -259,7 +268,7 @@ class ConnectHandler(utils.BaseHandler):
                 for subscription in result["items"]:
                     del_result = service.subscriptions().delete(id=subscription["id"]).execute()
         except AccessTokenRefreshError:
-            _disconnect(gplus_id)
+            _disconnect(gplus_id, test)
             self.response.status = 401
             self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
@@ -282,7 +291,7 @@ class ConnectHandler(utils.BaseHandler):
         try:
             result = service.subscriptions().insert(body=body).execute()
         except AccessTokenRefreshError:
-            _disconnect(gplus_id)
+            _disconnect(gplus_id, test)
             self.response.status = 401
             self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
@@ -300,7 +309,7 @@ class ConnectHandler(utils.BaseHandler):
         try:
             result = service.subscriptions().insert(body=body).execute()
         except AccessTokenRefreshError:
-            _disconnect(gplus_id)
+            _disconnect(gplus_id, test)
             self.response.status = 401
             self.response.out.write(utils.createError(401, "Failed to refresh access token."))
             return
@@ -324,7 +333,7 @@ class ConnectHandler(utils.BaseHandler):
             try:
                 result = service.timeline().insert(body=welcome).execute()
             except AccessTokenRefreshError:
-                _disconnect(gplus_id)
+                _disconnect(gplus_id, test)
                 self.response.status = 401
                 self.response.out.write(utils.createError(401, "Failed to refresh access token."))
                 return
@@ -350,7 +359,7 @@ class DisconnectHandler(utils.BaseHandler):
         gplus_id = self.session.get("gplus_id")
 
         # Only disconnect a connected user.
-        credentials = get_credentials(gplus_id)
+        credentials = get_credentials(gplus_id, test)
         if credentials is None:
             self.response.status = 401
             self.response.out.write(utils.createError(401, "Current user not connected."))
@@ -358,7 +367,7 @@ class DisconnectHandler(utils.BaseHandler):
 
         # Create a new authorized API client
         try:
-            service = get_auth_service(gplus_id)
+            service = get_auth_service(gplus_id, test)
         except AccessTokenRefreshError:
             self.response.status = 500
             self.response.out.write(utils.createError(500, "Failed to refresh access token."))
@@ -422,7 +431,10 @@ class DisconnectHandler(utils.BaseHandler):
             return
 
         # Delete User entity from datastore
-        ndb.Key("User", gplus_id).delete()
+        if test is not None:
+            ndb.Key("TestUser", gplus_id).delete()
+        else:
+            ndb.Key("User", gplus_id).delete()
 
 
 AUTH_ROUTES = [
