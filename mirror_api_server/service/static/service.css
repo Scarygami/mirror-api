@@ -41,3 +41,31 @@ body {
   color: black;
   width: 500px;
 }
+
+#timeline {
+  width: 100%;
+  max-width: 100%;
+  min-width: 100%;
+  overflow-y: hidden;
+  overflow-x: scroll;
+  white-space: nowrap;
+}
+
+.card {
+  display: inline-block;
+  position: relative;
+  width: 640px;
+  height: 360px;
+  background-color: black;
+  margin-right: 10px;
+}
+
+.card_iframe {
+  background-color: transparent;
+  border: 0px none transparent;
+  padding: 0px;
+  overflow: hidden;
+  position: absolute;
+  height: 100%; width: 100%;
+  left: 0; top: 0;
+}

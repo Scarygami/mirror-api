@@ -4,7 +4,17 @@
   var doc = global.document, console = global.console;
 
   Date.prototype.niceDate = function () {
-    var y, m, d, h, min;
+    var y, m, d, h, min, dif, now;
+    now = new Date();
+    dif = (now.getTime() - this.getTime()) / 1000 / 60;
+
+    if (dif <= 1) { return "Just now"; }
+    if (Math.round(dif) === 1) { return "a minute ago"; }
+    if (dif < 60) { return Math.round(dif) + " minutes ago"; }
+
+    dif = Math.round(dif / 60);
+    if (dif === 1) { return "an hour ago"; }
+    if (dif <= 4) { return dif + " hours ago"; }
 
     y = this.getFullYear().toString();
     m = (this.getMonth() + 1).toString();
@@ -12,22 +22,65 @@
     h = this.getHours().toString();
     min = this.getMinutes().toString();
 
+    if (this.getFullYear() === now.getFullYear() && this.getMonth() === now.getMonth() && this.getDate() === now.getDate()) {
+      return (h[1] ? h : "0" + h[0]) + ":" + (min[1] ? min : "0" + min[0]);
+    }
     return y + "-" + (m[1] ? m : "0" + m[0]) + "-" + (d[1] ? d : "0" + d[0]) + " " + (h[1] ? h : "0" + h[0]) + ":" + (min[1] ? min : "0" + min[0]);
   };
 
   function Service() {
     var state;
 
+    function displayCard(div, data) {
+      var card, iframe, html, text, image, date, i, l, att, tmpDate;
+      card = doc.createElement("div");
+      card.classList.add("card");
+      card.innerHTML =
+        "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"/glass/inner.html\" class=\"card_iframe\"></iframe>";
+      div.appendChild(card);
+      tmpDate = data.displayDate || data.updated || data.created;
+      if (tmpDate) {
+        date = new Date(tmpDate);
+      }
+      html = data.html;
+      text = data.text;
+      image = undefined;
+      if (data.attachments && data.attachments.length > 0) {
+        l = data.attachments.length;
+        for (i = 0; i < l; i++) {
+          att = data.attachments[i];
+          if (att.contentType.indexOf("image/") === 0) {
+            image = att.contentUrl;
+            break;
+          }
+        }
+      }
+      if (html) {
+        // HTML overrides text and image in card, can't be mixed
+        text = "";
+        image = undefined;
+      }
+
+      iframe = card.querySelector(".card_iframe");
+      iframe.onload = function () {
+        var tmpDate;
+        if (date) {
+          tmpDate = date.niceDate();
+        } else {
+          tmpDate = "";
+        }
+        iframe.contentWindow.setData(text, image, html, tmpDate);
+      };
+    }
+
     function listCards(items) {
-      var i, l, ul, li;
+      var i, l, div, card, iframe;
       if (items) {
-        ul = doc.getElementById("cards");
-        ul.innerHTML = "";
+        div = doc.getElementById("timeline");
+        div.innerHTML = "";
         l = items.length;
-        for (i = l - 1; i >= 0; i--) {
-          li = doc.createElement("li");
-          li.innerHTML = (new Date(items[i].displayDate || items[i].udpated || items[i].created)).niceDate() + " - " + (items[i].text || "");
-          ul.appendChild(li);
+        for (i = 0; i < l; i++) {
+          displayCard(div, items[i]);
         }
       }
     }
