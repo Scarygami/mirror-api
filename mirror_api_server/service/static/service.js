@@ -211,16 +211,7 @@
 
       if (text) {
         input.value = "";
-
         message.text = text;
-
-        input = doc.getElementById("new_image");
-        text = input.value;
-        input.value = "";
-
-        if (text) {
-          message.image = text;
-        }
 
         xhr = new global.XMLHttpRequest();
         xhr.onreadystatechange = function () {

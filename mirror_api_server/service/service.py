@@ -90,9 +90,6 @@ class NewCardHandler(utils.BaseHandler):
 
         body = {}
         body["text"] = data["text"]
-        if "image" in data:
-            body["attachments"] = [{"contentType": "image/*", "contentUrl": data["image"]}]
-        body["menuItems"] = [{"action": "SHARE"}, {"action": "REPLY"}]
 
         try:
             # Insert timeline card and return as reponse
