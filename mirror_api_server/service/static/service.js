@@ -36,7 +36,8 @@
       card = doc.createElement("div");
       card.classList.add("card");
       card.innerHTML =
-        "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"/glass/inner.html\" class=\"card_iframe\"></iframe>";
+        "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"/glass/inner.html\" class=\"card_iframe\"></iframe>" +
+        "<pre class=\"card_metadata\"></pre>";
       div.appendChild(card);
       tmpDate = data.displayDate || data.updated || data.created;
       if (tmpDate) {
@@ -71,6 +72,8 @@
         }
         iframe.contentWindow.setData(text, image, html, tmpDate);
       };
+
+      card.querySelector(".card_metadata").appendChild(doc.createTextNode(JSON.stringify(data, null, 2)));
     }
 
     function listCards(items) {

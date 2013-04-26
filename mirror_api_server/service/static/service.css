@@ -55,17 +55,29 @@ body {
   display: inline-block;
   position: relative;
   width: 640px;
-  height: 360px;
-  background-color: black;
+  height: 600px;
   margin-right: 10px;
 }
 
 .card_iframe {
-  background-color: transparent;
+  background-color: black;
   border: 0px none transparent;
   padding: 0px;
   overflow: hidden;
   position: absolute;
-  height: 100%; width: 100%;
+  height: 360px; width: 640px;
   left: 0; top: 0;
+}
+
+.card_metadata {
+  position: absolute;
+  background-color: #EEE;
+  display: block;
+  padding: 5px;
+  width: 640px;
+  max-width: 640px;
+  height: 240px;
+  max-height: 240px;
+  overflow: auto;
+  left: 0; top: 360px;
 }
