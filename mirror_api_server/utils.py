@@ -17,8 +17,6 @@
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
-TEST_ENV = True
-
 import jinja2
 import json
 import os

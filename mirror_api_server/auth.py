@@ -83,7 +83,7 @@ def _disconnect(gplus_id):
 
 
 class ConnectHandler(utils.BaseHandler):
-    def post(self):
+    def post(self, test):
         """
         Exchange the one-time authorization code for a token and
         store the credentials for later access.
@@ -338,7 +338,7 @@ class ConnectHandler(utils.BaseHandler):
 
 
 class DisconnectHandler(utils.BaseHandler):
-    def post(self):
+    def post(self, test):
         """
         Remove contacts and subscriptions registered for the user.
         Revoke current user's token and reset their session.
@@ -426,6 +426,6 @@ class DisconnectHandler(utils.BaseHandler):
 
 
 AUTH_ROUTES = [
-    ("/connect", ConnectHandler),
-    ("/disconnect", DisconnectHandler)
+    (r"(/test)?/connect", ConnectHandler),
+    (r"(/test)?/disconnect", DisconnectHandler)
 ]

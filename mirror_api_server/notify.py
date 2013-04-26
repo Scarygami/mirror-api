@@ -39,7 +39,7 @@ class TimelineNotifyHandler(utils.BaseHandler):
     Forwards the information to implemented demo services
     """
 
-    def post(self):
+    def post(self, test):
         """Callback for Timeline updates."""
 
         message = self.request.body
@@ -84,7 +84,7 @@ class LocationNotifyHandler(utils.BaseHandler):
     Forwards the information to implemented demo services
     """
 
-    def post(self):
+    def post(self, test):
         """Callback for Location updates."""
 
         message = self.request.body
@@ -134,6 +134,6 @@ class LocationNotifyHandler(utils.BaseHandler):
 
 
 NOTIFY_ROUTES = [
-    ("/timeline_update", TimelineNotifyHandler),
-    ("/locations_update", LocationNotifyHandler)
+    (r"(/test)?/timeline_update", TimelineNotifyHandler),
+    (r"(/test)?/locations_update", LocationNotifyHandler)
 ]

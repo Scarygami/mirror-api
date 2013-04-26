@@ -20,9 +20,10 @@ __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 import utils
 from auth import get_auth_service
 
+import json
 import random
 import string
-import json
+
 
 from oauth2client.client import AccessTokenRefreshError
 
@@ -30,7 +31,7 @@ from oauth2client.client import AccessTokenRefreshError
 class IndexHandler(utils.BaseHandler):
     """Renders the main page that is mainly used for authentication only so far"""
 
-    def get(self):
+    def get(self, test):
         reconnect = (self.request.get("reconnect") == "true")
         template = utils.JINJA.get_template("templates/service.html")
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
@@ -40,7 +41,7 @@ class IndexHandler(utils.BaseHandler):
 
 class ListHandler(utils.BaseHandler):
 
-    def get(self):
+    def get(self, test):
         """Retrieve timeline cards for the current user."""
 
         self.response.content_type = "application/json"
@@ -64,7 +65,7 @@ class ListHandler(utils.BaseHandler):
 
 class NewCardHandler(utils.BaseHandler):
 
-    def post(self):
+    def post(self, test):
         """Create a new timeline card for the current user."""
 
         self.response.content_type = "application/json"
@@ -98,7 +99,7 @@ class NewCardHandler(utils.BaseHandler):
 
 
 SERVICE_ROUTES = [
-    ("/", IndexHandler),
-    ("/list", ListHandler),
-    ("/new", NewCardHandler)
+    (r"(/test)?/", IndexHandler),
+    (r"(/test)?/list", ListHandler),
+    (r"(/test)?/new", NewCardHandler)
 ]

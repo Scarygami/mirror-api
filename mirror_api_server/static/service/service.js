@@ -52,7 +52,7 @@
         }
       };
 
-      xhr.open("GET", "/list", true);
+      xhr.open("GET", global.location.pathname + "list", true);
       xhr.send();
     }
 
@@ -78,13 +78,13 @@
             doc.getElementById("signout").style.display = "none";
             doc.getElementById("glass").style.display = "none";
             if (xhr.status === 401) {
-              global.location.href = "/?reconnect=true";
+              global.location.href = global.location.pathname + "?reconnect=true";
             }
           }
         }
       };
 
-      xhr.open("POST", "/connect?state=" + state + "&gplus_id=" + id, true);
+      xhr.open("POST", global.location.pathname + "connect?state=" + state + "&gplus_id=" + id, true);
       xhr.setRequestHeader("Content-Type", "application/octet-stream; charset=utf-8");
       xhr.send(code);
     }
@@ -107,7 +107,7 @@
         }
       };
 
-      xhr.open("POST", "/disconnect", true);
+      xhr.open("POST", global.location.pathname + "disconnect", true);
       xhr.send();
 
       doc.getElementById("signin").style.display = "block";
@@ -182,7 +182,7 @@
           }
         };
 
-        xhr.open("POST", "/new", true);
+        xhr.open("POST", global.location.pathname + "new", true);
         xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
         xhr.send(JSON.stringify(message));
       }
