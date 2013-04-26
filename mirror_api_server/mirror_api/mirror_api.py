@@ -146,8 +146,6 @@ class MirrorApi(remote.Service):
 
         card.put()
 
-        channel.send_message(card.user.email(), json.dumps({"id": card.id}))
-
         return card
 
     @TimelineItem.method(user_required=True,

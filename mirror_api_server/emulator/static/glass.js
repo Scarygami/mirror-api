@@ -455,7 +455,7 @@
           return;
         }
 
-        imageData = global.atob(sharedCard.image.substring(("data:" + sharedCard.imageType + ";base64,").length));
+        imageData = sharedCard.image.substring(("data:" + sharedCard.imageType + ";base64,").length);
 
         data = {};
         if (sharedCard.text) {
@@ -476,6 +476,7 @@
           JSON.stringify(data) +
           delimiter +
           "Content-Type: " + sharedCard.imageType + "\r\n" +
+          "Content-Transfer-Encoding: base64\r\n" +
           "\r\n" +
           imageData +
           close_delim;

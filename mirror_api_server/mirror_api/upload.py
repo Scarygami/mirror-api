@@ -17,10 +17,22 @@
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
+# Add the library location to the path
+import sys
+sys.path.insert(0, 'lib')
+
 import email
+import httplib2
 import logging
 import json
+import utils
 import webapp2
+
+from google.appengine.api import files
+
+from apiclient.discovery import build
+from apiclient.errors import HttpError
+from oauth2client.client import AccessTokenCredentials
 
 
 class UploadHandler(webapp2.RequestHandler):
@@ -28,6 +40,24 @@ class UploadHandler(webapp2.RequestHandler):
     _metainfo = None
     _content_type = None
     _content = None
+    _token = None
+    _service = None
+
+    def dispatch(self):
+        self._checkauth()
+        self._decode()
+        if self._token is None:
+            self.abort(401)
+        else:
+            credentials = AccessTokenCredentials(self._token, "mirror-api-upload-handler/1.0")
+            http = httplib2.Http()
+            http = credentials.authorize(http)
+            self._service = build("mirror", "v1", http=http, discoveryServiceUrl=utils.discovery_service_url)
+            super(UploadHandler, self).dispatch()
+
+    def _checkauth(self):
+        if "Authorization" in self.request.headers:
+            self._token = self.request.headers["Authorization"].split(" ")[1]
 
     def _decode(self):
         """Check for valid content types and decode data accordingly"""
@@ -44,12 +74,14 @@ class UploadHandler(webapp2.RequestHandler):
                 return
 
             for payload in msg.get_payload():
-                if payload.get_content_type().startswith("image/"):
+                content_type = payload.get_content_type()
+                if content_type.startswith("image/") or content_type.startswith("audio/") or content_type.startswith("video/"):
                     if self._content is None:
-                        self._content_type = payload.get_content_type()
+                        self._content_type = content_type
                         self._content = payload.get_payload(decode=True)
-                elif payload.get_content_type() == "application/json":
-                    self._metainfo = json.loads(payload.get_payload())
+                elif content_type == "application/json":
+                    if self._metainfo is None:
+                        self._metainfo = json.loads(payload.get_payload())
 
             return
 
@@ -64,24 +96,64 @@ class UploadHandler(webapp2.RequestHandler):
 class InsertHandler(UploadHandler):
 
     def post(self):
-        self._decode()
 
-        logging.info(self.request.headers)
+        self.response.content_type = "application/json"
 
-        if self._metainfo is None and self._content is None:
-            self.response.out.write("Invalid request")
+        if self._content is None:
+            self.response.status = 400
+            self.response.out.write(utils.createError(400, "Couldn't decode content or invalid content-type"))
 
-        if self._metainfo is not None:
-            self.response.out.write("<pre>" + json.dumps(self._metainfo, indent=2, separators=(",", ": ")) + "</pre><br><br>")
+        # 1) Insert new card using
+        if self._metainfo is None:
+            request = self._service.internal().timeline().insert()
+        else:
+            request = self._service.internal().timeline().insert(body=self._metainfo)
 
-        if self._content is not None:
-            self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (self._content_type, self._content))
+        try:
+            card = request.execute()
+        except HttpError as e:
+            self.response.status = e.resp.status
+            self.response.out.write(e.content)
+            return
+
+        # 2) Insert data into blob store
+        file_name = files.blobstore.create(mime_type=self._content_type)
+        with files.open(file_name, 'a') as f:
+            f.write(self._content)
+        files.finalize(file_name)
+        blob_key = files.blobstore.get_blob_key(file_name)
+
+        # 3) Update card with attachment info
+        if not "attachments" in card:
+            card["attachments"] = []
+
+        attachment = {
+            "id": str(blob_key),
+            "contentType": self._content_type,
+            "contentUrl": "%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, card["id"], str(blob_key)),
+            "isProcessing": False
+        }
+
+        card["attachments"].append(attachment)
+
+        request = self._service.internal().timeline().update(id=card["id"], body=card)
+
+        try:
+            result = request.execute()
+        except HttpError as e:
+            self.response.status = e.resp.status
+            self.response.out.write(e.content)
+            return
+
+        self.response.status = 200
+        self.response.out.write(json.dumps(result))
 
 
 class UpdateHandler(UploadHandler):
 
     def put(self, id):
-        self._decode()
+
+        self.response.content_type = "application/json"
 
         if self._metainfo is None and self._content is None:
             self.response.out.write("Invalid request")
@@ -96,7 +168,8 @@ class UpdateHandler(UploadHandler):
 class AttachmentInsertHandler(UploadHandler):
 
     def post(self, id):
-        self._decode()
+
+        self.response.content_type = "application/json"
 
         if self._metainfo is None and self._content is None:
             self.response.out.write("Invalid request")
@@ -108,11 +181,13 @@ class AttachmentInsertHandler(UploadHandler):
             self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (self._content_type, self._content))
 
 
-class DownloadHandler(webapp2.RequestHandler):
+class DownloadHandler(UploadHandler):
 
     def get(self, id, attachment):
 
-        self.response.out.write("Not implemented yet")
+        self.response.content_type = "application/json"
+        self.response.status = 501
+        self.response.out.write(utils.createError(501, "Not implemented yet"))
 
 
 app = webapp2.WSGIApplication(
