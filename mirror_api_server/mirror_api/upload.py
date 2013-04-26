@@ -18,6 +18,7 @@
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
 import email
+import logging
 import json
 import webapp2
 
@@ -65,11 +66,13 @@ class InsertHandler(UploadHandler):
     def post(self):
         self._decode()
 
+        logging.info(self.request.headers)
+
         if self._metainfo is None and self._content is None:
             self.response.out.write("Invalid request")
 
         if self._metainfo is not None:
-            self.response.out.write("<pre>" + self._metainfo + "</pre><br><br>")
+            self.response.out.write("<pre>" + json.dumps(self._metainfo, indent=2, separators=(",", ": ")) + "</pre><br><br>")
 
         if self._content is not None:
             self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (self._content_type, self._content))
@@ -84,7 +87,7 @@ class UpdateHandler(UploadHandler):
             self.response.out.write("Invalid request")
 
         if self._metainfo is not None:
-            self.response.out.write("<pre>" + self._metainfo + "</pre><br><br>")
+            self.response.out.write("<pre>" + json.dumps(self._metainfo, indent=2, separators=(",", ": ")) + "</pre><br><br>")
 
         if self._content is not None:
             self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (self._content_type, self._content))
@@ -99,7 +102,7 @@ class AttachmentInsertHandler(UploadHandler):
             self.response.out.write("Invalid request")
 
         if self._metainfo is not None:
-            self.response.out.write("<pre>" + self._metainfo + "</pre><br><br>")
+            self.response.out.write("<pre>" + json.dumps(self._metainfo, indent=2, separators=(",", ": ")) + "</pre><br><br>")
 
         if self._content is not None:
             self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (self._content_type, self._content))

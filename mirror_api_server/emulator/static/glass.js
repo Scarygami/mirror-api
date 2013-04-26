@@ -446,6 +446,96 @@
         });
       }
 
+      function shareMedia() {
+        var data, boundary, delimiter, close_delim, imageData, multipartRequestBody, xhr;
+
+        if (sharedCard.image.indexOf("data:image/") !== 0) {
+          // can't share non data-uri's
+          onError();
+          return;
+        }
+
+        imageData = global.atob(sharedCard.image.substring(("data:" + sharedCard.imageType + ";base64,").length));
+
+        data = {};
+        if (sharedCard.text) {
+          data.text = sharedCard.text;
+        }
+        if (sharedCard.data.menuItems) {
+          data.menuItems = sharedCard.data.menuItems;
+        }
+        data.recipients = [me.data];
+
+        boundary = "-------314159265358979323846";
+        delimiter = "\r\n--" + boundary + "\r\n";
+        close_delim = "\r\n--" + boundary + "--";
+
+        multipartRequestBody =
+          delimiter +
+          "Content-Type: application/json\r\n\r\n" +
+          JSON.stringify(data) +
+          delimiter +
+          "Content-Type: " + sharedCard.imageType + "\r\n" +
+          "\r\n" +
+          imageData +
+          close_delim;
+
+        xhr = new global.XMLHttpRequest();
+        xhr.onreadystatechange = function () {
+          var resp;
+          if (xhr.readyState === 4) {
+            console.log(xhr.response);
+            if (xhr.status === 200) {
+              resp = JSON.parse(xhr.response);
+              if (resp.id) {
+                sharedCard.localOnly = false;
+                sharedCard.id = resp.id;
+                sharedCard.cardDiv.id = "c" + me.id;
+                sendAction();
+              } else {
+                onError();
+              }
+            } else {
+              console.log("Error sharing media", xhr.status, xhr.statusText);
+              onError();
+            }
+          }
+        };
+
+        xhr.open("POST", "/upload/mirror/v1/timeline", true);
+        xhr.setRequestHeader("Authorization", "Bearer " + global.gapi.auth.getToken().access_token);
+        xhr.setRequestHeader("Content-Type", 'multipart/mixed; boundary="' + boundary + '"');
+        xhr.send(multipartRequestBody);
+      }
+
+      function shareSimple() {
+        var data;
+        data = {};
+        if (sharedCard.text) {
+          data.text = sharedCard.text;
+        }
+        if (sharedCard.data.menuItems) {
+          data.menuItems = sharedCard.data.menuItems;
+        }
+        data.recipients = [me.data];
+
+        if (data.text) {
+          mirror.internal.timeline.insert({"resource": data}).execute(function (resp) {
+            console.log(resp);
+            if (resp.id) {
+              sharedCard.localOnly = false;
+              sharedCard.id = resp.id;
+              sharedCard.cardDiv.id = "c" + me.id;
+              sendAction();
+            } else {
+              onError();
+            }
+          });
+        } else {
+          onError();
+        }
+      }
+
       /**
        * TODO: Sharing Progress should be separate overlay which can be
        * animated in
@@ -457,39 +547,16 @@
         global.setTimeout(onSuccess, 2000);
       } else {
         if (sharedCard.localOnly) {
-          data = {};
           if (sharedCard.image) {
-            data.attachments = [{contentType: sharedCard.imageType, contentUrl: sharedCard.image}];
-          }
-          if (sharedCard.text) {
-            data.text = sharedCard.text;
-          }
-          if (sharedCard.data.menuItems) {
-            data.menuItems = sharedCard.data.menuItems;
-          }
-          data.recipients = [this.data];
-
-          if (data.attachments || data.text) {
-            mirror.internal.timeline.insert({"resource": data}).execute(function (resp) {
-              var data;
-              console.log(resp);
-              if (resp.id) {
-                sharedCard.localOnly = false;
-                sharedCard.id = resp.id;
-                sharedCard.cardDiv.id = "c" + me.id;
-                sendAction();
-              } else {
-                onError();
-              }
-            });
+            shareMedia();
           } else {
-            onError();
+            shareSimple();
           }
-
         } else {
           sharedCard.data.recipients = sharedCard.data.recipients || [];
           sharedCard.data.recipients.push(this.data);
-          mirror.internal.timeline.update({"id": sharedCard.id, "resource": sharedCard.data}).execute(function (resp) {
+          data = {"recipients": sharedCard.data.recipients};
+          mirror.timeline.patch({"id": sharedCard.id, "resource": data}).execute(function (resp) {
             console.log(resp);
             if (resp.id) {
               sendAction();
@@ -975,7 +1042,7 @@
 
     ActionCard.prototype.createCardElements = function () {
       this.createDiv();
-      this.actionDiv = this.cardDiv.getElementsByClassName('card_action')[0];
+      this.actionDiv = this.cardDiv.getElementsByClassName("card_action")[0];
       if (!!actions[this.action]) {
         this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
         this.iconDiv.src = actions[this.action].values[0].iconUrl;
@@ -989,8 +1056,8 @@
       var tween;
       this.active = true;
       activeCard = this;
-      tween = new Tween(this.actionDiv, 'paddingTop', '%', 50, 0, 0.25);
-      tween = new Tween(this.cardDiv, 'opacity', null, 0, 1, 0.25);
+      tween = new Tween(this.actionDiv, "paddingTop", "%", 50, 0, 0.25);
+      tween = new Tween(this.cardDiv, "opacity", null, 0, 1, 0.25);
     };
 
     ActionCard.prototype.animateOut = function () {
@@ -1001,8 +1068,8 @@
         cd.style.display = "none";
       };
 
-      tween = new Tween(this.actionDiv, 'paddingTop', '%', 0, 50, 0.25);
-      (new Tween(this.cardDiv, 'opacity', null, 1, 0, 0.25)).then(h);
+      tween = new Tween(this.actionDiv, "paddingTop", "%", 0, 50, 0.25);
+      (new Tween(this.cardDiv, "opacity", null, 1, 0, 0.25)).then(h);
     };
 
     /**
