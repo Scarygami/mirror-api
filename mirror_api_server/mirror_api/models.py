@@ -55,7 +55,7 @@ class MenuValue(EndpointsModel):
 class MenuItem(EndpointsModel):
     action = msgprop.EnumProperty(MenuAction, required=True)
     id = ndb.StringProperty()
-    removeWhenSelected = ndb.BooleanProperty()
+    removeWhenSelected = ndb.BooleanProperty(default=False)
     values = ndb.LocalStructuredProperty(MenuValue, repeated=True)
 
 
@@ -71,7 +71,8 @@ class Attachment(EndpointsModel):
     """
     id = ndb.StringProperty()
     contentType = ndb.StringProperty()
-    contentUrl = ndb.TextProperty()
+    contentUrl = ndb.StringProperty()
+    isProcessingContent = ndb.BooleanProperty(default=False)
 
 
 class Location(EndpointsModel):
