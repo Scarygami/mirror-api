@@ -24,12 +24,14 @@ sys.path.insert(0, 'lib')
 from utils import config
 import webapp2
 
-from auth import AUTH_ROUTES
-from notify import NOTIFY_ROUTES
-from service import SERVICE_ROUTES
+from service.auth import AUTH_ROUTES
+from service.notify import NOTIFY_ROUTES
+from service.service import SERVICE_ROUTES
 
+ROUTES = (AUTH_ROUTES + SERVICE_ROUTES + NOTIFY_ROUTES)
+
+# Remove the next two lines if you don't want to host a Glass emulator
 from emulator.glass import GLASS_ROUTES
-
-ROUTES = (AUTH_ROUTES + GLASS_ROUTES + SERVICE_ROUTES + NOTIFY_ROUTES)
+ROUTES = (ROUTES + GLASS_ROUTES)
 
 app = webapp2.WSGIApplication(ROUTES, debug=True, config=config)

@@ -17,15 +17,11 @@ handlers:
   script: mirror_api.api.ApiServer
 
 - url: /images
-  static_dir: static/images
+  static_dir: service/static/images
 
-- url: /js/service\.js
-  static_files: static/service/service.js
-  upload: static/service/service\.js
-
-- url: /css/service\.css
-  static_files: static/service/service.css
-  upload: static/service/service\.css
+- url: /service/(.*\.(html|css|js))
+  static_files: service/static/\1
+  upload: service/static/(.*\.(html|css|js))
 
 - url: /upload/.*
   script: mirror_api.upload.app

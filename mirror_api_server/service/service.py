@@ -39,7 +39,7 @@ class IndexHandler(utils.BaseHandler):
             scopes = ' '.join(utils.COMMON_SCOPES + utils.TEST_SCOPES)
 
         reconnect = (self.request.get("reconnect") == "true")
-        template = utils.JINJA.get_template("templates/service.html")
+        template = utils.JINJA.get_template("service/templates/service.html")
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
         self.session["state"] = state
         self.response.out.write(template.render({"client_id": utils.CLIENT_ID, "state": state, "scopes": scopes, "reconnect": reconnect}))
