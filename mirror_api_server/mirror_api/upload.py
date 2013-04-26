@@ -24,11 +24,15 @@ import webapp2
 
 class UploadHandler(webapp2.RequestHandler):
 
-    def post(self):
+    _metainfo = None
+    _content_type = None
+    _content = None
+
+    def _decode(self):
         # Check if we are receiving a valid content_type
         content_type = self.request.content_type
         if content_type != "multipart/related" and content_type != "multipart/mixed":
-            self.response.out.write("Invalid Content-Type")
+            return
 
         # Attach content-type header to body so that email library can decode it correctly
         message = "Content-Type: " + self.request.headers["Content-Type"] + "\r\n"
@@ -37,22 +41,68 @@ class UploadHandler(webapp2.RequestHandler):
         msg = email.message_from_string(message)
 
         if not msg.is_multipart():
-            self.response.out.write("Couldn't decode multipart body")
             return
 
         for payload in msg.get_payload():
             if payload.get_content_type().startswith("image/"):
-                # Display attached image
-                self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (payload.get_content_type(), payload.get_payload()))
+                if self._content is None:
+                    self._content_type = payload.get_content_type()
+                    self._content = payload.get_payload()  # TODO: decode base64 data
             elif payload.get_content_type() == "application/json":
-                # Parse and display JSON metadata
-                j = json.loads(payload.get_payload())
-                self.response.out.write("<pre>" + json.dumps(j, indent=2, separators=(",", ": ")) + "</pre><br><br>")
-            else:
-                self.response.out.write("Invalid content-type: %s<br><br>" % payload.get_content_type())
+                self._metainfo = json.loads(payload.get_payload())
+
+
+class InsertHandler(UploadHandler):
+
+    def post(self):
+        # Check if we are receiving a valid content_type
+        self._decode()
+
+        if self._metainfo is None and self._content is None:
+            self.response.out.write("Invalid request")
+
+        if self._metainfo is not None:
+            self.response.out.write("<pre>" + self._metainfo + "</pre><br><br>")
+
+        if self._content is not None:
+            self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (self._content_type, self._content))
+
+
+class UpdateHandler(UploadHandler):
+
+    def put(self, id):
+        self._decode()
+
+        if self._metainfo is None and self._content is None:
+            self.response.out.write("Invalid request")
+
+        if self._metainfo is not None:
+            self.response.out.write("<pre>" + self._metainfo + "</pre><br><br>")
+
+        if self._content is not None:
+            self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (self._content_type, self._content))
+
+
+class AttachmentInsertHandler(UploadHandler):
+
+    def post(self, id):
+        self._decode()
+
+        if self._metainfo is None and self._content is None:
+            self.response.out.write("Invalid request")
+
+        if self._metainfo is not None:
+            self.response.out.write("<pre>" + self._metainfo + "</pre><br><br>")
+
+        if self._content is not None:
+            self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (self._content_type, self._content))
 
 
 app = webapp2.WSGIApplication(
-    [("/upload/", UploadHandler)],
+    [
+        (r"/upload/mirror/v1/timeline/(.*)/attachments", AttachmentInsertHandler),
+        (r"/upload/mirror/v1/timeline/(.*)", UpdateHandler),
+        ("/upload/mirror/v1/timeline", InsertHandler)
+    ],
     debug=True
 )
