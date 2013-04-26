@@ -134,20 +134,24 @@ This includes all dependencies, but won't always be the newest available version
 
 ### Testing
 
-At the moment the only functionality of the web app hosted at
-`https://yourapp.appspot.com/` is to send text and image cards
-to the Glass emulator available at `https://yourapp.appspot.com/glass/`
-but I'm planning to add more functionality to it. Using the login on
-the web app also sets up the necessary contacts and subscriptions
-for the demo services and stores credentials for offline access of the services.
+To register contacts and subscriptions you will first have to sign in at the
+web app hosted at `https://yourapp.appspot.com/test/`. The functionality of
+this app is very limited so far but will be improved.
 
-You can also use the API Explorer at `https://yourapp.appspot.com/_ah/api/explorer`
+(Plan is to have your real web app hosted at `https://yourapp.appspot.com/` using
+the same UI as the test UI, but with the difference that the real web app
+will use calls directly to the Mirror API while the test web app uses the
+self-hosted Mirror API clone.)
+
+You can then use the API Explorer at `https://yourapp.appspot.com/_ah/api/explorer`
 to directly send requests to the API.
 You will have to turn on OAuth (in the upper right corner of the Explorer) with
 the `https://www.googleapis.com/auth/userinfo.email` scope.
-You can already use the Explorer to register ShareEntities and Subscriptions.
-The Glass emulator will display actions and shares correctly and send them to
-the Mirror API Server which forwards the information to the relevant subscriptions.
+
+You can then see the result at the Glass emulator available at
+`https://yourapp.appspot.com/glass/`. The Glass emulator will display actions
+and shares correctly and send them to the Mirror API Server which forwards the
+information to the relevant subscriptions.
 
 
 ### Deviations from the actual Mirror API
