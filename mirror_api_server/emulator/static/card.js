@@ -63,7 +63,7 @@
             if (marker[0] === "0") {
               tmp += "color:0xF7594A";
             } else {
-              tmp += "icon:http://" + global.location.host + "/images/map_dot.png|shadow:false";
+              tmp += "icon:http://" + global.location.host + "/glass/images/map_dot.png|shadow:false";
             }
             tmp += "|" + coords[0] + "," + coords[1];
             elements.push(tmp);

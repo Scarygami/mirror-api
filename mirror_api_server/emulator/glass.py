@@ -39,7 +39,7 @@ class GlassHandler(utils.BaseHandler):
     """Renders the Glass emulator"""
 
     def get(self):
-        template = utils.JINJA.get_template("templates/glass.html")
+        template = utils.JINJA.get_template("emulator/templates/glass.html")
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
         self.session["state"] = state
         self.response.out.write(template.render(

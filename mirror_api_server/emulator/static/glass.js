@@ -221,7 +221,7 @@
         "values": [{
           "state": "DEFAULT",
           "displayName": "Share",
-          "iconUrl": "../images/share.png"
+          "iconUrl": "images/share.png"
         }]
       },
       "NAVIGATE": {
@@ -230,7 +230,7 @@
         "values": [{
           "state": "DEFAULT",
           "displayName": "Navigate",
-          "iconUrl": "../images/navigate.png"
+          "iconUrl": "images/navigate.png"
         }]
       },
       "REPLY": {
@@ -239,7 +239,7 @@
         "values": [{
           "state": "DEFAULT",
           "displayName": "Reply",
-          "iconUrl": "../images/reply.png"
+          "iconUrl": "images/reply.png"
         }]
       },
       "READ_ALOUD": {
@@ -248,7 +248,7 @@
         "values": [{
           "state": "DEFAULT",
           "displayName": "Read aloud",
-          "iconUrl": "../images/read_aloud.png"
+          "iconUrl": "images/read_aloud.png"
         }]
       }
     };
@@ -260,20 +260,20 @@
       "<div class=\"card_text\"></div>";
     templates[cardType.CONTENT_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
-      "<img class=\"card_icon\" src=\"../images/corner.png\"></div>" +
+      "<img class=\"card_icon\" src=\"images/corner.png\"></div>" +
       "<div class=\"card_interface\"></div>";
     templates[cardType.ACTION_CARD] =
       "<div class=\"card_action\"><img class=\"card_icon\"> <div class=\"card_text\"></div></div>";
     templates[cardType.SHARE_CARD] =
       "<div class=\"card_text\"></div>" +
       "<div class=\"card card_type_progress\" style=\"display: none\">" +
-      "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"../images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
+      "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
       "</div>";
     templates[cardType.REPLY_CARD] =
       "<div class=\"card_text\"></div>" +
-      "<img class=\"card_icon\" src=\"../images/talk.png\">" +
+      "<img class=\"card_icon\" src=\"images/talk.png\">" +
       "<div class=\"card card_type_progress\" style=\"display: none\">" +
-      "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"../images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
+      "  <div class=\"card_progress\"><img class=\"card_progress_icon\" src=\"images/share.png\"> <div class=\"card_progress_text\">Sharing</div></div>" +
       "</div>";
     templates[cardType.CAMERA_CARD] =
       "<video class=\"card_video\"></video>" +
@@ -420,13 +420,13 @@
       }
 
       function onSuccess() {
-        me.progressIconDiv.src = "../images/success.png";
+        me.progressIconDiv.src = "images/success.png";
         me.progressTextDiv.innerHTML = "Shared";
         global.setTimeout(closeShare, 2000);
       }
 
       function onError() {
-        me.progressIconDiv.src = "../images/error.png";
+        me.progressIconDiv.src = "images/error.png";
         me.progressTextDiv.innerHTML = "Failed";
         global.setTimeout(closeShare, 2000);
       }
@@ -450,7 +450,7 @@
        * TODO: Sharing Progress should be separate overlay which can be
        * animated in
        */
-      this.progressIconDiv.src = "../images/share.png";
+      this.progressIconDiv.src = "images/share.png";
       this.progressTextDiv.innerHTML = "Sharing";
       this.progressDiv.style.display = "block";
       if (global.glassDemoMode) {
@@ -1030,20 +1030,20 @@
       }
 
       function onSuccess() {
-        me.iconDiv.src = "../images/success.png";
+        me.iconDiv.src = "images/success.png";
         me.textDiv.innerHTML = "Sent";
         global.setTimeout(closeAction, 2000);
       }
 
       function onError() {
-        me.iconDiv.src = "../images/error.png";
+        me.iconDiv.src = "images/error.png";
         me.textDiv.innerHTML = "Failed";
         global.setTimeout(closeAction, 2000);
       }
 
       this.active = false;
       this.updateCardStyle(true);
-      this.iconDiv.src = "../images/share.png";
+      this.iconDiv.src = "images/share.png";
       this.textDiv.innerHTML = "Sending";
       if (global.glassDemoMode) {
         global.setTimeout(onSuccess, 2000);
@@ -1220,14 +1220,14 @@
       }
 
       function onSuccess() {
-        me.progressIconDiv.src = "../images/success.png";
+        me.progressIconDiv.src = "images/success.png";
         me.progressTextDiv.innerHTML = "Sent";
         me.progressDiv.style.display = "block";
         global.setTimeout(closeReply, 2000);
       }
 
       function onError() {
-        me.progressIconDiv.src = "../images/error.png";
+        me.progressIconDiv.src = "images/error.png";
         me.progressTextDiv.innerHTML = "Failed";
         me.progressDiv.style.display = "block";
         global.setTimeout(closeReply, 2000);
@@ -1254,7 +1254,7 @@
         recognition.onend = function () {
           var data;
           if (result !== "") {
-            me.progressIconDiv.src = "../images/reply.png";
+            me.progressIconDiv.src = "images/reply.png";
             me.progressTextDiv.innerHTML = "Sending";
             me.progressDiv.style.display = "block";
             if (global.glassDemoMode) {
