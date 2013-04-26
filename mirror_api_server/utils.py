@@ -44,6 +44,18 @@ SESSION_KEY = "sdjalasjdakjhskdauh3o8h4ofihskjdhfow38fhoaihoa2udjlakj"
 config = {}
 config["webapp2_extras.sessions"] = {"secret_key": SESSION_KEY}
 
+# Add any additional scopes that you might need for your service to access other Google APIs
+COMMON_SCOPES = ["https://www.googleapis.com/auth/plus.login"]
+
+# userinfo.email scope is required to work with Google Cloud Endpoints
+TEST_SCOPES = ["https://www.googleapis.com/auth/userinfo.email"]
+
+# Remove the location scope from here if you don't need it
+REAL_SCOPES = [
+    "https://www.googleapis.com/auth/glass.timeline",
+    "https://www.googleapis.com/auth/glass.location"
+]
+
 
 def createError(code, message):
     """Create a JSON string to be returned as error response to requests"""

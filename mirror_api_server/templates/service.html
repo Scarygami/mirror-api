@@ -9,7 +9,7 @@
   <body>
     <div id="signin">
       <button class="g-signin"
-        data-scope="https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/userinfo.email"
+        data-scope="{{ scopes }}"
         data-clientId="{{ client_id }}"
         data-callback="onSignInCallback"
         data-redirecturi="postmessage"

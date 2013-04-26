@@ -294,7 +294,7 @@ class ConnectHandler(utils.BaseHandler):
         body["collection"] = "timeline"
         body["userToken"] = gplus_id
         body["verifyToken"] = verifyToken
-        body["callbackUrl"] = utils.base_url + "/timeline_update"
+        body["callbackUrl"] = utils.base_url + ("" if test is None else "/test") + "/timeline_update"
         try:
             result = service.subscriptions().insert(body=body).execute()
         except AccessTokenRefreshError:
@@ -312,7 +312,7 @@ class ConnectHandler(utils.BaseHandler):
         body["collection"] = "locations"
         body["userToken"] = gplus_id
         body["verifyToken"] = verifyToken
-        body["callbackUrl"] = utils.base_url + "/locations_update"
+        body["callbackUrl"] = utils.base_url + ("" if test is None else "/test") + "/locations_update"
         try:
             result = service.subscriptions().insert(body=body).execute()
         except AccessTokenRefreshError:

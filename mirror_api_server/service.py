@@ -32,11 +32,17 @@ class IndexHandler(utils.BaseHandler):
     """Renders the main page that is mainly used for authentication only so far"""
 
     def get(self, test):
+
+        if test is None:
+            scopes = ' '.join(utils.COMMON_SCOPES + utils.REAL_SCOPES)
+        else:
+            scopes = ' '.join(utils.COMMON_SCOPES + utils.TEST_SCOPES)
+
         reconnect = (self.request.get("reconnect") == "true")
         template = utils.JINJA.get_template("templates/service.html")
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
         self.session["state"] = state
-        self.response.out.write(template.render({"client_id": utils.CLIENT_ID, "state": state, "reconnect": reconnect}))
+        self.response.out.write(template.render({"client_id": utils.CLIENT_ID, "state": state, "scopes": scopes, "reconnect": reconnect}))
 
 
 class ListHandler(utils.BaseHandler):
