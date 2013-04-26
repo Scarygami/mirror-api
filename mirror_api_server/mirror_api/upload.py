@@ -29,33 +29,40 @@ class UploadHandler(webapp2.RequestHandler):
     _content = None
 
     def _decode(self):
-        # Check if we are receiving a valid content_type
+        """Check for valid content types and decode data accordingly"""
+
         content_type = self.request.content_type
-        if content_type != "multipart/related" and content_type != "multipart/mixed":
+        if content_type == "multipart/related" or content_type == "multipart/mixed":
+            # Attach content-type header to body so that email library can decode it correctly
+            message = "Content-Type: " + self.request.headers["Content-Type"] + "\r\n"
+            message += self.request.body
+
+            msg = email.message_from_string(message)
+
+            if not msg.is_multipart():
+                return
+
+            for payload in msg.get_payload():
+                if payload.get_content_type().startswith("image/"):
+                    if self._content is None:
+                        self._content_type = payload.get_content_type()
+                        self._content = payload.get_payload(decode=True)
+                elif payload.get_content_type() == "application/json":
+                    self._metainfo = json.loads(payload.get_payload())
+
             return
 
-        # Attach content-type header to body so that email library can decode it correctly
-        message = "Content-Type: " + self.request.headers["Content-Type"] + "\r\n"
-        message += self.request.body
-
-        msg = email.message_from_string(message)
-
-        if not msg.is_multipart():
-            return
-
-        for payload in msg.get_payload():
-            if payload.get_content_type().startswith("image/"):
-                if self._content is None:
-                    self._content_type = payload.get_content_type()
-                    self._content = payload.get_payload()  # TODO: decode base64 data
-            elif payload.get_content_type() == "application/json":
-                self._metainfo = json.loads(payload.get_payload())
+        if content_type.startswith("image/") or content_type.startswith("audio/") or content_type.startswith("video/"):
+            self._content_type = content_type
+            if "Content-Transfer-Encoding" in self.request.headers and self.request.headers["Content-Transfer-Encoding"].lower() == "base64":
+                self._content = self.request.body.decode("base64")
+            else:
+                self._content = self.request.body
 
 
 class InsertHandler(UploadHandler):
 
     def post(self):
-        # Check if we are receiving a valid content_type
         self._decode()
 
         if self._metainfo is None and self._content is None:
@@ -98,8 +105,16 @@ class AttachmentInsertHandler(UploadHandler):
             self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (self._content_type, self._content))
 
 
+class DownloadHandler(webapp2.RequestHandler):
+
+    def get(self, id, attachment):
+
+        self.response.out.write("Not implemented yet")
+
+
 app = webapp2.WSGIApplication(
     [
+        (r"/upload/mirror/v1/timeline/(.*)/attachments/(.*)", DownloadHandler),
         (r"/upload/mirror/v1/timeline/(.*)/attachments", AttachmentInsertHandler),
         (r"/upload/mirror/v1/timeline/(.*)", UpdateHandler),
         ("/upload/mirror/v1/timeline", InsertHandler)
