@@ -25,9 +25,10 @@ from utils import config
 import webapp2
 
 from auth import AUTH_ROUTES
-from glass import GLASS_ROUTES
 from notify import NOTIFY_ROUTES
 from service import SERVICE_ROUTES
+
+from emulator.glass import GLASS_ROUTES
 
 ROUTES = (AUTH_ROUTES + GLASS_ROUTES + SERVICE_ROUTES + NOTIFY_ROUTES)
 
