@@ -82,13 +82,14 @@ class MirrorApi(remote.Service):
     @TimelineItem.method(user_required=True, http_method="POST",
                          request_fields=("bundleId",
                                          "canonicalUrl",
+                                         "creator",
                                          "displayTime",
                                          "html",
                                          "htmlPages",
-                                         "inReplyTo",
                                          "isBundleCover",
                                          "location",
                                          "menuItems",
+                                         "notification",
                                          "recipients",
                                          "sourceItemId",
                                          "speakableText",
@@ -115,7 +116,6 @@ class MirrorApi(remote.Service):
         if card.htmlPages is not None and len(card.htmlPages) > 0 and card.bundleId is not None:
             raise endpoints.BadRequestException("Can't mix HTML and Card bundle.")
 
-        # TODO: Temporary fix until default values are fixed
         card.isDeleted = False
 
         card.put()
@@ -158,13 +158,14 @@ class MirrorApi(remote.Service):
                          request_fields=("id",
                                          "bundleId",
                                          "canonicalUrl",
+                                         "creator",
                                          "displayTime",
                                          "html",
                                          "htmlPages",
-                                         "inReplyTo",
                                          "isBundleCover",
                                          "location",
                                          "menuItems",
+                                         "notification",
                                          "recipients",
                                          "sourceItemId",
                                          "speakableText",
@@ -241,6 +242,7 @@ class MirrorApi(remote.Service):
         card.bundleId = None
         card.canonicalUrl = None
         card.created = None
+        card.creator = None
         card.displayTime = None
         card.html = None
         card.htmlPages = []
@@ -248,6 +250,7 @@ class MirrorApi(remote.Service):
         card.isBundleCover = None
         card.isPinned = None
         card.menuItems = []
+        card.notification = None
         card.recipients = []
         card.sourceItemId = None
         card.speakableText = None
@@ -260,7 +263,27 @@ class MirrorApi(remote.Service):
         # Notify Glass emulator
         channel.send_message(card.user.email(), json.dumps({"id": card.id}))
 
-        # TODO: Notify subscriptions
+        # Notify timeline DELETE subscriptions
+        data = {}
+        data["collection"] = "timeline"
+        data["itemId"] = card.id
+        operation = Operation.DELETE
+        data["operation"] = operation.name
+
+        header = {"Content-type": "application/json"}
+
+        query = Subscription.query().filter(Subscription.user == endpoints.get_current_user())
+        query = query.filter(Subscription.collection == "timeline")
+        query = query.filter(Subscription.operation == operation)
+        for subscription in query.fetch():
+            data["userToken"] = subscription.userToken
+            data["verifyToken"] = subscription.verifyToken
+
+            req = urllib2.Request(subscription.callbackUrl, json.dumps(data), header)
+            try:
+                urllib2.urlopen(req)
+            except urllib2.URLError as e:
+                logging.error(e)
 
         return card
 
@@ -302,7 +325,6 @@ class MirrorApi(remote.Service):
 
         contact.key.delete()
 
-        # TODO: Check if a success HTTP code can be returned with an empty body
         return contact
 
     @Contact.method(user_required=True,
@@ -351,7 +373,6 @@ class MirrorApi(remote.Service):
 
         subscription.key.delete()
 
-        # TODO: Check if a success HTTP code can be returned with an empty body
         return subscription
 
     @Location.query_method(user_required=True,
@@ -424,7 +445,7 @@ class MirrorApi(remote.Service):
 
         current_user = endpoints.get_current_user()
         if current_user is None:
-            raise endpoints.UnauthorizedException('Authentication required.')
+            raise endpoints.UnauthorizedException("Authentication required.")
 
         card = ndb.Key("TimelineItem", request.itemId).get()
 
@@ -450,7 +471,7 @@ class MirrorApi(remote.Service):
 
         current_user = endpoints.get_current_user()
         if current_user is None:
-            raise endpoints.UnauthorizedException('Authentication required.')
+            raise endpoints.UnauthorizedException("Authentication required.")
 
         card = ndb.Key("TimelineItem", request.itemId).get()
 
@@ -475,7 +496,7 @@ class MirrorApi(remote.Service):
 
         current_user = endpoints.get_current_user()
         if current_user is None:
-            raise endpoints.UnauthorizedException('Authentication required.')
+            raise endpoints.UnauthorizedException("Authentication required.")
 
         card = ndb.Key("TimelineItem", request.itemId).get()
 
@@ -511,9 +532,11 @@ class MirrorApi(remote.Service):
 
         current_user = endpoints.get_current_user()
         if current_user is None:
-            raise endpoints.UnauthorizedException('Authentication required.')
+            raise endpoints.UnauthorizedException("Authentication required.")
 
-        # TODO: check if card exists and belongs to the user
+        card = ndb.Key("TimelineItem", action.itemId).get()
+        if card is None or card.user != current_user:
+            raise endpoints.NotFoundException("Card not found.")
 
         data = None
         operation = None
@@ -524,7 +547,7 @@ class MirrorApi(remote.Service):
             data["collection"] = "timeline"
             data["itemId"] = action.itemId
             data["operation"] = operation.name
-            data["userActions"] = ({"type": MenuAction.SHARE.name},)
+            data["userActions"] = [{"type": MenuAction.SHARE.name}]
 
         if action.action == MenuAction.REPLY or action.action == MenuAction.REPLY_ALL:
             operation = Operation.INSERT
@@ -532,7 +555,7 @@ class MirrorApi(remote.Service):
             data["collection"] = "timeline"
             data["itemId"] = action.itemId
             data["operation"] = operation.name
-            data["userActions"] = ({"type": MenuAction.REPLY.name},)
+            data["userActions"] = [{"type": MenuAction.REPLY.name}]
 
         if action.action == MenuAction.DELETE:
             operation = Operation.DELETE
@@ -540,7 +563,7 @@ class MirrorApi(remote.Service):
             data["collection"] = "timeline"
             data["itemId"] = action.itemId
             data["operation"] = operation.name
-            data["userActions"] = ({"type": MenuAction.DELETE.name},)
+            data["userActions"] = [{"type": MenuAction.DELETE.name}]
 
         if action.action == MenuAction.CUSTOM:
             operation = Operation.UPDATE
@@ -548,7 +571,7 @@ class MirrorApi(remote.Service):
             data["collection"] = "timeline"
             data["itemId"] = action.itemId
             data["operation"] = operation.name
-            data["userActions"] = ({"type": MenuAction.DELETE.name, "payload": action.value},)
+            data["userActions"] = [{"type": MenuAction.CUSTOM.name, "payload": action.value}]
 
         if data is not None and operation is not None:
             header = {"Content-type": "application/json"}
@@ -565,5 +588,8 @@ class MirrorApi(remote.Service):
                     urllib2.urlopen(req)
                 except urllib2.URLError as e:
                     logging.error(e)
+
+        # Report back to Glass emulator
+        channel.send_message(current_user.email(), json.dumps({"id": action.itemId}))
 
         return ActionResponse(success=True)

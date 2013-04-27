@@ -142,12 +142,18 @@ class TimelineItem(EndpointsModel):
         source = ndb.StringProperty()
         type = msgprop.EnumProperty(ContactType)
 
+    class Notification(EndpointsModel):
+
+        level = ndb.StringProperty(default="DEFAULT")
+        deliveryTime = EndpointsDateTimeProperty()
+
     _message_fields_schema = (
         "id",
         "attachments",
         "bundleId",
         "canonicalUrl",
         "created",
+        "creator",
         "displayTime",
         "html",
         "htmlPages",
@@ -157,6 +163,8 @@ class TimelineItem(EndpointsModel):
         "isPinned",
         "location",
         "menuItems",
+        "notification",
+        "pinScore",
         "recipients",
         "sourceItemId",
         "speakableText",
@@ -171,6 +179,7 @@ class TimelineItem(EndpointsModel):
     bundleId = ndb.StringProperty()
     canonicalUrl = ndb.StringProperty()
     created = EndpointsDateTimeProperty(auto_now_add=True)
+    creator = ndb.LocalStructuredProperty(TimelineContact)
     displayTime = EndpointsDateTimeProperty()
     html = ndb.TextProperty()
     htmlPages = ndb.TextProperty(repeated=True)
@@ -180,6 +189,8 @@ class TimelineItem(EndpointsModel):
     isPinned = ndb.BooleanProperty()
     location = ndb.LocalStructuredProperty(Location)
     menuItems = ndb.LocalStructuredProperty(MenuItem, repeated=True)
+    notification = ndb.LocalStructuredProperty(Notification)
+    pinScore = ndb.IntegerProperty()
     recipients = ndb.LocalStructuredProperty(TimelineContact, repeated=True)
     sourceItemId = ndb.StringProperty()
     speakableText = ndb.TextProperty()
