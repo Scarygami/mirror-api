@@ -133,7 +133,6 @@ class AttachmentHandler(utils.BaseHandler):
 
 
 SERVICE_ROUTES = [
-    (r"(/test)?/", IndexHandler),
     (r"(/test)?/attachment/(.*)/(.*)", AttachmentHandler),
     (r"(/test)?/", IndexHandler),
     (r"(/test)?/list", ListHandler),
