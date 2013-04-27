@@ -127,6 +127,7 @@ class AttachmentHandler(utils.BaseHandler):
 
         http = httplib2.Http()
         http = credentials.authorize(http)
+        http.timeout = 60
 
         resp, content = http.request("%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, timelineId, attachmentId))
         if resp.status == 200:

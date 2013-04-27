@@ -73,7 +73,7 @@ class TimelineNotifyHandler(utils.BaseHandler):
 
         for demo_service in demo_services:
             if hasattr(demo_service, "handle_item"):
-                demo_service.handle_item(result, service)
+                demo_service.handle_item(result, service, test)
 
 
 class LocationNotifyHandler(utils.BaseHandler):
@@ -126,13 +126,7 @@ class LocationNotifyHandler(utils.BaseHandler):
 
         for demo_service in demo_services:
             if hasattr(demo_service, "handle_location"):
-                (new_items, updated_items, deleted_items) = demo_service.handle_location(result)
-                if new_items is not None:
-                    for item in new_items:
-                        new_result = service.timeline().insert(body=item).execute()
-                        logging.info(new_result)
-
-                # TODO: handle updating, deleting
+                demo_service.handle_location(result, service, test)
 
 
 NOTIFY_ROUTES = [

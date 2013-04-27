@@ -54,6 +54,7 @@ class UploadHandler(webapp2.RequestHandler):
             credentials = AccessTokenCredentials(self._token, "mirror-api-upload-handler/1.0")
             http = httplib2.Http()
             http = credentials.authorize(http)
+            http.timeout = 60
             self._service = build("mirror", "v1", http=http, discoveryServiceUrl=utils.discovery_service_url)
             super(UploadHandler, self).dispatch()
 

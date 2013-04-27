@@ -17,12 +17,12 @@
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
+from service import upload
 from utils import base_url
 
 import logging
 import Image
 import cStringIO
-import re
 import random
 
 __all__ = ["handle_item", "CONTACTS", "WELCOMES"]
@@ -40,15 +40,20 @@ CONTACTS = [
 """Welcome message cards that are sent when the user first connects to this service"""
 WELCOMES = [
     {
-        "text": "Welcome to Add a Cat!",
-        "attachments": [{"contentType": "image/jpeg", "contentUrl": base_url + "/images/cat.png"}]
+        "html": ("<article class=\"photo\">"
+                 "  <img src=\"" + base_url + "/images/cat.png\" width=\"100%\" height=\"100%\">"
+                 "  <div class=\"photo-overlay\"></div>"
+                 "  <section>"
+                 "    <p class=\"text-auto-size\">Welcome to Add a Cat!</p>"
+                 "  </section>"
+                 "</article>")
     }
 ]
 
 _NUM_CATS = 6
 
 
-def handle_item(item, service):
+def handle_item(item, service, test):
     """Callback for Timeline updates."""
 
     if "recipients" in item:
@@ -62,23 +67,26 @@ def handle_item(item, service):
         # Item not meant for this service
         return
 
-    image = None
+    imageId = None
     if "attachments" in item:
         for att in item["attachments"]:
             if att["contentType"].startswith("image/"):
-                image = att["contentUrl"]
+                imageId = att["id"]
                 break
 
-    if image is None:
+    if imageId is None:
         logging.info("No suitable attachment")
         return
 
-    if not image.startswith("data:image"):
-        logging.info("Can only work with data-uri")
-        return
+    attachment_metadata = service.timeline().attachments().get(
+        itemId=item["id"], attachmentId=imageId).execute()
+    content_url = attachment_metadata.get("contentUrl")
+    resp, content = service._http.request(content_url)
 
-    img_data = re.search(r'base64,(.*)', image).group(1)
-    tempimg = cStringIO.StringIO(img_data.decode('base64'))
+    if resp.status != 200:
+        logging.info("Couldn't fetch attachment")
+
+    tempimg = cStringIO.StringIO(content)
     im = Image.open(tempimg)
 
     cat = random.randint(1, _NUM_CATS)
@@ -97,11 +105,9 @@ def handle_item(item, service):
     im.save(f, "JPEG")
     content = f.getvalue()
     f.close()
-    data_uri = "data:image/jpeg;base64," + content.encode("base64").replace("\n", "")
 
     new_item = {}
-    new_item["attachments"] = [{"contentType": "image/jpeg", "contentUrl": data_uri}]
     new_item["menuItems"] = [{"action": "SHARE"}]
 
-    new_result = service.timeline().insert(body=new_item).execute()
-    logging.info(new_result)
+    result = upload.multipart_insert(new_item, content, "image/jpeg", service, test)
+    logging.info(result)

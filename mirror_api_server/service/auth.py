@@ -80,6 +80,7 @@ def get_auth_service(gplus_id, test, api="mirror", version="v1"):
 
     http = httplib2.Http()
     http = credentials.authorize(http)
+    http.timeout = 60
 
     if discovery_service_url is None:
         service = build(api, version, http=http)

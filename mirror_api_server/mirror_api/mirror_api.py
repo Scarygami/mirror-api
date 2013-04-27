@@ -466,7 +466,7 @@ class MirrorApi(remote.Service):
     @endpoints.method(AttachmentRequest, AttachmentResponse,
                       path="timeline/{itemId}/attachments/{attachmentId}", http_method="GET",
                       name="timeline.attachments.get")
-    def acttachments_get(self, request):
+    def attachments_get(self, request):
         """Retrieve metainfo for a single attachments for a timeline card"""
 
         current_user = endpoints.get_current_user()
@@ -491,7 +491,7 @@ class MirrorApi(remote.Service):
     @endpoints.method(AttachmentRequest, AttachmentResponse,
                       path="timeline/{itemId}/attachments/{attachmentId}", http_method="DELETE",
                       name="timeline.attachments.delete")
-    def acttachments_delete(self, request):
+    def attachments_delete(self, request):
         """Retrieve metainfo for a single attachments for a timeline card"""
 
         current_user = endpoints.get_current_user()

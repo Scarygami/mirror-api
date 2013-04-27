@@ -21,6 +21,7 @@ import utils
 from auth import get_auth_service
 
 import json
+import logging
 import random
 import string
 
@@ -113,20 +114,17 @@ class AttachmentHandler(utils.BaseHandler):
             self.response.out.write(utils.createError(401, "Invalid credentials."))
             return
 
-        if test is None:
-            attachment_metadata = self.mirror_service.timeline().attachments().get(
-                itemId=timelineId, attachmentId=attachmentId).execute()
-            content_type = str(attachment_metadata.get("contentType"))
-            content_url = attachment_metadata.get("contentUrl")
-            resp, content = service._http.request(content_url)
-        else:
-            resp, content = service._http.request("%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, timelineId, attachmentId))
-            content_type = resp["content-type"]
+        attachment_metadata = service.timeline().attachments().get(
+            itemId=timelineId, attachmentId=attachmentId).execute()
+        content_type = str(attachment_metadata.get("contentType"))
+        content_url = attachment_metadata.get("contentUrl")
+        resp, content = service._http.request(content_url)
 
         if resp.status == 200:
             self.response.content_type = content_type
             self.response.out.write(content)
         else:
+            logging.info(resp)
             self.response.content_type = "application/json"
             self.response.status = resp.status
             self.response.out.write(utils.createError(resp.status, "Unable to retrieve attachment."))

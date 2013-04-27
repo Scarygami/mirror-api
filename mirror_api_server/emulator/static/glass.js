@@ -1406,7 +1406,7 @@
             me.canvas.width = me.video.offsetWidth;
             me.canvas.height = Math.floor(me.canvas.width / 16 * 9);
             me.ctx.drawImage(me.video, 0, 0);
-            me.image = me.canvas.toDataURL("image/png");
+            me.image = me.canvas.toDataURL("image/jpeg");
             me.cardDiv.style.backgroundImage = "url(" + me.image + ")";
             me.video.style.display = "none";
             me.video.pause();
@@ -1415,7 +1415,7 @@
               cardType.CONTENT_CARD,
               "new_" + photoCount,
               startCard,
-              {attachments: [{contentType: "image/png", contentUrl: me.image}], created: new Date(), menuItems: [{action: "SHARE"}]}
+              {attachments: [{contentType: "image/jpeg", contentUrl: me.image}], created: new Date(), menuItems: [{action: "SHARE"}]}
             );
             card.localOnly = true;
             startCard.addCard(card);
