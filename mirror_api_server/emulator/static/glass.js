@@ -382,8 +382,12 @@
         for (i = 0; i < l; i++) {
           att = data.attachments[i];
           if (att.contentType.indexOf("image/") === 0) {
-            this.image = att.contentUrl;
             this.imageType = att.contentType;
+            if (att.id) {
+              this.image = "/glass/attachment/" + this.id + "/" + att.id;
+            } else {
+              this.image = att.contentUrl;
+            }
             break;
           }
         }

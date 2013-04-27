@@ -29,6 +29,8 @@ import utils
 import webapp2
 
 from google.appengine.api import files
+from google.appengine.ext import blobstore
+from google.appengine.ext.webapp import blobstore_handlers
 
 from apiclient.discovery import build
 from apiclient.errors import HttpError
@@ -154,15 +156,8 @@ class UpdateHandler(UploadHandler):
     def put(self, id):
 
         self.response.content_type = "application/json"
-
-        if self._metainfo is None and self._content is None:
-            self.response.out.write("Invalid request")
-
-        if self._metainfo is not None:
-            self.response.out.write("<pre>" + json.dumps(self._metainfo, indent=2, separators=(",", ": ")) + "</pre><br><br>")
-
-        if self._content is not None:
-            self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (self._content_type, self._content))
+        self.response.status = 501
+        self.response.out.write(utils.createError(501, "Not implemented yet"))
 
 
 class AttachmentInsertHandler(UploadHandler):
@@ -170,24 +165,30 @@ class AttachmentInsertHandler(UploadHandler):
     def post(self, id):
 
         self.response.content_type = "application/json"
-
-        if self._metainfo is None and self._content is None:
-            self.response.out.write("Invalid request")
-
-        if self._metainfo is not None:
-            self.response.out.write("<pre>" + json.dumps(self._metainfo, indent=2, separators=(",", ": ")) + "</pre><br><br>")
-
-        if self._content is not None:
-            self.response.out.write("<img src=\"data:%s;base64,%s\"><br><br>" % (self._content_type, self._content))
+        self.response.status = 501
+        self.response.out.write(utils.createError(501, "Not implemented yet"))
 
 
-class DownloadHandler(UploadHandler):
+class DownloadHandler(UploadHandler, blobstore_handlers.BlobstoreDownloadHandler):
 
     def get(self, id, attachment):
 
-        self.response.content_type = "application/json"
-        self.response.status = 501
-        self.response.out.write(utils.createError(501, "Not implemented yet"))
+        # Trying to access card to see if user is allowed to
+        request = self._service.timeline().get(id=id)
+        try:
+            request.execute()
+        except HttpError as e:
+            self.response.status = e.resp.status
+            self.response.out.write(e.content)
+            return
+
+        if not blobstore.get(attachment):
+            self.response.content_type = "application/json"
+            self.response.status = 404
+            self.response.out.write(utils.createError(404, "Attachment not found"))
+            return
+
+        self.send_blob(attachment)
 
 
 app = webapp2.WSGIApplication(

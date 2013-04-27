@@ -27,6 +27,7 @@ import utils
 
 import httplib2
 import json
+import logging
 import random
 import string
 
@@ -42,6 +43,7 @@ class GlassHandler(utils.BaseHandler):
         template = utils.JINJA.get_template("emulator/templates/glass.html")
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
         self.session["state"] = state
+        self.session["credentials"] = None
         self.response.out.write(template.render(
             {
                 "state": state,
@@ -106,11 +108,35 @@ class GlassConnectHandler(utils.BaseHandler):
 
         token = channel.create_channel(result["email"])
 
+        self.session["credentials"] = credentials
+
         self.response.status = 200
         self.response.out.write(utils.createMessage({"token": token}))
 
 
+class AttachmentHandler(utils.BaseHandler):
+    """Retrieves an attachment using the current user's credentials"""
+
+    def get(self, timelineId, attachmentId):
+        credentials = self.session.get("credentials")
+        if credentials is None:
+            self.error(401)
+
+        http = httplib2.Http()
+        http = credentials.authorize(http)
+
+        resp, content = http.request("%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, timelineId, attachmentId))
+        if resp.status == 200:
+            self.response.content_type = resp["content-type"]
+            self.response.out.write(content)
+        else:
+            self.response.content_type = "application/json"
+            self.response.status = resp.status
+            self.response.out.write(utils.createError(resp.status, "Unable to retrieve attachment."))
+
+
 GLASS_ROUTES = [
+    (r"/glass/attachment/(.*)/(.*)", AttachmentHandler),
     ("/glass/connect", GlassConnectHandler),
     ("/glass/", GlassHandler)
 ]
