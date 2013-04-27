@@ -107,7 +107,7 @@ class InsertHandler(UploadHandler):
 
         # 1) Insert new card using
         if self._metainfo is None:
-            request = self._service.internal().timeline().insert()
+            request = self._service.internal().timeline().insert(body={})
         else:
             request = self._service.internal().timeline().insert(body=self._metainfo)
 
@@ -156,8 +156,58 @@ class UpdateHandler(UploadHandler):
     def put(self, id):
 
         self.response.content_type = "application/json"
-        self.response.status = 501
-        self.response.out.write(utils.createError(501, "Not implemented yet"))
+
+        if self._content is None:
+            self.response.status = 400
+            self.response.out.write(utils.createError(400, "Couldn't decode content or invalid content-type"))
+
+        # Trying to access card to see if user is allowed to
+        request = self._service.timeline().get(id=id)
+        try:
+            card = request.execute()
+        except HttpError as e:
+            self.response.status = e.resp.status
+            self.response.out.write(e.content)
+            return
+
+        # 2) Insert data into blob store
+        file_name = files.blobstore.create(mime_type=self._content_type)
+        with files.open(file_name, 'a') as f:
+            f.write(self._content)
+        files.finalize(file_name)
+        blob_key = files.blobstore.get_blob_key(file_name)
+
+        # 3) Update card with attachment info and new metainfo
+        if self._metainfo is None:
+            new_card = {}
+        else:
+            new_card = self._metainfo
+
+        if "attachments" in card:
+            new_card["attachments"] = card["attachments"]
+        else:
+            new_card["attachments"] = []
+
+        attachment = {
+            "id": str(blob_key),
+            "contentType": self._content_type,
+            "contentUrl": "%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, card["id"], str(blob_key)),
+            "isProcessing": False
+        }
+
+        new_card["attachments"].append(attachment)
+
+        request = self._service.internal().timeline().update(id=card["id"], body=new_card)
+
+        try:
+            result = request.execute()
+        except HttpError as e:
+            self.response.status = e.resp.status
+            self.response.out.write(e.content)
+            return
+
+        self.response.status = 200
+        self.response.out.write(json.dumps(result))
 
 
 class AttachmentInsertHandler(UploadHandler):
@@ -165,8 +215,51 @@ class AttachmentInsertHandler(UploadHandler):
     def post(self, id):
 
         self.response.content_type = "application/json"
-        self.response.status = 501
-        self.response.out.write(utils.createError(501, "Not implemented yet"))
+
+        if self._content is None:
+            self.response.status = 400
+            self.response.out.write(utils.createError(400, "Couldn't decode content or invalid content-type"))
+
+        # Trying to access card to see if user is allowed to
+        request = self._service.timeline().get(id=id)
+        try:
+            card = request.execute()
+        except HttpError as e:
+            self.response.status = e.resp.status
+            self.response.out.write(e.content)
+            return
+
+        # 2) Insert data into blob store
+        file_name = files.blobstore.create(mime_type=self._content_type)
+        with files.open(file_name, 'a') as f:
+            f.write(self._content)
+        files.finalize(file_name)
+        blob_key = files.blobstore.get_blob_key(file_name)
+
+        # 3) Update card with attachment info
+        if not "attachments" in card:
+            card["attachments"] = []
+
+        attachment = {
+            "id": str(blob_key),
+            "contentType": self._content_type,
+            "contentUrl": "%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, card["id"], str(blob_key)),
+            "isProcessing": False
+        }
+
+        card["attachments"].append(attachment)
+
+        request = self._service.internal().timeline().update(id=card["id"], body=card)
+
+        try:
+            result = request.execute()
+        except HttpError as e:
+            self.response.status = e.resp.status
+            self.response.out.write(e.content)
+            return
+
+        self.response.status = 200
+        self.response.out.write(json.dumps(result))
 
 
 class DownloadHandler(UploadHandler, blobstore_handlers.BlobstoreDownloadHandler):
