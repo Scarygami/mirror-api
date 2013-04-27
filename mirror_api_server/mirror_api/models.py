@@ -219,6 +219,28 @@ class TimelineItem(EndpointsModel):
         """
         return None
 
+    def MaxResultsSet(self, value):
+        """Setter to be used for default limit EndpointsAliasProperty.
+
+        Simply sets the limit on the entity's query info object, and the query
+        info object handles validation.
+
+        Args:
+          value: The limit value to be set.
+        """
+        self._endpoints_query_info.limit = value
+
+    @EndpointsAliasProperty(setter=MaxResultsSet, property_type=messages.IntegerField, default=20)
+    def maxResults(self):
+        """Getter to be used for default limit EndpointsAliasProperty.
+
+        Uses the ProtoRPC property_type IntegerField since a limit.
+
+        Returns:
+          The integer (or null) limit from the query info on the entity.
+        """
+        return self._endpoints_query_info.limit
+
 
 class Contact(EndpointsModel):
     """A person or group that can be used as a creator or a contact."""

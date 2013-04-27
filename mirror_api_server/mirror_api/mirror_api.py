@@ -57,7 +57,7 @@ API_DESCRIPTION = ("Mirror API implemented using Google Cloud "
 class MirrorApi(remote.Service):
     """Class which defines the Mirror API v1."""
 
-    @TimelineItem.query_method(query_fields=("limit", "pageToken", "bundleId", "includeDeleted", "pinnedOnly", "sourceItemId"),
+    @TimelineItem.query_method(query_fields=("maxResults", "pageToken", "bundleId", "includeDeleted", "pinnedOnly", "sourceItemId"),
                                user_required=True,
                                path="timeline", name="timeline.list")
     def timeline_list(self, query):
@@ -264,8 +264,7 @@ class MirrorApi(remote.Service):
 
         return card
 
-    @Contact.query_method(query_fields=("limit", "pageToken"),
-                          user_required=True,
+    @Contact.query_method(user_required=True,
                           path="contacts", name="contacts.list")
     def contacts_list(self, query):
         """List all Contacts registered for the current user."""
@@ -318,8 +317,7 @@ class MirrorApi(remote.Service):
         contact.put()
         return contact
 
-    @Subscription.query_method(query_fields=("limit", "pageToken"),
-                               user_required=True,
+    @Subscription.query_method(user_required=True,
                                path="subscriptions", name="subscriptions.list")
     def subscriptions_list(self, query):
         """List all Subscriptions registered for the current user."""
@@ -356,8 +354,7 @@ class MirrorApi(remote.Service):
         # TODO: Check if a success HTTP code can be returned with an empty body
         return subscription
 
-    @Location.query_method(query_fields=("limit", "pageToken"),
-                           user_required=True,
+    @Location.query_method(user_required=True,
                            path="locations", name="locations.list")
     def locations_list(self, query):
         """List locations for the current user."""
@@ -422,7 +419,7 @@ class MirrorApi(remote.Service):
     @endpoints.method(AttachmentListRequest, AttachmentList,
                       path="timeline/{itemId}/attachments", http_method="GET",
                       name="timeline.attachments.list")
-    def acttachments_list(self, request):
+    def attachments_list(self, request):
         """Retrieve attachments for a timeline card"""
 
         current_user = endpoints.get_current_user()
