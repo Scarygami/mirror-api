@@ -24,7 +24,9 @@ import logging
 import urllib2
 
 from google.appengine.api import channel
+from google.appengine.ext import blobstore
 from google.appengine.ext import endpoints
+from google.appengine.ext import ndb
 from protorpc import remote
 
 from models import TimelineItem
@@ -35,6 +37,10 @@ from models import Subscription
 from models import Action
 from models import ActionResponse
 from models import Location
+from models import AttachmentListRequest
+from models import AttachmentRequest
+from models import AttachmentResponse
+from models import AttachmentList
 
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -406,9 +412,90 @@ class MirrorApi(remote.Service):
 
         return location
 
+    @endpoints.method(AttachmentListRequest, AttachmentList,
+                      path="timeline/{itemId}/attachments", http_method="GET",
+                      name="timeline.attachments.list")
+    def acttachments_list(self, request):
+        """Retrieve attachments for a timeline card"""
+
+        current_user = endpoints.get_current_user()
+        if current_user is None:
+            raise endpoints.UnauthorizedException('Authentication required.')
+
+        card = ndb.Key("TimelineItem", request.itemId).get()
+
+        if card is None or card.user != current_user:
+            raise endpoints.NotFoundException("Card not found.")
+
+        attachments = []
+
+        if card.attachments is not None:
+            for att in card.attachments:
+                attachments.append(AttachmentResponse(id=att.id,
+                                                      contentType=att.contentType,
+                                                      contentUrl=att.contentUrl,
+                                                      isProcessingContent=att.isProcessingContent))
+
+        return AttachmentList(items=attachments)
+
+    @endpoints.method(AttachmentRequest, AttachmentResponse,
+                      path="timeline/{itemId}/attachments/{attachmentId}", http_method="GET",
+                      name="timeline.attachments.get")
+    def acttachments_get(self, request):
+        """Retrieve metainfo for a single attachments for a timeline card"""
+
+        current_user = endpoints.get_current_user()
+        if current_user is None:
+            raise endpoints.UnauthorizedException('Authentication required.')
+
+        card = ndb.Key("TimelineItem", request.itemId).get()
+
+        if card is None or card.user != current_user:
+            raise endpoints.NotFoundException("Attachment not found.")
+
+        if card.attachments is not None:
+            for att in card.attachments:
+                if att.id == request.attachmentId:
+                    return AttachmentResponse(id=att.id,
+                                              contentType=att.contentType,
+                                              contentUrl=att.contentUrl,
+                                              isProcessingContent=att.isProcessingContent)
+
+        raise endpoints.NotFoundException("Attachment not found.")
+
+    @endpoints.method(AttachmentRequest, AttachmentResponse,
+                      path="timeline/{itemId}/attachments/{attachmentId}", http_method="DELETE",
+                      name="timeline.attachments.delete")
+    def acttachments_delete(self, request):
+        """Retrieve metainfo for a single attachments for a timeline card"""
+
+        current_user = endpoints.get_current_user()
+        if current_user is None:
+            raise endpoints.UnauthorizedException('Authentication required.')
+
+        card = ndb.Key("TimelineItem", request.itemId).get()
+
+        if card is None or card.user != current_user:
+            raise endpoints.NotFoundException("Attachment not found.")
+
+        if card.attachments is not None:
+            for att in card.attachments:
+                if att.id == request.attachmentId:
+                    # Delete attachment from blobstore
+                    blobkey = blobstore.BlobKey(request.attachmentId)
+                    blobstore.delete(blobkey)
+
+                    # Remove attachment from timeline card
+                    card.attachments.remove(att)
+                    card.put()
+
+                    return AttachmentResponse(id=att.id)
+
+        raise endpoints.NotFoundException("Attachment not found.")
+
     @endpoints.method(Action, ActionResponse,
-                      path='internal/actions', http_method='POST',
-                      name='internal.actions.insert')
+                      path="internal/actions", http_method="POST",
+                      name="internal.actions.insert")
     def action_insert(self, action):
         """Perform an action on a timeline card for the current user.
 

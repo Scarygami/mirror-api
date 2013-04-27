@@ -59,22 +59,6 @@ class MenuItem(EndpointsModel):
     values = ndb.LocalStructuredProperty(MenuValue, repeated=True)
 
 
-class Attachment(EndpointsModel):
-    """Attachment to a timeline card
-
-    Due to limitations in Cloud Endpoints this works a bit differently than
-    the attachments in the official API. Normally you would add attachments
-    by uploading the media data (as image/audio/video). Attachments in this
-    implementation can only by of type image and are represented either as
-    URL or Data-URI and can be added/retrieved/updated directly by filling
-    the attachments field in the timeline.insert method.
-    """
-    id = ndb.StringProperty()
-    contentType = ndb.StringProperty()
-    contentUrl = ndb.StringProperty()
-    isProcessingContent = ndb.BooleanProperty(default=False)
-
-
 class Location(EndpointsModel):
     """Model for location"""
 
@@ -128,6 +112,21 @@ class TimelineItem(EndpointsModel):
     Since the created property is auto_now_add=True, Cards will document when
     they were inserted immediately after being stored.
     """
+
+    class Attachment(EndpointsModel):
+        """Attachment to a timeline card
+
+        Due to limitations in Cloud Endpoints this works a bit differently than
+        the attachments in the official API. Normally you would add attachments
+        by uploading the media data (as image/audio/video). Attachments in this
+        implementation can only by of type image and are represented either as
+        URL or Data-URI and can be added/retrieved/updated directly by filling
+        the attachments field in the timeline.insert method.
+        """
+        id = ndb.StringProperty()
+        contentType = ndb.StringProperty()
+        contentUrl = ndb.StringProperty()
+        isProcessingContent = ndb.BooleanProperty(default=False)
 
     class TimelineContact(EndpointsModel):
 
@@ -296,3 +295,23 @@ class Action(messages.Message):
 class ActionResponse(messages.Message):
     """Simple response to actions send to the Mirror API"""
     success = messages.BooleanField(1, default=True)
+
+
+class AttachmentListRequest(messages.Message):
+    itemId = messages.IntegerField(1, required=True)
+
+
+class AttachmentRequest(messages.Message):
+    itemId = messages.IntegerField(1, required=True)
+    attachmentId = messages.StringField(2, required=True)
+
+
+class AttachmentResponse(messages.Message):
+    id = messages.StringField(1)
+    contentType = messages.StringField(2)
+    contentUrl = messages.StringField(3)
+    isProcessingContent = messages.BooleanField(4, default=False)
+
+
+class AttachmentList(messages.Message):
+    items = messages.MessageField(AttachmentResponse, 1, repeated=True)
