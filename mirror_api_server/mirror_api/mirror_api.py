@@ -230,6 +230,13 @@ class MirrorApi(remote.Service):
         if card.isDeleted:
             raise endpoints.NotFoundException("Card has been deleted")
 
+        # Delete attachments
+        keys = []
+        if card.attachments is not None:
+            for att in card.attachments:
+                keys.append(blobstore.BlobKey(att.id))
+        blobstore.delete_async(keys)
+
         card.attachments = []
         card.bundleId = None
         card.canonicalUrl = None
