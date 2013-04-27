@@ -58,4 +58,5 @@ def handle_location(item):
     """
 
     # TODO: implement
-    return (None, None, None)
+
+    return

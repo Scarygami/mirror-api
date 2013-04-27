@@ -73,12 +73,7 @@ class TimelineNotifyHandler(utils.BaseHandler):
 
         for demo_service in demo_services:
             if hasattr(demo_service, "handle_item"):
-                (new_items, updated_items, deleted_items) = demo_service.handle_item(result)
-                if new_items is not None:
-                    for item in new_items:
-                        new_result = service.timeline().insert(body=item).execute()
-                        logging.info(new_result)
-                # TODO: handle updating, deleting
+                demo_service.handle_item(result, service)
 
 
 class LocationNotifyHandler(utils.BaseHandler):

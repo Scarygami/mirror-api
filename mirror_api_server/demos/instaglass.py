@@ -82,7 +82,7 @@ def _apply_sepia_filter(image):
     return image
 
 
-def handle_item(item):
+def handle_item(item, service):
     """Callback for Timeline updates."""
 
     if "recipients" in item:
@@ -91,10 +91,10 @@ def handle_item(item):
                 break
         else:
             # Item not meant for this service
-            return (None, None, None)
+            return
     else:
         # Item not meant for this service
-        return (None, None, None)
+        return
 
     image = None
     if "attachments" in item:
@@ -105,11 +105,11 @@ def handle_item(item):
 
     if image is None:
         logging.info("No suitable attachment")
-        return (None, None, None)
+        return
 
     if not image.startswith("data:image"):
         logging.info("Can only work with data-uri")
-        return (None, None, None)
+        return
 
     img_data = re.search(r'base64,(.*)', image).group(1)
     tempimg = cStringIO.StringIO(img_data.decode('base64'))
@@ -126,4 +126,5 @@ def handle_item(item):
     new_item["attachments"] = [{"contentType": "image/jpeg", "contentUrl": data_uri}]
     new_item["menuItems"] = [{"action": "SHARE"}]
 
-    return ([new_item], None, None)
+    new_result = service.timeline().insert(body=new_item).execute()
+    logging.info(new_result)
