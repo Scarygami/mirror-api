@@ -120,7 +120,10 @@ class AttachmentHandler(utils.BaseHandler):
     def get(self, timelineId, attachmentId):
         credentials = self.session.get("credentials")
         if credentials is None:
-            self.error(401)
+            self.response.content_type = "application/json"
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Invalid credentials."))
+            return
 
         http = httplib2.Http()
         http = credentials.authorize(http)

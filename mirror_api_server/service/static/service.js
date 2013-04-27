@@ -51,7 +51,11 @@
         for (i = 0; i < l; i++) {
           att = data.attachments[i];
           if (att.contentType.indexOf("image/") === 0) {
-            image = att.contentUrl;
+            if (att.id) {
+              image = global.location.pathname + "attachment/" + data.id + "/" + att.id;
+            } else {
+              image = att.contentUrl;
+            }
             break;
           }
         }

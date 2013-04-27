@@ -101,7 +101,40 @@ class NewCardHandler(utils.BaseHandler):
             self.response.out.write(utils.createError(500, "Failed to refresh access token."))
 
 
+class AttachmentHandler(utils.BaseHandler):
+    """Retrieves an attachment using the current user's credentials"""
+
+    def get(self, test, timelineId, attachmentId):
+        gplus_id = self.session.get("gplus_id")
+        service = get_auth_service(gplus_id, test)
+        if service is None:
+            self.response.content_type = "application/json"
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Invalid credentials."))
+            return
+
+        if test is None:
+            attachment_metadata = self.mirror_service.timeline().attachments().get(
+                itemId=timelineId, attachmentId=attachmentId).execute()
+            content_type = str(attachment_metadata.get("contentType"))
+            content_url = attachment_metadata.get("contentUrl")
+            resp, content = service._http.request(content_url)
+        else:
+            resp, content = service._http.request("%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, timelineId, attachmentId))
+            content_type = resp["content-type"]
+
+        if resp.status == 200:
+            self.response.content_type = content_type
+            self.response.out.write(content)
+        else:
+            self.response.content_type = "application/json"
+            self.response.status = resp.status
+            self.response.out.write(utils.createError(resp.status, "Unable to retrieve attachment."))
+
+
 SERVICE_ROUTES = [
+    (r"(/test)?/", IndexHandler),
+    (r"(/test)?/attachment/(.*)/(.*)", AttachmentHandler),
     (r"(/test)?/", IndexHandler),
     (r"(/test)?/list", ListHandler),
     (r"(/test)?/new", NewCardHandler)
