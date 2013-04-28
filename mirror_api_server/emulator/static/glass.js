@@ -1701,6 +1701,19 @@
       newcard.animateIn();
     };
 
+    function onKeyDown(e) {
+      if (activeCard) {
+        switch (e.keyCode) {
+        case 37: activeCard.right(); break;
+        case 38: activeCard.up(); break;
+        case 39: activeCard.left(); break;
+        case 40: activeCard.down(); break;
+        case 13:
+        case 32: activeCard.tap(); break;
+        }
+      }
+    }
+
     /**
      * Set up main UI event handlers
      */
@@ -1712,7 +1725,7 @@
         mainDiv.onmousedown = onMouseDown;
         mainDiv.onmouseup = onMouseUp;
       }
-
+      doc.onkeydown = onKeyDown;
       //TODO
       mainDiv.onselectstart = function () { return false; };
     };
