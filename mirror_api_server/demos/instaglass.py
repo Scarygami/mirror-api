@@ -24,7 +24,6 @@ import logging
 import Image
 import ImageOps
 import cStringIO
-import re
 
 __all__ = ["handle_item", "CONTACTS", "WELCOMES"]
 
@@ -45,7 +44,7 @@ WELCOMES = [
                  "  <img src=\"" + base_url + "/images/sepia.jpg\" width=\"100%\" height=\"100%\">"
                  "  <div class=\"photo-overlay\"></div>"
                  "  <section>"
-                 "    <p class=\"text-auto-size\">Welcome to Add a Cat!</p>"
+                 "    <p class=\"text-auto-size\">Welcome to Instaglass!</p>"
                  "  </section>"
                  "</article>")
     }
