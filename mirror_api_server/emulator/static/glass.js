@@ -1318,14 +1318,16 @@
           result = "";
         };
         recognition.onresult = function (e) {
-          var i;
+          var i, interim = "";
           console.log(e);
           for (i = e.resultIndex; i < e.results.length; i++) {
             if (e.results[i].isFinal) {
               result += e.results[i][0].transcript;
+            } else {
+              interim += e.results[i][0].transcript;
             }
           }
-          me.textDiv.innerHTML = result;
+          me.textDiv.innerHTML = result + "<br>" + interim;
           me.textDiv.classList.add("real_input");
         };
         recognition.onerror = onError;
