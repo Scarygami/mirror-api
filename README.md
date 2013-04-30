@@ -118,8 +118,9 @@ This includes all dependencies, but won't always be the newest available version
 5.  Leave Redirect URIs empty but set Javascript origin to
     `https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
 
-6.  Edit `mirror_api_server/client_secrets.json` and change `YOUR_CLIENT_ID` and
-    `YOUR_CLIENT_SECRET` to the information from the APIs Console.
+6.  Edit `mirror_api_server/client_secrets.json` and change `YOUR_CLIENT_ID`,
+    `YOUR_CLIENT_SECRET` and `YOUR_API_KEY` to the information from the
+    APIs Console. Also enter a random long string as `RANDOM_SESSION_SECRET`.
 
     Important: Don't commit that file if you contribute to this project. One possible
     solution to prevent this: http://blog.bossylobster.com/2011/10/protecting.html

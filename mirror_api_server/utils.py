@@ -36,10 +36,10 @@ discovery_url = base_url + "/_ah/api"
 discovery_service_url = discovery_url + "/discovery/v1/apis/{api}/{apiVersion}/rest"
 
 with open("client_secrets.json", "r") as fh:
-    CLIENT_ID = json.load(fh)["web"]["client_id"]
-
-# TODO: read session secret from file
-SESSION_KEY = "sdjalasjdakjhskdauh3o8h4ofihskjdhfow38fhoaihoa2udjlakj"
+    secrets = json.load(fh)["web"]
+    CLIENT_ID = secrets["client_id"]
+    SESSION_KEY = str(secrets["session_secret"])
+    API_KEY = secrets["api_key"]
 
 config = {}
 config["webapp2_extras.sessions"] = {"secret_key": SESSION_KEY}
