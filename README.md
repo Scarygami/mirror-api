@@ -111,7 +111,7 @@ This includes all dependencies, but won't always be the newest available version
 
 2.  Create a new project in the [Google APIs Console](https://code.google.com/apis/console/)
 
-3.  Activate the Google+ API in `Services`
+3.  Activate the Google+ API in `Services`, and the Places API for one of the demo services.
 
 4.  Create a new Client ID for web applications in `API Access`
 
