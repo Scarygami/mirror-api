@@ -113,21 +113,38 @@ This includes all dependencies, but won't always be the newest available version
 
 3.  Activate the Google+ API in `Services`, and the Places API for one of the demo services.
 
-4.  Create a new Client ID for web applications in `API Access`
+4.  Create a new Client ID for web applications in `API Access`. 
 
-5.  Leave Redirect URIs empty but set Javascript origin to
-    `https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
+5.  click on `Create an OAuth 2.0 client ID...`. 
 
-6.  Edit `mirror_api_server/client_secrets.json` and change `YOUR_CLIENT_ID`,
+6.  fill out a `Product name` and click `Next`.
+
+7.  keep `Web application` and select `(more options)` next to `Your site or hostname`.
+
+8.  make `Authorized Redirect URIs` empty. 
+
+9.  set `Authorized JavasSript Origins` to `https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
+
+10.  click on `Create client ID`.
+
+11. Create a new `Simple API Access` server key. 
+
+12. click on `Create new Server key...`. 
+
+13. keep the IP field empty if you want to accept all IP adresses, or fill in the IP subnets that you got from your ISP. 
+
+14. click on `Create`. 
+
+15.  Edit `mirror_api_server/client_secrets.json` and change `YOUR_CLIENT_ID`,
     `YOUR_CLIENT_SECRET` and `YOUR_API_KEY` to the information from the
     APIs Console. Also enter a random long string as `RANDOM_SESSION_SECRET`.
 
     Important: Don't commit that file if you contribute to this project. One possible
     solution to prevent this: http://blog.bossylobster.com/2011/10/protecting.html
 
-7.  Edit `mirror_api_server/app.yaml` to change the name of the application to `yourapp`.
+16.  Edit `mirror_api_server/app.yaml` to change the name of the application to `yourapp`.
 
-8.  Follow the steps in the [Google App Engine Python 2.7 Getting Started](https://developers.google.com/appengine/docs/python/gettingstartedpython27/)
+17.  Follow the steps in the [Google App Engine Python 2.7 Getting Started](https://developers.google.com/appengine/docs/python/gettingstartedpython27/)
     to install the necessary dependencies and deploy the application. Specifically you will need the steps
     [The Development Environment](https://developers.google.com/appengine/docs/python/gettingstartedpython27/devenvironment) and
     [Uploading Your Application](https://developers.google.com/appengine/docs/python/gettingstartedpython27/uploading)
