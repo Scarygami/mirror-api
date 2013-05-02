@@ -34,7 +34,7 @@ WELCOMES = [
 ]
 
 
-def handle_location(item, service, test):
+def handle_location(item, notification, service, test):
     """Callback for Location updates."""
 
     """

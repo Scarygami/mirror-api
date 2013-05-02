@@ -22,6 +22,7 @@ import json
 import os
 import webapp2
 
+from apiclient.discovery import build
 from google.appengine.api.app_identity import get_application_id
 from google.appengine.ext import ndb
 from oauth2client.appengine import CredentialsNDBProperty
@@ -56,6 +57,11 @@ REAL_SCOPES = [
     "https://www.googleapis.com/auth/glass.location"
 ]
 
+# Requests for app activities during the Auth flow
+REQUEST_VISIBLE_ACTIONS = [
+    "http://schemas.google.com/CheckInActivity"
+]
+
 
 def createError(code, message):
     """Create a JSON string to be returned as error response to requests"""
@@ -84,6 +90,14 @@ class BaseHandler(webapp2.RequestHandler):
     @webapp2.cached_property
     def session(self):
         return self.session_store.get_session(name='mirror_session', factory=sessions_memcache.MemcacheSessionFactory)
+
+
+def build_service_from_service(service, api, version):
+    """Build a Google API service using another pre-authed service"""
+    
+    new_service = build(api, version, http=service._http)
+    
+    return new_service
 
 
 class User(ndb.Model):

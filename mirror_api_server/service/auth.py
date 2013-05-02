@@ -89,7 +89,7 @@ def get_auth_service(gplus_id, test, api="mirror", version="v1"):
 
     return service
 
-
+    
 def _disconnect(gplus_id, test):
     """Delete credentials in case of errors"""
 

@@ -39,11 +39,12 @@ class IndexHandler(utils.BaseHandler):
         else:
             scopes = ' '.join(utils.COMMON_SCOPES + utils.TEST_SCOPES)
 
+        request_visible_actions = ' '.join(utils.REQUEST_VISIBLE_ACTIONS)
         reconnect = (self.request.get("reconnect") == "true")
         template = utils.JINJA.get_template("service/templates/service.html")
         state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
         self.session["state"] = state
-        self.response.out.write(template.render({"client_id": utils.CLIENT_ID, "state": state, "scopes": scopes, "reconnect": reconnect}))
+        self.response.out.write(template.render({"client_id": utils.CLIENT_ID, "state": state, "scopes": scopes, "actions": request_visible_actions, "reconnect": reconnect}))
 
 
 class ListHandler(utils.BaseHandler):

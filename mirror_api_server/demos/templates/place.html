@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>{% if chk_place %}{{ place.name }}{% else %}{% if chk_error %}Error{% else %}Nothing{% endif %}{% endif %}</title>
+</head>
+<body>
+  {% if chk_place %}
+  <div itemscope itemtype="http://schema.org/Place">
+    <img itemprop="image" src="{{ place.icon }}" style="vertical-align: middle" /><h1 itemprop="name">{{ place.name }}</h1>
+    Location:
+    <span itemprop="geo" itemscope itemtype="http://schema.org/GeoCoordinates">
+      Latitude <span itemprop="latitude">{{ place.geometry.location.lat }}</span> /
+      Longitude <span itemprop="longitude">{{ place.geometry.location.lng }}</span>
+    </span><br><br>
+    URL: <a href="{{ place.url }}" itemprop="url">{{ place.url }}</a>
+  </div>
+  {% else %}
+  {% if chk_error %}
+  Error: {{ error }}
+  {% else %}
+  Nothing to see here
+  {% endif %}
+  {% endif %}
+</body>
+</html>

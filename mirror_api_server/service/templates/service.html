@@ -14,6 +14,7 @@
         data-callback="onSignInCallback"
         data-redirecturi="postmessage"
         {% if reconnect %}data-approvalprompt="force"{% endif %}
+        data-requestvisibleactions="{{ actions }}"
         data-accesstype="offline"
         data-theme="dark"
         data-cookiepolicy="single_host_origin">

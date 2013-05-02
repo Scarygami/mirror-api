@@ -87,9 +87,20 @@ def _apply_sepia_filter(image):
     return image
 
 
-def handle_item(item, service, test):
+def handle_item(item, notification, service, test):
     """Callback for Timeline updates."""
 
+    if "userActions" in notification:
+        for action in notification["userActions"]:
+            if "type" in action and action["type"] == "SHARE":
+                break
+        else:
+            # No SHARE action
+            return
+    else:
+        # No SHARE action
+        return
+    
     if "recipients" in item:
         for rec in item["recipients"]:
             if rec["id"] == "instaglass_sepia":

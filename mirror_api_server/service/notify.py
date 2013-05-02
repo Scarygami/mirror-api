@@ -73,7 +73,7 @@ class TimelineNotifyHandler(utils.BaseHandler):
 
         for demo_service in demo_services:
             if hasattr(demo_service, "handle_item"):
-                demo_service.handle_item(result, service, test)
+                demo_service.handle_item(result, data, service, test)
 
 
 class LocationNotifyHandler(utils.BaseHandler):
@@ -126,7 +126,7 @@ class LocationNotifyHandler(utils.BaseHandler):
 
         for demo_service in demo_services:
             if hasattr(demo_service, "handle_location"):
-                demo_service.handle_location(result, service, test)
+                demo_service.handle_location(result, data, service, test)
 
 
 NOTIFY_ROUTES = [

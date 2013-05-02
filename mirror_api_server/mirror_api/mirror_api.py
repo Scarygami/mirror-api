@@ -21,6 +21,7 @@ import monkey_patch
 import json
 import os
 import logging
+import sys
 import urllib2
 
 from google.appengine.api import channel
@@ -282,8 +283,8 @@ class MirrorApi(remote.Service):
             req = urllib2.Request(subscription.callbackUrl, json.dumps(data), header)
             try:
                 urllib2.urlopen(req)
-            except urllib2.URLError as e:
-                logging.error(e)
+            except:
+                logging.error(sys.exc_info()[0])
 
         return card
 
@@ -432,8 +433,8 @@ class MirrorApi(remote.Service):
             req = urllib2.Request(subscription.callbackUrl, json.dumps(data), header)
             try:
                 urllib2.urlopen(req)
-            except urllib2.URLError as e:
-                logging.error(e)
+            except:
+                logging.error(sys.exc_info()[0])
 
         return location
 
@@ -586,8 +587,8 @@ class MirrorApi(remote.Service):
                 req = urllib2.Request(subscription.callbackUrl, json.dumps(data), header)
                 try:
                     urllib2.urlopen(req)
-                except urllib2.URLError as e:
-                    logging.error(e)
+                except:
+                    logging.error(sys.exc_info()[0])
 
         # Report back to Glass emulator
         channel.send_message(current_user.email(), json.dumps({"id": action.itemId}))
