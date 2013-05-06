@@ -41,22 +41,33 @@ dart generate.dart --url=https://<yourapp>.appspot.com/_ah/api/discovery/v1/apis
 
 ### Testing
 
+First make sure to change the css and dart paths in `hangout_companion.xml` to match where you plan to upload the files.
+
 To test your application you will first have to upload it (including the packages) to `<YOUR_SERVER_PATH>`
 
 Then go to the [Google APIs Console](https://code.google.com/apis/console/) and create a new Project.
 
 Create a new `Client ID` for web applications in "API Access"
 
-Activate the Google+ Hangouts API in "Services"
+Activate the Google+ Hangouts API, Google+ API (and Mirror API if you have access) in "Services"
 
 In "Hangouts" enter the URL to your XML file in Application URL.
+
+Check "This application requires additional OAuth 2.0 scopes" and enter:
+```
+https://www.googleapis.com/auth/glass.timeline
+https://www.googleapis.com/auth/userinfo.email
+```
+
+If you have access to the real Mirror API you can remove the `userinfo.email` scope.
+Make sure to remove it from the `SCOPES` in `hangout_companion.dart` as well.
 
 At the bottom of that page you can then "Save" and "Enter a hangout".
 
 (Of course this will only work in Dartium without compiling to js...)
 
 
-^### Licenses
+### Licenses
 
 ```
 Copyright (c) 2013 Gerwin Sturm, FoldedSoft e.U. / www.foldedsoft.at
