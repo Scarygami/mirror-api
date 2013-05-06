@@ -36,7 +36,7 @@ class HangoutOAuth2 extends SimpleOAuth2 {
    * Loads the Google JS API client if it hasn't been loaded before 
    */
   Future<bool> _loadClient() {
-    if (_clientLoaded) return new Future.immediate(true);
+    if (_clientLoaded) return new Future.value(true);
     if (_clientLoader != null) return _clientLoader;
     
     var completer = new Completer<bool>();
@@ -81,7 +81,7 @@ class HangoutOAuth2 extends SimpleOAuth2 {
    */
   Future<String> login() {
     if (token != null && _expiry != null && _expiry.isAfter(new DateTime.now())) {
-      return new Future.immediate(token);
+      return new Future.value(token);
     }
     var completer = new Completer<String>();
     _loadClient().then((success) {

@@ -11,6 +11,12 @@ Mirror API documentation: https://developers.google.com/glass/
 
 ### Setup
 
+If you have access to the real Mirror API use the dependency as specified in `pubspec.yaml.real`
+```
+  google_mirror_v1_api: any
+```
+
+
 If you don't have access to the real Mirror API and want to test this with your own hosted
 [Mirror API Emulator](https://github.com/Scarygami/mirror-api) you will have to do the following:
 

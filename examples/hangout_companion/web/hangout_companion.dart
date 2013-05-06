@@ -62,8 +62,8 @@ void onParticipantsChanged(ParticipantsChangedEvent e) {
 
 Future<bool> fetchCurrentCards() {
   var completer = new Completer<bool>();
-  mirror.timeline.list(bundleId: BUNDLE_ID).then((mirrorlib.TimelineListResponse result) {
-    result.items.forEach((mirrorlib.TimelineItem item) {
+  mirror.timeline.list(bundleId: BUNDLE_ID).then((result) {
+    result.items.forEach((item) {
       if (item.isBundleCover) {
         coverCard = item; 
       } else {
@@ -87,7 +87,7 @@ void initialize() {
     mirror.makeAuthRequests = true;
     fetchCurrentCards.then((result) {
       hapi.onParticipantsChanged.add(onParticipantsChanged);
-      onParticipantsChanged();
+      onParticipantsChanged(null);
     });
   });
 }
