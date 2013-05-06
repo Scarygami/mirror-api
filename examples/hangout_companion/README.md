@@ -38,8 +38,7 @@ dart generate.dart --url=https://<yourapp>.appspot.com/_ah/api/discovery/v1/apis
     path: /path/to/dart_mirror_v1_api_client
 ```
 
-
-### Testing
+### Running
 
 First make sure to change the css and dart paths in `hangout_companion.xml` to match where you plan to upload the files.
 
@@ -65,6 +64,15 @@ Make sure to remove it from the `SCOPES` in `hangout_companion.dart` as well.
 At the bottom of that page you can then "Save" and "Enter a hangout".
 
 (Of course this will only work in Dartium without compiling to js...)
+
+
+### Special note if you are running with the Mirror API emulator and not the real Mirror API
+
+During the first run the authentication will fail, check the Javascript console and you will see a message `Client ID: <some client id here>`
+
+Copy this client ID and add it as `additional_client_id` in the `client_secrets.json` of your Mirror API instance. Deploy the instance again and authentication should work.
+
+Please note that you will have to repeat those steps whenever you save the Hangouts settings in the API console, because this will result in a new Client ID.
 
 
 ### Licenses

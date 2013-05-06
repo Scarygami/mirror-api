@@ -57,7 +57,107 @@ void updateCoverCard() {
 
 onParticipantsChanged(ParticipantsChangedEvent e) {
   updateCoverCard();
-  // TODO: update participant cards
+  var participants = hapi.getParticipants();
+  cards.forEach((mirrorlib.TimelineItem c) {
+    c.isDeleted = true;
+  });
+  participants.forEach((Participant part) {
+    mirrorlib.TimelineItem card = null;
+    cards.forEach((mirrorlib.TimelineItem c) {
+      if (c.sourceItemId == part.person.id) {
+        c.isDeleted = false;
+        card = c;
+      }
+    });
+    if (card == null) {
+      plus.people.get(part.person.id)
+        .then((pluslib.Person p) {
+          var image = p.image.url.replaceFirst("?sz=50", "?sz=240");
+          var name = p.displayName;
+          var placeName = "";
+          if (p.placesLived != null) {
+            p.placesLived.forEach((pluslib.PersonPlacesLived place) {
+              if (place.primary != null && place.primary == true) {
+                placeName = place.value;
+              } else {
+                if (placeName == "") {
+                  placeName = place.value;
+                }
+              }
+            });
+          }
+          var workName = "";
+          var eduName = "";
+          if (p.organizations != null) {
+            p.organizations.forEach((pluslib.PersonOrganizations org) {
+              if (org.primary != null && org.primary == true) {
+                if (org.type == "work") {
+                  workName = org.name;
+                } else {
+                  eduName = org.name;
+                }
+              } else {
+                if (org.type == "work") {
+                  if (workName == "") {
+                    workName = org.name;
+                  }
+                } else {
+                  if (eduName == "") {
+                    eduName = org.name;
+                  }
+                }
+              }
+            });
+          }
+          var tagline = "";
+          if (p.tagline != null) {
+            tagline = p.tagline;
+          }
+
+          var html = """
+            <article>
+              <figure>
+                <img src="$image">
+            <div class="align-center"><p class="text-small">$name</p></div>
+              </figure>
+              <section>
+                <table class="text-small align-right"> 
+                  <tbody>""";
+          if (placeName != "") {
+            html += "<tr><td>$placeName</td></tr>";
+          }
+          if (workName != "") {
+            html += "<tr><td>$workName</td></tr>";
+          } else if (eduName != "") {
+            html += "<tr><td>$eduName</td></tr>";
+          }
+          if (tagline !="") {
+            html += "<tr><td>$tagline</td></tr>";            
+          }
+          html += "</tbody></table></section></article>";
+          card = new mirrorlib.TimelineItem.fromJson({});
+          card.bundleId = BUNDLE_ID;
+          card.isBundleCover = false;
+          card.html = html;
+          card.sourceItemId = part.person.id;
+          mirror.timeline.insert(card)
+            .then((mirrorlib.TimelineItem c) {
+              cards.add(c);
+              print("Participant card created: $c");
+            })
+            .catchError((e) => print("Error inserting participant card: $e"));
+        })
+        .catchError((e) => print("Error fetching profile information: $e"));
+    }
+  });
+  cards.forEach((mirrorlib.TimelineItem c) {
+    if (c.isDeleted) {
+      mirror.timeline.delete(c.id)
+        .then((result) => print("Card deleted: $result"))
+        .catchError((e) => print("Error deleting card: $e"));
+      cards.remove(c);
+    }
+  });
 }
 
 Future<bool> fetchCurrentCards() {
@@ -83,6 +183,7 @@ void initialize() {
   auth.login()
     .then((t) {
       plus = new pluslib.Plus(auth);
+      plus.makeAuthRequests = true;
       mirror = new mirrorlib.Mirror(auth);
       mirror.makeAuthRequests = true;
       fetchCurrentCards()

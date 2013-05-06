@@ -91,6 +91,7 @@ class HangoutOAuth2 extends SimpleOAuth2 {
             js.map({"client_id": null, "scope": new List.from(_scopes), "immediate": true}),
             new js.Callback.once((js.Proxy authResult) {
               Map result = JSON.parse(js.context.JSON.stringify(authResult));
+              print("Client ID: ${result["client_id"]}");
               if (result.containsKey("access_token")) {
                 token = result["access_token"];
                 tokenType = result["token_type"];
