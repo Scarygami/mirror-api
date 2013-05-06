@@ -46,15 +46,21 @@ from models import AttachmentList
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _SECRETS_PATH = os.path.join(_ROOT_DIR, "client_secrets.json")
+_CLIENT_IDs = [endpoints.API_EXPLORER_CLIENT_ID]
+
 with open(_SECRETS_PATH, "r") as fh:
-    CLIENT_ID = json.load(fh)["web"]["client_id"]
+    _secrets = json.load(fh)["web"]
+    _CLIENT_IDs.append(_secrets["client_id"])
+    if "additional_client_ids" in _secrets:
+        _CLIENT_IDs.extend(_secrets["additional_client_ids"])
+
 API_DESCRIPTION = ("Mirror API implemented using Google Cloud "
                    "Endpoints for testing")
 
 
 @endpoints.api(name="mirror", version="v1",
                description=API_DESCRIPTION,
-               allowed_client_ids=[CLIENT_ID, endpoints.API_EXPLORER_CLIENT_ID])
+               allowed_client_ids=_CLIENT_IDs)
 class MirrorApi(remote.Service):
     """Class which defines the Mirror API v1."""
 
@@ -81,21 +87,6 @@ class MirrorApi(remote.Service):
         return card
 
     @TimelineItem.method(user_required=True, http_method="POST",
-                         request_fields=("bundleId",
-                                         "canonicalUrl",
-                                         "creator",
-                                         "displayTime",
-                                         "html",
-                                         "htmlPages",
-                                         "isBundleCover",
-                                         "location",
-                                         "menuItems",
-                                         "notification",
-                                         "recipients",
-                                         "sourceItemId",
-                                         "speakableText",
-                                         "text",
-                                         "title"),
                          path="timeline", name="timeline.insert")
     def timeline_insert(self, card):
         """Insert a card for the current user."""
@@ -156,22 +147,6 @@ class MirrorApi(remote.Service):
         return card
 
     @TimelineItem.method(user_required=True,
-                         request_fields=("id",
-                                         "bundleId",
-                                         "canonicalUrl",
-                                         "creator",
-                                         "displayTime",
-                                         "html",
-                                         "htmlPages",
-                                         "isBundleCover",
-                                         "location",
-                                         "menuItems",
-                                         "notification",
-                                         "recipients",
-                                         "sourceItemId",
-                                         "speakableText",
-                                         "text",
-                                         "title"),
                          path="timeline/{id}", http_method="PUT",
                          name="timeline.update")
     def timeline_update(self, card):

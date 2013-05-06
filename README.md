@@ -113,26 +113,29 @@ This includes all dependencies, but won't always be the newest available version
 
 3.  Activate the Google+ API in `Services`, and the Places API for one of the demo services.
 
-4.  Create a new Client ID for web applications in `API Access`. 
+4.  Create a new Client ID for web applications in `API Access`.
 
-    1.  Click on `Create an OAuth 2.0 client ID...`. 
+    1.  Click on `Create an OAuth 2.0 client ID...`.
     2.  Fill out a `Product name` and click `Next`.
     3.  Keep `Web application` and select `(more options)` next to `Your site or hostname`.
-    4.  Make `Authorized Redirect URIs` empty. 
+    4.  Make `Authorized Redirect URIs` empty.
     5.  Set `Authorized JavasSript Origins` to `https://yourapp.appspot.com` and `http://localhost:8080` for local testing.
     6.  Click on `Create client ID`.
 
-  
-5. Create a new `Simple API Access` server key. 
 
-    1. Click on `Create new Server key...`. 
-    2. Keep the IP field empty if you want to accept all IP adresses, or fill in the IP subnets that you got from your ISP. 
+5. Create a new `Simple API Access` server key.
+
+    1. Click on `Create new Server key...`.
+    2. Keep the IP field empty if you want to accept all IP adresses, or fill in the IP subnets that you got from your ISP.
     3. Click on `Create`.
 
-  
+
 6.  Edit `mirror_api_server/client_secrets.json` and change `YOUR_CLIENT_ID`,
     `YOUR_CLIENT_SECRET` and `YOUR_API_KEY` to the information from the
     APIs Console. Also enter a random long string as `RANDOM_SESSION_SECRET`.
+
+    If you have additional Client IDs you want to access the Mirror API with
+    add them in `additional_client_ids`
 
     Important: Don't commit that file if you contribute to this project. One possible
     solution to prevent this: http://blog.bossylobster.com/2011/10/protecting.html
