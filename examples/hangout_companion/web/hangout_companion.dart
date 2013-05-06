@@ -55,7 +55,7 @@ void updateCoverCard() {
   }
 }
 
-void onParticipantsChanged(ParticipantsChangedEvent e) {
+onParticipantsChanged(ParticipantsChangedEvent e) {
   updateCoverCard();
   // TODO: update participant cards
 }
@@ -63,39 +63,44 @@ void onParticipantsChanged(ParticipantsChangedEvent e) {
 Future<bool> fetchCurrentCards() {
   var completer = new Completer<bool>();
   mirror.timeline.list(bundleId: BUNDLE_ID).then((result) {
-    result.items.forEach((item) {
-      if (item.isBundleCover) {
-        coverCard = item; 
-      } else {
-        cards.add(item);
-      }
-    });
+    if (result.items != null) {
+      result.items.forEach((item) {
+        if (item.isBundleCover) {
+          coverCard = item; 
+        } else {
+          cards.add(item);
+        }
+      });
+    }
     completer.complete(true);
   })
-  .catchError((e) {
-    print("Error while fetching cards: $e");
-    completer.complete(false);
-  });
+  .catchError((e) => completer.completeError(e));
   return completer.future;
 }
 
 void initialize() {
-  auth = new HangoutOAuth2([]);
-  auth.login().then((t) {
-    plus = new pluslib.Plus(auth);
-    mirror = new mirrorlib.Mirror(auth);
-    mirror.makeAuthRequests = true;
-    fetchCurrentCards.then((result) {
-      hapi.onParticipantsChanged.add(onParticipantsChanged);
-      onParticipantsChanged(null);
-    });
-  });
+  auth = new HangoutOAuth2(SCOPES);
+  auth.login()
+    .then((t) {
+      plus = new pluslib.Plus(auth);
+      mirror = new mirrorlib.Mirror(auth);
+      mirror.makeAuthRequests = true;
+      fetchCurrentCards()
+        .then((result) {
+          hapi.onParticipantsChanged.add(onParticipantsChanged);
+          onParticipantsChanged(null);
+        })
+        .catchError((e) => print("Error while fetching cards: $e"));
+    })
+    .catchError((e) => print("Error during authentication: $e"));
 }
 
 void main() {
-  var hapi = new Hangout();
+  hapi = new Hangout();
   hapi.onApiReady.add((ApiReadyEvent e) {
-    if (e.isApiReady) initialize();
+    if (e.isApiReady) {
+      new Timer(const Duration(milliseconds: 1), initialize);
+    }
   });
 }
 

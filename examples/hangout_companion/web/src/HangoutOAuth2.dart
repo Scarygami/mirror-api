@@ -14,7 +14,7 @@ import "package:js/js.dart" as js;
  */
 class HangoutOAuth2 extends SimpleOAuth2 {
   
-  bool _clientLoaded;
+  bool _clientLoaded = false;
   Future<bool> _clientLoader;
   
   DateTime _expiry;
