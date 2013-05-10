@@ -1,0 +1,83 @@
+* {
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  padding: 5px;
+}
+
+#signin, #signout {
+  padding: 5px;
+}
+
+#signout_button, #send_card {
+  display: inline-block;
+  text-align: left;
+  padding: 5px;
+  cursor: pointer;
+  line-height: 20px;
+  border-radius: 4px;
+  margin-top: 5px;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  background: #CCC;
+  border: 1px solid #999;
+  color: #333;
+}
+
+#glass input, #glass textarea {
+  text-align: left;
+  padding: 5px;
+  line-height: 20px;
+  border-radius: 4px;
+  margin-top: 5px;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  background: white;
+  border: 1px solid #999;
+  color: black;
+  width: 500px;
+}
+
+#timeline {
+  width: 100%;
+  max-width: 100%;
+  min-width: 100%;
+  overflow-y: hidden;
+  overflow-x: scroll;
+  white-space: nowrap;
+}
+
+.card {
+  display: inline-block;
+  position: relative;
+  width: 640px;
+  height: 600px;
+  margin-right: 10px;
+}
+
+.card_iframe {
+  background-color: black;
+  border: 0px none transparent;
+  padding: 0px;
+  overflow: hidden;
+  position: absolute;
+  height: 360px; width: 640px;
+  left: 0; top: 0;
+}
+
+.card_metadata {
+  position: absolute;
+  background-color: #EEE;
+  display: block;
+  padding: 5px;
+  width: 640px;
+  max-width: 640px;
+  height: 240px;
+  max-height: 240px;
+  overflow: auto;
+  left: 0; top: 360px;
+}
