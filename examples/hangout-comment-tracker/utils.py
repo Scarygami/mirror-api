@@ -44,7 +44,10 @@ config = {}
 config["webapp2_extras.sessions"] = {"secret_key": SESSION_KEY}
 
 # Add any additional scopes that you might need for your service to access other Google APIs
-COMMON_SCOPES = ["https://www.googleapis.com/auth/plus.login"]
+COMMON_SCOPES = [
+    "https://www.googleapis.com/auth/plus.login",
+    "https://www.googleapis.com/auth/youtube.readonly"
+]
 
 # userinfo.email scope is required to work with Google Cloud Endpoints
 TEST_SCOPES = ["https://www.googleapis.com/auth/userinfo.email"]

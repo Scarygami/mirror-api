@@ -205,61 +205,6 @@ class ConnectHandler(utils.BaseHandler):
         user.imageUrl = result["image"]["url"]
         user.put()
 
-        # Fetch user friends and store for later user
-        try:
-            result = plus_service.people().list(userId="me", collection="visible", maxResults=100, orderBy="best", fields="items/id").execute()
-        except AccessTokenRefreshError:
-            _disconnect(gplus_id, test)
-            self.response.status = 401
-            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
-            return
-        except HttpError as e:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
-            return
-
-        friends = []
-        if "items" in result:
-            for item in result["items"]:
-                friends.append(item["id"])
-
-        user.friends = friends
-        user.put()
-
-        # Delete all existing contacts, so only the currently implemented ones are available
-        try:
-            result = service.contacts().list().execute()
-            if "items" in result:
-                for contact in result["items"]:
-                    service.contacts().delete(id=contact["id"]).execute()
-        except AccessTokenRefreshError:
-            _disconnect(gplus_id, test)
-            self.response.status = 401
-            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
-            return
-        except HttpError as e:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
-            return
-
-        # Register contacts defined in the demo services
-        contacts = []
-        #for demo_service in demo_services:
-        #    if hasattr(demo_service, "CONTACTS"):
-        #        contacts.extend(demo_service.CONTACTS)
-
-        for contact in contacts:
-            try:
-                result = service.contacts().insert(body=contact).execute()
-            except AccessTokenRefreshError:
-                _disconnect(gplus_id, test)
-                self.response.status = 401
-                self.response.out.write(utils.createError(401, "Failed to refresh access token."))
-                return
-            except HttpError as e:
-                self.response.status = 500
-                self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
-                return
 
         """
         Re-register subscriptions to make sure all of them are available.
@@ -338,7 +283,7 @@ class ConnectHandler(utils.BaseHandler):
 class DisconnectHandler(utils.BaseHandler):
     def post(self, test):
         """
-        Remove contacts and subscriptions registered for the user.
+        Remove subscriptions registered for the user.
         Revoke current user's token and reset their session.
         Delete User entity from Data store.
         """

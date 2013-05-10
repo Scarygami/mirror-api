@@ -1,0 +1,37 @@
+#!/usr/bin/env python
+
+import os
+
+hooks_dir = os.path.dirname(os.path.abspath(__file__))
+relative_dir = os.path.join(hooks_dir, '../..')
+project_root = os.path.abspath(relative_dir)
+
+git_included_config = os.path.join(project_root, 'mirror_api_server/client_secrets.json')
+confidential_config = os.path.join(project_root, 'mirror_api_server/_client_secrets.json')
+
+with open(git_included_config, 'rU') as fh:
+    git_included_contents = fh.read()
+
+with open(confidential_config, 'rU') as fh:
+    confidential_contents = fh.read()
+
+with open(git_included_config, 'w') as fh:
+    fh.write(confidential_contents)
+
+with open(confidential_config, 'w') as fh:
+    fh.write(git_included_contents)
+
+git_included_config = os.path.join(project_root, 'examples/hangout-comment-tracker/client_secrets.json')
+confidential_config = os.path.join(project_root, 'examples/hangout-comment-tracker/_client_secrets.json')
+
+with open(git_included_config, 'rU') as fh:
+    git_included_contents = fh.read()
+
+with open(confidential_config, 'rU') as fh:
+    confidential_contents = fh.read()
+
+with open(git_included_config, 'w') as fh:
+    fh.write(confidential_contents)
+
+with open(confidential_config, 'w') as fh:
+    fh.write(git_included_contents)

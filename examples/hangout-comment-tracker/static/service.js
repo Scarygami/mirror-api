@@ -31,90 +31,7 @@
   function Service() {
     var state;
 
-    function displayCard(div, data) {
-      var card, iframe, html, text, image, date, i, l, att, tmpDate;
-      card = doc.createElement("div");
-      card.classList.add("card");
-      card.innerHTML =
-        "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"/glass/inner.html\" class=\"card_iframe\"></iframe>" +
-        "<pre class=\"card_metadata\"></pre>";
-      div.appendChild(card);
-      tmpDate = data.displayDate || data.updated || data.created;
-      if (tmpDate) {
-        date = new Date(tmpDate);
-      }
-      html = data.html;
-      text = data.text;
-      image = undefined;
-      if (data.attachments && data.attachments.length > 0) {
-        l = data.attachments.length;
-        for (i = 0; i < l; i++) {
-          att = data.attachments[i];
-          if (att.contentType.indexOf("image/") === 0) {
-            if (att.id) {
-              image = global.location.pathname + "attachment/" + data.id + "/" + att.id;
-            } else {
-              image = att.contentUrl;
-            }
-            break;
-          }
-        }
-      }
-      if (html) {
-        // HTML overrides text and image in card, can't be mixed
-        text = "";
-        image = undefined;
-      }
 
-      iframe = card.querySelector(".card_iframe");
-      iframe.onload = function () {
-        var tmpDate;
-        if (date) {
-          tmpDate = date.niceDate();
-        } else {
-          tmpDate = "";
-        }
-        iframe.contentWindow.setData(text, image, html, tmpDate);
-      };
-
-      card.querySelector(".card_metadata").appendChild(doc.createTextNode(JSON.stringify(data, null, 2)));
-    }
-
-    function listCards(items) {
-      var i, l, div, card, iframe;
-      if (items) {
-        div = doc.getElementById("timeline");
-        div.innerHTML = "";
-        l = items.length;
-        for (i = 0; i < l; i++) {
-          displayCard(div, items[i]);
-        }
-      }
-    }
-
-    function requestCards() {
-      var xhr;
-
-      xhr = new global.XMLHttpRequest();
-      xhr.onreadystatechange = function () {
-        var response, json;
-        if (xhr.readyState === 4) {
-          if (xhr.status === 200) {
-            console.log("Success: " + xhr.responseText);
-            json = JSON.parse(xhr.responseText);
-            listCards(json.items);
-          } else {
-            console.log("Error " + xhr.status + ": " + xhr.statusText);
-            if (xhr.responseText) {
-              console.log(xhr.responseText);
-            }
-          }
-        }
-      };
-
-      xhr.open("GET", global.location.pathname + "list", true);
-      xhr.send();
-    }
 
     function connect(id, code) {
       var xhr;
@@ -151,7 +68,6 @@
 
     this.disconnect = function () {
       var xhr;
-
       xhr = new global.XMLHttpRequest();
       xhr.onreadystatechange = function () {
         var response;
@@ -187,15 +103,18 @@
       if (authResult.access_token) {
         doc.getElementById("signin").style.display = "none";
         global.gapi.client.load("plus", "v1", function () {
-          global.gapi.client.plus.people.get({"userId": "me"}).execute(function (result) {
-            if (result.error) {
-              console.log(result.error);
-              doc.getElementById("signin").style.display = "block";
-              doc.getElementById("signout").style.display = "none";
-              doc.getElementById("glass").style.display = "none";
-              return;
-            }
-            connect(result.id, authResult.code);
+          global.gapi.client.load("youtube", "v3", function () {
+            global.gapi.client.plus.people.get({"userId": "me"}).execute(function (result) {
+              console.log(result);
+              if (result.error) {
+                console.log(result.error);
+                doc.getElementById("signin").style.display = "block";
+                doc.getElementById("signout").style.display = "none";
+                doc.getElementById("glass").style.display = "none";
+                return;
+              }
+              connect(result.id, authResult.code);
+            });
           });
         });
       } else if (authResult.error) {
@@ -206,39 +125,12 @@
       }
     };
 
-    this.sendCard = function () {
-      var input, xhr, text, message;
-      input = doc.getElementById("new_card");
-      text = input.value;
-
-      message = {};
-
-      if (text) {
-        input.value = "";
-        message.text = text;
-
-        xhr = new global.XMLHttpRequest();
-        xhr.onreadystatechange = function () {
-          var response;
-          if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-              console.log("Success: " + xhr.responseText);
-              requestCards();
-            } else {
-              console.log("Error " + xhr.status + ": " + xhr.statusText);
-              if (xhr.responseText) {
-                console.log(xhr.responseText);
-              }
-            }
-          }
-        };
-
-        xhr.open("POST", global.location.pathname + "new", true);
-        xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
-        xhr.send(JSON.stringify(message));
-      }
-
-    };
+    this.addSource = function () {
+      var search = doc.getElementById("ct-source-input").value;
+      global.gapi.client.youtube.videos.list({"part": "snippet", "id": search}).execute(function (result) {
+        console.log(result);
+      })
+    }
   }
 
   global.mirrorService = new Service();
@@ -246,6 +138,6 @@
 
   global.onload = function () {
     doc.getElementById("signout_button").onclick = global.mirrorService.disconnect;
-    doc.getElementById("send_card").onclick = global.mirrorService.sendCard;
+    doc.getElementById("ct-add").onclick = global.mirrorService.addSource;
   };
 }(this));

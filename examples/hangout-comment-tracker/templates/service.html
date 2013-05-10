@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>Mirror API Service</title>
+    <title>Hangout Comment Tracker - Glassware</title>
     <script src="/service.js"></script>
     <link rel="stylesheet" type="text/css" href="/service.css">
   </head>
@@ -23,11 +23,11 @@
       <button id="signout_button">Sign-out and disconnect</button>
     </div>
     <div id="glass" style="display: none;">
-      <div id="timeline"></div>
-      Text: <input type="text" id="new_card"> <button id="send_card">Send to glass</button>
+      <input id="ct-source-input" style="width: 270px;" placeholder="Google+ Post / YouTube Video / Search term"><button id="ct-add">Add</button><br>
     </div><br><br><br>
     <div id="footer">
-      Mirror API Emulator created by <a href="https://plus.google.com/112336147904981294875" rel="author" target="_blank">Gerwin Sturm</a>. If you are not hosting this as your own App Engine project, be aware that things will break randomly and your data will disappear while I test stuff. Please <a href="https://github.com/Scarygami/mirror-api" target="_blank">get the source and host your own version</a>.
+      Created by <a href="https://plus.google.com/112336147904981294875" rel="author" target="_blank">Gerwin Sturm</a>,
+      <a href="http://www.foldedsoft.at/" target="_blank">FoldedSoft e.U.</a>
     </div>
     <script type="text/javascript">
       (function(global) {
