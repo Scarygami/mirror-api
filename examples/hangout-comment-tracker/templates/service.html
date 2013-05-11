@@ -23,8 +23,16 @@
       <button id="signout_button">Sign-out and disconnect</button>
     </div>
     <div id="glass" style="display: none;">
-      <input id="ct-source-input" style="width: 270px;" placeholder="Google+ Post / YouTube Video / Search term"><button id="ct-add">Add</button><br>
-    </div><br><br><br>
+      <div class="sources">
+        <input id="ct-source-input" style="width: 270px;" placeholder="Google+ Post / YouTube Video / Search term">
+        <button id="ct-add">Add</button><br>
+        <div id="sources" class="list"></div>
+      </div>
+      <div class="sources">
+        Currently tracked
+        <div id="tracked" class="list"></div>
+      </div>
+    </div><br style="clear: both;"><br><br>
     <div id="footer">
       Created by <a href="https://plus.google.com/112336147904981294875" rel="author" target="_blank">Gerwin Sturm</a>,
       <a href="http://www.foldedsoft.at/" target="_blank">FoldedSoft e.U.</a>

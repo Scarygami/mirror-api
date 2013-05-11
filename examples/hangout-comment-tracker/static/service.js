@@ -31,7 +31,9 @@
   function Service() {
     var state;
 
+    function initialize() {
 
+    }
 
     function connect(id, code) {
       var xhr;
@@ -45,7 +47,7 @@
             doc.getElementById("signin").style.display = "none";
             doc.getElementById("signout").style.display = "block";
             doc.getElementById("glass").style.display = "block";
-            requestCards();
+            initialize();
           } else {
             console.log("Error " + xhr.status + ": " + xhr.statusText);
             if (xhr.responseText) {
@@ -105,7 +107,6 @@
         global.gapi.client.load("plus", "v1", function () {
           global.gapi.client.load("youtube", "v3", function () {
             global.gapi.client.plus.people.get({"userId": "me"}).execute(function (result) {
-              console.log(result);
               if (result.error) {
                 console.log(result.error);
                 doc.getElementById("signin").style.display = "block";
