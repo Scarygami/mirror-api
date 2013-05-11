@@ -20,8 +20,8 @@ __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 from google.appengine.ext import ndb
 from oauth2client.appengine import CredentialsNDBProperty
 
-YT_SOURCE = 1
-PLUS_SOURCE = 2
+PLUS_POST = 1
+YT_POST = 2
 PLUS_SEARCH = 3
 
 

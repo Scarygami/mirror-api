@@ -6,6 +6,10 @@ api_version: 1
 
 handlers:
 
+- url: /images/*.png
+  static_dir: static/images
+  mime_type: image/png
+
 - url: /images
   static_dir: static/images
 

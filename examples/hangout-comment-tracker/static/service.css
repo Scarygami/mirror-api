@@ -72,3 +72,10 @@ input {
   text-align: right;
   font-size: 9pt;
 }
+
+.ct-post { border-bottom: 1px dotted #CCC; vertical-align: top; padding: 12px 8px 7px 47px; word-wrap: break-word; position: relative;}
+.ct-post_pic {display: block; border: 0; max-width: 32px; max-height: 32px; float: left; margin-left: -40px;}
+.ct-service_pic {display: block; border: 0; max-width: 16px; max-height: 16px; float: left; margin-left: -20px; margin-top: 20px;}
+.ct-post_time {display: block; float: right; color: #999; padding: 0;}
+.ct-post_text {margin-top: 2px; padding: 0;}
+.ct-post_time a {color: #999;}
