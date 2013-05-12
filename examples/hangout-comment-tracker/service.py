@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""RequestHandlers for Web service"""
+"""RequestHandlers for HCT Web service"""
 
 __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
@@ -25,7 +25,7 @@ import logging
 import random
 import string
 
-
+from google.appengine.ext import ndb
 from oauth2client.client import AccessTokenRefreshError
 
 
@@ -49,31 +49,36 @@ class IndexHandler(utils.BaseHandler):
 class ListHandler(utils.BaseHandler):
 
     def get(self, test):
-        """Retrieve timeline cards for the current user."""
+        """Retrieve currently tracked sources for the current user."""
 
         self.response.content_type = "application/json"
 
         gplus_id = self.session.get("gplus_id")
-        service = get_auth_service(gplus_id, test)
+        if test is not None:
+            user = ndb.Key("TestUser", gplus_id).get()
+        else:
+            user = ndb.Key("User", gplus_id).get()
 
-        if service is None:
+        if user is None:
             self.response.status = 401
             self.response.out.write(utils.createError(401, "Current user not connected."))
             return
-        try:
-            # Retrieve timeline cards and return as reponse
-            result = service.timeline().list().execute()
-            self.response.status = 200
-            self.response.out.write(json.dumps(result))
-        except AccessTokenRefreshError:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+
+        items = []
+        if user.sources is not None:
+            for source in user.sources:
+                data = source.get()
+                items.append(data.id)
+
+        self.response.out.write(json.dumps({"items": items}))
+
+        # TODO
 
 
-class NewCardHandler(utils.BaseHandler):
+class AddHandler(utils.BaseHandler):
 
     def post(self, test):
-        """Create a new timeline card for the current user."""
+        """Add a new source to be tracker."""
 
         self.response.content_type = "application/json"
 
@@ -85,54 +90,36 @@ class NewCardHandler(utils.BaseHandler):
             self.response.out.write(utils.createError(401, "Current user not connected."))
             return
 
-        message = self.request.body
+        data = json.loads(self.request.body)
 
-        data = json.loads(message)
-
-        body = {}
-        body["text"] = data["text"]
-
-        try:
-            # Insert timeline card and return as reponse
-            result = service.timeline().insert(body=body).execute()
-            self.response.status = 200
-            self.response.out.write(json.dumps(result))
-        except AccessTokenRefreshError:
-            self.response.status = 500
-            self.response.out.write(utils.createError(500, "Failed to refresh access token."))
+        # TODO
+        logging.info(data)
 
 
-class AttachmentHandler(utils.BaseHandler):
-    """Retrieves an attachment using the current user's credentials"""
+class RemoveHandler(utils.BaseHandler):
 
-    def get(self, test, timelineId, attachmentId):
+    def get(self, test, source_id):
+        """
+        Remove a Source for the user.
+        Set Source.active = False if no users are tracking it anymore.
+        """
+
+        self.response.content_type = "application/json"
+
         gplus_id = self.session.get("gplus_id")
         service = get_auth_service(gplus_id, test)
+
         if service is None:
-            self.response.content_type = "application/json"
             self.response.status = 401
-            self.response.out.write(utils.createError(401, "Invalid credentials."))
+            self.response.out.write(utils.createError(401, "Current user not connected."))
             return
 
-        attachment_metadata = service.timeline().attachments().get(
-            itemId=timelineId, attachmentId=attachmentId).execute()
-        content_type = str(attachment_metadata.get("contentType"))
-        content_url = attachment_metadata.get("contentUrl")
-        resp, content = service._http.request(content_url)
-
-        if resp.status == 200:
-            self.response.content_type = content_type
-            self.response.out.write(content)
-        else:
-            logging.info(resp)
-            self.response.content_type = "application/json"
-            self.response.status = resp.status
-            self.response.out.write(utils.createError(resp.status, "Unable to retrieve attachment."))
+        # TODO
 
 
 SERVICE_ROUTES = [
-    (r"(/test)?/attachment/(.*)/(.*)", AttachmentHandler),
     (r"(/test)?/", IndexHandler),
     (r"(/test)?/list", ListHandler),
-    (r"(/test)?/new", NewCardHandler)
+    (r"(/test)?/add", AddHandler),
+    (r"(/test)?/remove/(.+)", RemoveHandler)
 ]

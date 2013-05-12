@@ -205,7 +205,6 @@ class ConnectHandler(utils.BaseHandler):
         user.imageUrl = result["image"]["url"]
         user.put()
 
-
         """
         Re-register subscriptions to make sure all of them are available.
         Normally it would be best to use subscriptions.list first to check.
