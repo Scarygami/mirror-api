@@ -1,0 +1,26 @@
+application: hangout-comment-tracker
+version: 1
+runtime: python27
+threadsafe: true
+api_version: 1
+
+handlers:
+
+- url: /images/*.png
+  static_dir: static/images
+  mime_type: image/png
+
+- url: /images
+  static_dir: static/images
+
+- url: /(.*\.(html|css|js))
+  static_files: static/\1
+  upload: static/(.*\.(html|css|js))
+
+- url: .*
+  script: main.app
+
+libraries:
+
+- name: jinja2
+  version: latest

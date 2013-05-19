@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Hangout Comment Tracker - Glassware</title>
+    <script src="/service.js"></script>
+    <link rel="stylesheet" type="text/css" href="/service.css">
+  </head>
+  <body>
+    <div id="signin">
+      <button class="g-signin"
+        data-scope="{{ scopes }}"
+        data-clientId="{{ client_id }}"
+        data-callback="onSignInCallback"
+        data-redirecturi="postmessage"
+        {% if reconnect %}data-approvalprompt="force"{% endif %}
+        data-accesstype="offline"
+        data-theme="dark"
+        data-cookiepolicy="single_host_origin">
+      </button>
+    </div>
+    <div id="signout" style="display: none;">
+      <button id="signout_button">Sign-out and disconnect</button>
+    </div>
+    <div id="glass" style="display: none;">
+      <div class="sources">
+        <input id="ct-source-input" style="width: 270px;" placeholder="Google+ Post / YouTube Video / Search term">
+        <button id="ct-add">Add</button><br>
+        <div id="ct-searching" style="display: none;"><img src="/images/spinner.gif" alt="searching"> Searching...</div>
+        <div id="sources" class="list"></div>
+      </div>
+      <div class="sources">
+        Currently tracked
+        <div id="tracked" class="list"></div>
+      </div>
+    </div><br style="clear: both;"><br><br>
+    <div id="footer">
+      Created by <a href="https://plus.google.com/112336147904981294875" rel="author" target="_blank">Gerwin Sturm</a>,
+      <a href="http://www.foldedsoft.at/" target="_blank">FoldedSoft e.U.</a>
+    </div>
+    <script type="text/javascript">
+      (function(global) {
+        var po = document.createElement('script');
+        po.type = 'text/javascript'; po.async = true;
+        po.src = 'https://plus.google.com/js/client:plusone.js';
+        var s = document.getElementsByTagName('script')[0];
+        s.parentNode.insertBefore(po, s);
+
+        global.mirrorService.setState("{{ state }}");
+      })(this);
+    </script>
+  </body>
+</html>
