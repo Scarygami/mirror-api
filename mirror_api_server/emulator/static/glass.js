@@ -1451,17 +1451,17 @@
 
     /** Event Listeners */
 
-    function onMouseDown(e) {
-      mouseX = e.pageX - activeCard.cardDiv.offsetLeft;
-      mouseY = e.pageY - activeCard.cardDiv.offsetTop;
-    }
-
     function onTouchStart(e) {
       if (e.changedTouches && e.changedTouches.length > 0) {
         e.preventDefault();
         mouseX = e.changedTouches[0].pageX - activeCard.cardDiv.offsetLeft;
         mouseY = e.changedTouches[0].pageY - activeCard.cardDiv.offsetTop;
       }
+    }
+    
+    function onMouseDown(e) {
+      e.changedTouches = [{pageX: e.pageX, pageY: e.pageY}];
+      onTouchStart(e);
     }
 
     /**
@@ -1494,8 +1494,8 @@
       var x, y;
       if (e.changedTouches && e.changedTouches.length > 0) {
         e.preventDefault();
-        x = e.changedTouches[0].pageX - activeCard.cardDiv.cardDiv.offsetLeft;
-        y = e.changedTouches[0].pageY - activeCard.cardDiv.cardDiv.offsetTop;
+        x = e.changedTouches[0].pageX - activeCard.cardDiv.offsetLeft;
+        y = e.changedTouches[0].pageY - activeCard.cardDiv.offsetTop;
         makeMove(mouseX, mouseY, x, y);
       }
     }
@@ -1503,10 +1503,8 @@
     function onMouseUp(e) {
       var x, y;
       if (e.which !== 2 && e.button !== 2) {
-        x = e.pageX - activeCard.cardDiv.offsetLeft;
-        y = e.pageY - activeCard.cardDiv.offsetTop;
-
-        makeMove(mouseX, mouseY, x, y);
+        e.changedTouches = [{pageX: e.pageX, pageY: e.pageY}];
+        onTouchEnd(e);
       }
     }
 
@@ -1723,10 +1721,9 @@
       if (global.ontouchstart !== undefined) {
         mainDiv.addEventListener("touchstart", onTouchStart, false);
         mainDiv.addEventListener("touchend", onTouchEnd, false);
-      } else {
-        mainDiv.onmousedown = onMouseDown;
-        mainDiv.onmouseup = onMouseUp;
       }
+      mainDiv.onmousedown = onMouseDown;
+      mainDiv.onmouseup = onMouseUp;
       doc.onkeydown = onKeyDown;
       //TODO
       mainDiv.onselectstart = function () { return false; };
