@@ -5,8 +5,15 @@
   margin: 0;
 }
 
+html {
+  min-height: 100%;
+}
+
 body {
   padding: 5px;
+  min-height: 100%;
+  background-image: url("images/background.png");
+  background-repeat: repeat;
 }
 
 #signin, #signout, #glass {
@@ -33,49 +40,12 @@ button {
   color: #333;
 }
 
-#ct-add {
-  background: #4d90fe;
-  border: 1px solid #3079ed;
-  color: white;
-}
-
-input {
-  text-align: left;
-  padding: 5px;
-  line-height: 20px;
-  border-radius: 4px;
-  margin-top: 5px;
-  font-family: Arial, sans-serif;
-  font-size: 15px;
-  background: white;
-  border: 1px solid #999;
-  color: black;
-  width: 500px;
-}
-
-#glass {
+#main {
   width: 100%;
   min-width: 1000px;
-}
-
-.sources {
-  width: 450px;
-  float: left;
-}
-
-.list {
-  width: 450px;
-  padding: 5px;
 }
 
 #footer {
   text-align: right;
   font-size: 9pt;
 }
-
-.ct-post { border-bottom: 1px dotted #CCC; vertical-align: top; padding: 12px 8px 7px 47px; word-wrap: break-word; position: relative;}
-.ct-post_pic {display: block; border: 0; max-width: 32px; max-height: 32px; float: left; margin-left: -40px;}
-.ct-service_pic {display: block; border: 0; max-width: 16px; max-height: 16px; float: left; margin-left: -20px; margin-top: 20px;}
-.ct-post_time {display: block; float: right; color: #999; padding: 0;}
-.ct-post_text {margin-top: 2px; padding: 0;}
-.ct-post_time a {color: #999;}

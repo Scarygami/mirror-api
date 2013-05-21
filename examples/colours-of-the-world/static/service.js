@@ -513,7 +513,7 @@
             console.log("Success: " + xhr.responseText);
             doc.getElementById("signin").style.display = "none";
             doc.getElementById("signout").style.display = "block";
-            doc.getElementById("glass").style.display = "block";
+            doc.getElementById("main").style.display = "block";
             initialize();
           } else {
             console.log("Error " + xhr.status + ": " + xhr.statusText);
@@ -522,7 +522,7 @@
             }
             doc.getElementById("signin").style.display = "block";
             doc.getElementById("signout").style.display = "none";
-            doc.getElementById("glass").style.display = "none";
+            doc.getElementById("main").style.display = "none";
             if (xhr.status === 401) {
               global.location.href = global.location.pathname + "?reconnect=true";
             }
@@ -557,7 +557,7 @@
 
       doc.getElementById("signin").style.display = "block";
       doc.getElementById("signout").style.display = "none";
-      doc.getElementById("glass").style.display = "none";
+      doc.getElementById("main").style.display = "none";
     };
 
     this.setState = function (s) {
@@ -578,7 +578,7 @@
                 console.log(result.error);
                 doc.getElementById("signin").style.display = "block";
                 doc.getElementById("signout").style.display = "none";
-                doc.getElementById("glass").style.display = "none";
+                doc.getElementById("main").style.display = "none";
                 return;
               }
               connect(result.id, authResult.code);
@@ -589,7 +589,7 @@
         console.log("There was an error: " + authResult.error);
         doc.getElementById("signin").style.display = "block";
         doc.getElementById("signout").style.display = "none";
-        doc.getElementById("glass").style.display = "none";
+        doc.getElementById("main").style.display = "none";
       }
     };
 
