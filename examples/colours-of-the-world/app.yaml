@@ -1,4 +1,4 @@
-application: hangout-comment-tracker
+application: colours-of-the-world
 version: 1
 runtime: python27
 threadsafe: true
@@ -23,4 +23,7 @@ handlers:
 libraries:
 
 - name: jinja2
+  version: latest
+
+- name: PIL
   version: latest
