@@ -5,18 +5,13 @@
   margin: 0;
 }
 
-html {
-  min-height: 100%;
-}
-
 body {
-  padding: 5px;
-  min-height: 100%;
+  padding: 10px 20px;
   background-image: url("images/background.png");
   background-repeat: repeat;
 }
 
-#signin, #signout, #glass {
+#signin, #signout, #main {
   padding: 5px;
 }
 
@@ -40,9 +35,20 @@ button {
   color: #333;
 }
 
+#header {
+  width: 100%;
+  min-width: 1000px;
+  background-color: rgba(255, 255, 255, 0.4);
+  font-family: "Roboto";
+  font-weight: 300;
+  font-size: 60px;
+  padding: 5px 20px;
+}
+
 #main {
   width: 100%;
   min-width: 1000px;
+  background-color: rgba(255, 255, 255, 0.7);
 }
 
 #footer {
