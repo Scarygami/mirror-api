@@ -1,0 +1,7 @@
+indexes:
+
+- kind: Submission
+  properties:
+  - name: colour
+  - name: date
+    direction: desc

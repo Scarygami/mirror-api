@@ -494,12 +494,9 @@
     }
 
     function initialize() {
-      sources_div = doc.getElementById("sources");
-      tracked_div = doc.getElementById("tracked");
-      search_input = doc.getElementById("ct-source-input");
-      searching_div  = doc.getElementById("ct-searching");
-      doc.getElementById("ct-add").onclick = addSource;
       gapi = global.gapi.client;
+      // TODO
+      doc.getElementById("loading").style.visibility = "hidden";
     }
 
     function connect(id, code) {
@@ -523,6 +520,7 @@
             doc.getElementById("signin").style.display = "block";
             doc.getElementById("signout").style.display = "none";
             doc.getElementById("colours").style.display = "none";
+            doc.getElementById("loading").style.display = "none";
             if (xhr.status === 401) {
               global.location.href = global.location.pathname + "?reconnect=true";
             }
@@ -537,6 +535,7 @@
 
     this.disconnect = function () {
       var xhr;
+      if (!global.confirm("Are you sure? This will delete all your submissions, scores and achievements.")) { return; }
       xhr = new global.XMLHttpRequest();
       xhr.onreadystatechange = function () {
         var response;
@@ -558,6 +557,7 @@
       doc.getElementById("signin").style.display = "block";
       doc.getElementById("signout").style.display = "none";
       doc.getElementById("colours").style.display = "none";
+      doc.getElementById("loading").style.visibility = "hidden";
     };
 
     this.setState = function (s) {
@@ -571,6 +571,7 @@
     this.signInCallback = function (authResult) {
       if (authResult.access_token) {
         doc.getElementById("signin").style.display = "none";
+        doc.getElementById("loading").style.visibility = "visible";
         global.gapi.client.load("plus", "v1", function () {
           global.gapi.client.load("youtube", "v3", function () {
             global.gapi.client.plus.people.get({"userId": "me"}).execute(function (result) {
@@ -579,6 +580,7 @@
                 doc.getElementById("signin").style.display = "block";
                 doc.getElementById("signout").style.display = "none";
                 doc.getElementById("colours").style.display = "none";
+                doc.getElementById("loading").style.visibility = "hidden";
                 return;
               }
               connect(result.id, authResult.code);
@@ -590,6 +592,7 @@
         doc.getElementById("signin").style.display = "block";
         doc.getElementById("signout").style.display = "none";
         doc.getElementById("colours").style.display = "none";
+        doc.getElementById("loading").style.visibility = "hidden";
       }
     };
 

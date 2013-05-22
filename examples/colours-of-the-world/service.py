@@ -6,7 +6,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#      http://www.apache.org/licenses/LICENSE-2.0#
+#      http://www.apache.org/licenses/LICENSE-2.0
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,7 @@ __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 
 import utils
 from auth import get_auth_service
+from models import Submission
 
 import json
 import logging
@@ -46,10 +47,71 @@ class IndexHandler(utils.BaseHandler):
         self.response.out.write(template.render({"client_id": utils.CLIENT_ID, "state": state, "scopes": scopes, "reconnect": reconnect}))
 
 
-class ListHandler(utils.BaseHandler):
+class UserHandler(utils.BaseHandler):
 
     def get(self, test):
-        """Retrieve currently tracked sources for the current user."""
+        """Retrieve submissions for the current user."""
+        
+        self.response.content_type = "application/json"
+
+        gplus_id = self.session.get("gplus_id")
+        if gplus_id is None:
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Current user not connected."))
+            return
+
+        if test is not None:
+            user = ndb.Key("TestUser", gplus_id).get()
+        else:
+            user = ndb.Key("User", gplus_id).get()
+
+        if user.get() is None:
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Current user not connected."))
+            return
+
+        items = []
+        submissions = Submission.query(ancestor=user.key).order(-Submission.date).fetch(50)
+        for submission in submissions:
+            items.append({
+              "id": submission.key.id(),
+              "colour": submission.colour,
+              "url": submission.url,
+              "date": submission.date
+            })
+        
+        self.response.out.write(json.dumps({"items": items}))        
+        
+
+class ListHandler(utils.BaseHandler):
+
+    def get(self, test, colour):
+        """Retrieve recent submission, limited to a certain colour."""
+
+        self.response.content_type = "application/json"
+
+        qry = Submission.query()
+        if colour is not None:
+            qry = qry.filter(Submission.colour == colour)
+        qry = qry.order(-Submission.date)
+
+        items = []
+        submissions = qry.fetch(50)
+        for submission in submissions:
+            items.append({
+              "id": submission.key.id(),
+              "colour": submission.colour,
+              "url": submission.url,
+              "date": submission.date
+            })
+            
+        self.response.out.write(json.dumps({"items": items}))        
+
+            
+class RemoveHandler(utils.BaseHandler):
+
+    def get(self, test, submission_id):
+        """Remove a Submission for the user."""
 
         self.response.content_type = "application/json"
 
@@ -59,57 +121,7 @@ class ListHandler(utils.BaseHandler):
         else:
             user = ndb.Key("User", gplus_id).get()
 
-        if user is None:
-            self.response.status = 401
-            self.response.out.write(utils.createError(401, "Current user not connected."))
-            return
-
-        items = []
-        if user.sources is not None:
-            for source in user.sources:
-                data = source.get()
-                items.append(data.id)
-
-        self.response.out.write(json.dumps({"items": items}))
-
-        # TODO
-
-
-class AddHandler(utils.BaseHandler):
-
-    def post(self, test):
-        """Add a new source to be tracker."""
-
-        self.response.content_type = "application/json"
-
-        gplus_id = self.session.get("gplus_id")
-        service = get_auth_service(gplus_id, test)
-
-        if service is None:
-            self.response.status = 401
-            self.response.out.write(utils.createError(401, "Current user not connected."))
-            return
-
-        data = json.loads(self.request.body)
-
-        # TODO
-        logging.info(data)
-
-
-class RemoveHandler(utils.BaseHandler):
-
-    def get(self, test, source_id):
-        """
-        Remove a Source for the user.
-        Set Source.active = False if no users are tracking it anymore.
-        """
-
-        self.response.content_type = "application/json"
-
-        gplus_id = self.session.get("gplus_id")
-        service = get_auth_service(gplus_id, test)
-
-        if service is None:
+        if user.get() is None:
             self.response.status = 401
             self.response.out.write(utils.createError(401, "Current user not connected."))
             return
@@ -119,7 +131,7 @@ class RemoveHandler(utils.BaseHandler):
 
 SERVICE_ROUTES = [
     (r"(/test)?/", IndexHandler),
-    (r"(/test)?/list", ListHandler),
-    (r"(/test)?/add", AddHandler),
+    (r"(/test)?/list/?(red|orange|yellow|green|blue|indigo|violet)?", ListHandler),
+    (r"(/test)?/user", UserHandler),
     (r"(/test)?/remove/(.+)", RemoveHandler)
 ]

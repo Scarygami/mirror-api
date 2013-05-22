@@ -11,28 +11,43 @@
     <div id="header">Colours of the World</div>
     <div id="main">
       <div id="signin">
-        <button class="g-signin"
-          data-scope="{{ scopes }}"
-          data-clientId="{{ client_id }}"
-          data-callback="onSignInCallback"
-          data-redirecturi="postmessage"
-          {% if reconnect %}data-approvalprompt="force"{% endif %}
-          data-accesstype="offline"
-          data-theme="dark"
-          data-cookiepolicy="single_host_origin">
-        </button>
-      </div>
-      <div id="signout" style="display: none;">
-        <button id="signout_button">Sign-out and disconnect</button>
+        <img src="/images/signin.png">
+        <div id="signin_button">
+          <button class="g-signin"
+            data-scope="{{ scopes }}"
+            data-clientId="{{ client_id }}"
+            data-callback="onSignInCallback"
+            data-redirecturi="postmessage"
+            {% if reconnect %}data-approvalprompt="force"{% endif %}
+            data-accesstype="offline"
+            data-theme="dark"
+            data-cookiepolicy="single_host_origin">
+          </button>
+        </div>
+        <p>Sign in to connect with your Glass&#8482; device and<br>start seeing the world in different colours.</p>
       </div>
       <div id="colours" style="display: none;">
         Actual content goes here...
       </div>
-    </div><br><br><br>
+    </div>
     <div id="footer">
+      <div id="signout" style="display: none;">
+        <button id="signout_button" title="This will delete all your submissions, achievements and scores">Sign-out and disconnect</button>
+      </div>
       Created by <a href="https://plus.google.com/112336147904981294875" rel="author" target="_blank">Gerwin Sturm</a>,
       <a href="http://www.foldedsoft.at/" target="_blank">FoldedSoft e.U.</a>
     </div>
+    <div id="loading" style="visibility: hidden;">
+      <div id="circularG_1" class="circularG"></div>
+      <div id="circularG_2" class="circularG"></div>
+      <div id="circularG_3" class="circularG"></div>
+      <div id="circularG_4" class="circularG"></div>
+      <div id="circularG_5" class="circularG"></div>
+      <div id="circularG_6" class="circularG"></div>
+      <div id="circularG_7" class="circularG"></div>
+      <div id="circularG_8" class="circularG"></div>
+    </div>
+
     <script type="text/javascript">
       (function(global) {
         var po = document.createElement('script');
