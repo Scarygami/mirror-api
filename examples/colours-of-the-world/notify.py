@@ -16,8 +16,7 @@
 """
 Notification/subscription handler
 
-Handles subscription post requests coming from the Mirror API and forwards
-the requests to the relevant demo services.
+Handles subscription post requests coming from the Mirror API
 
 """
 
@@ -29,6 +28,7 @@ from auth import get_auth_service
 import json
 import logging
 from datetime import datetime
+from google.appengine.api import taskqueue
 from google.appengine.ext import ndb
 
 
@@ -61,20 +61,20 @@ class TimelineNotifyHandler(utils.BaseHandler):
             logging.info("Wrong collection")
             return
 
-        service = get_auth_service(gplus_id, test)
+        share = False
+        if "userActions" in data:
+            for action in data["userActions"]:
+                if "type" in action and action["type"] == "SHARE":
+                    share = True
+                    break
 
-        if service is None:
-            logging.info("No valid credentials")
-            return
+        if share:
+            # Evaluate submission
+            taskqueue.add(url="/tasks/evaluate",
+                          params={"user": gplus_id, "test": test, "item": data["itemId"]},
+                          method="POST")
 
-        result = service.timeline().get(id=data["itemId"]).execute()
-        logging.info(result)
-
-        #for demo_service in demo_services:
-        #    if hasattr(demo_service, "handle_item"):
-        #        demo_service.handle_item(result, data, service, test)
-
-
+                          
 NOTIFY_ROUTES = [
     (r"(/test)?/timeline_update", TimelineNotifyHandler)
 ]
