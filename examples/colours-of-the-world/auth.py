@@ -264,7 +264,7 @@ class ConnectHandler(utils.BaseHandler):
                      "  <div class=\"photo-overlay\"></div>"
                      "  <section>"
                      "    <p class=\"text-large\">Welcome to Colours of the World!</p>"
-                     "    <p class=\"text-small\">Your first task will be send to you soon</p>"
+                     "    <p class=\"text-small\">Your first task will be sent to you soon</p>"
                      "  </section>"
                      "</article>")
         }
