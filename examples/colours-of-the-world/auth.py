@@ -207,10 +207,7 @@ class ConnectHandler(utils.BaseHandler):
         user.put()
 
         """
-        Re-register subscriptions to make sure all of them are available.
-        Normally it would be best to use subscriptions.list first to check.
-        For the purposes of this demo service all possible subscriptions are made.
-        Normally you would only set-up subscriptions for the services you need.
+        Re-register subscriptions and contacts to make sure all of them are available.
         """
 
         # Delete all existing subscriptions
@@ -234,6 +231,45 @@ class ConnectHandler(utils.BaseHandler):
         user.verifyToken = verifyToken
         user.put()
 
+        # Contact for receiving submissions
+        contact_id = "colours_of_the_world"
+        existing = True
+        try:
+            result = service.contacts().get(id=contact_id).execute()
+        except AccessTokenRefreshError:
+            _disconnect(gplus_id, test)
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            if e.resp.status == 404:
+                existing = False
+            else:
+                self.response.status = 500
+                self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
+                return
+        
+        body =  {}
+        body["acceptTypes"] = "image/*"
+        body["id"] = contact_id
+        body["displayName"] = "Colours of the World"
+        body["imageUrls"] = [utils.base_url + "/images/card.png"]
+        
+        try:
+            if existing:
+                result = service.contacts().update(id=contact_id, body=body).execute()
+            else:
+                result = service.contacts().insert(body=body).execute()
+        except AccessTokenRefreshError:
+            _disconnect(gplus_id, test)
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
+            return
+
         # Subscribe to all timeline inserts/updates/deletes
         body = {}
         body["collection"] = "timeline"
@@ -256,6 +292,7 @@ class ConnectHandler(utils.BaseHandler):
             self.response.status = 200
             self.response.out.write(utils.createMessage("Current user is already connected."))
             return
+
 
         # Send welcome messages for new users
         welcome = {

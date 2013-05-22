@@ -270,6 +270,18 @@ class MirrorApi(remote.Service):
 
         return query.filter(Contact.user == endpoints.get_current_user())
 
+    @Contact.method(request_fields=("id",),
+                    user_required=True,
+                    path="contacts/{id}", http_method="GET",
+                    name="contacts.get")
+    def contacts_get(self, contact):
+        """Get contact with ID for the current user"""
+
+        if not contact.from_datastore or contact.user != endpoints.get_current_user():
+            raise endpoints.NotFoundException("Contact not found.")
+
+        return contact
+
     @Contact.method(user_required=True,
                     path="contacts", name="contacts.insert")
     def contacts_insert(self, contact):
