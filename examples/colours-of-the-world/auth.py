@@ -42,6 +42,7 @@ from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 from oauth2client.appengine import StorageByKeyName
+from google.appengine.api import taskqueue
 
 
 def get_credentials(gplus_id, test):
@@ -257,23 +258,33 @@ class ConnectHandler(utils.BaseHandler):
             return
 
         # Send welcome messages for new users
-        welcomes = []
-        #for demo_service in demo_services:
-        #    if hasattr(demo_service, "WELCOMES"):
-        #        welcomes.extend(demo_service.WELCOMES)
+        welcome = {
+            "html": ("<article>"
+                     "  <img src=\"" + utils.base_url + "/images/card.png\" width=\"100%\" height=\"100%\">"
+                     "  <div class=\"photo-overlay\"></div>"
+                     "  <section>"
+                     "    <p class=\"text-large\">Welcome to Colours of the World!</p>"
+                     "    <p class=\"text-small\">Your first task will be send to you soon</p>"
+                     "  </section>"
+                     "</article>")
+        }
 
-        for welcome in welcomes:
-            try:
-                result = service.timeline().insert(body=welcome).execute()
-            except AccessTokenRefreshError:
-                _disconnect(gplus_id, test)
-                self.response.status = 401
-                self.response.out.write(utils.createError(401, "Failed to refresh access token."))
-                return
-            except HttpError as e:
-                self.response.status = 500
-                self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
-                return
+        try:
+            result = service.timeline().insert(body=welcome).execute()
+        except AccessTokenRefreshError:
+            _disconnect(gplus_id, test)
+            self.response.status = 401
+            self.response.out.write(utils.createError(401, "Failed to refresh access token."))
+            return
+        except HttpError as e:
+            self.response.status = 500
+            self.response.out.write(utils.createError(500, "Failed to execute request. %s" % e))
+            return
+
+        # Create a new task for the user
+        taskqueue.add(url="/tasks/createtask", countdown=10,
+                      params={"user": gplus_id, "test": test},
+                      method="POST")
 
         self.response.status = 200
         self.response.out.write(utils.createMessage("Successfully connected user."))

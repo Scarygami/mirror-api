@@ -520,7 +520,7 @@
             doc.getElementById("signin").style.display = "block";
             doc.getElementById("signout").style.display = "none";
             doc.getElementById("colours").style.display = "none";
-            doc.getElementById("loading").style.display = "none";
+            doc.getElementById("loading").style.visibility = "hidden";
             if (xhr.status === 401) {
               global.location.href = global.location.pathname + "?reconnect=true";
             }

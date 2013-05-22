@@ -29,7 +29,6 @@ import string
 from google.appengine.ext import ndb
 from oauth2client.client import AccessTokenRefreshError
 
-
 class IndexHandler(utils.BaseHandler):
     """Renders the main page that is mainly used for authentication only so far"""
 

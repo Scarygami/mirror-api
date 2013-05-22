@@ -17,8 +17,18 @@ handlers:
   static_files: static/\1
   upload: static/(.*\.(html|css|js))
 
+- url: /tasks/.*
+  script: main.app
+  login: admin
+  
 - url: .*
   script: main.app
+
+
+builtins:
+
+- deferred: on
+
 
 libraries:
 

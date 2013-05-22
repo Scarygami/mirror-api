@@ -27,7 +27,8 @@ import webapp2
 from auth import AUTH_ROUTES
 from notify import NOTIFY_ROUTES
 from service import SERVICE_ROUTES
+from tasks import TASK_ROUTES
 
-ROUTES = (AUTH_ROUTES + SERVICE_ROUTES + NOTIFY_ROUTES )
+ROUTES = (AUTH_ROUTES + SERVICE_ROUTES + NOTIFY_ROUTES + TASK_ROUTES)
 
 app = webapp2.WSGIApplication(ROUTES, debug=True, config=config)

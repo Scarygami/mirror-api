@@ -250,6 +250,15 @@
           "displayName": "Read aloud",
           "iconUrl": "images/read_aloud.png"
         }]
+      },
+      "TOGGLE_PINNED": {
+        "action": "TOGGLE_PINNED",
+        "id": "TOGGLE_PINNED",
+        "values": [{
+          "state": "DEFAULT",
+          "displayName": "Pin/Unpin card",
+          "iconUrl": "images/success.png"
+        }]
       }
     };
 

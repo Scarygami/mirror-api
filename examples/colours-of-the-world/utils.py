@@ -56,16 +56,6 @@ REAL_SCOPES = [
     "https://www.googleapis.com/auth/glass.timeline"
 ]
 
-COLORS = {
-    "red": {"name": "Red", "hue": 0, "range": 15},
-    "orange": {"name": "Orange", "hue": 30, "range": 15},
-    "yellow": {"name": "Yellow", "hue": 60, "range": 15},
-    "green": {"name": "Green", "hue": 120, "range": 15},
-    "blue": {"name": "Blue", "hue": 240, "range": 15},
-    "indigo": {"name": "Indigo", "hue": 280, "range": 15},
-    "violet": {"name": "Violet", "hue": 320, "range": 15}
-}
-
 
 def createError(code, message):
     """Create a JSON string to be returned as error response to requests"""

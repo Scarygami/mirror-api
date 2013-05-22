@@ -10,11 +10,19 @@ handlers:
   static_files: emulator/static/\1
   upload: emulator/static/(.*\.(html|css|js|grxml))
 
+- url: /glass/images/*.png
+  static_dir: emulator/static/images
+  mime_type: image/png  
+
 - url: /glass/images
   static_dir: emulator/static/images
 
 - url: /_ah/spi/.*
   script: mirror_api.api.ApiServer
+
+- url: /images/*.png  
+  static_dir: service/static/images
+  mime_type: image/png
 
 - url: /images
   static_dir: service/static/images

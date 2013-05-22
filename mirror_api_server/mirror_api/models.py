@@ -49,7 +49,7 @@ class MenuValue(EndpointsModel):
 
     displayName = ndb.StringProperty(required=True)
     iconUrl = ndb.StringProperty(required=True)
-    state = msgprop.EnumProperty(MenuValueState, required=True)
+    state = msgprop.EnumProperty(MenuValueState)
 
 
 class MenuItem(EndpointsModel):
