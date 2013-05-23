@@ -76,7 +76,7 @@ class UserHandler(utils.BaseHandler):
               "id": submission.key.id(),
               "colour": submission.colour,
               "url": submission.url,
-              "date": submission.date
+              "date": submission.date.strftime("%Y-%m-%dT%H:%M:%S.%f")
             })
         
         self.response.out.write(json.dumps({"items": items}))        
@@ -101,7 +101,7 @@ class ListHandler(utils.BaseHandler):
               "id": submission.key.id(),
               "colour": submission.colour,
               "url": submission.url,
-              "date": submission.date
+              "date": submission.date.strftime("%Y-%m-%dT%H:%M:%S.%f")
             })
             
         self.response.out.write(json.dumps({"items": items}))        

@@ -227,9 +227,12 @@ class ConnectHandler(utils.BaseHandler):
             return
 
         # Generate random verifyToken and store it in User entity
-        verifyToken = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(32))
-        user.verifyToken = verifyToken
-        user.put()
+        if user.verifyToken is None:
+            verifyToken = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(32))
+            user.verifyToken = verifyToken
+            user.put()
+        else:
+            verifyToken = user.verifyToken
 
         # Contact for receiving submissions
         contact_id = "colours_of_the_world"

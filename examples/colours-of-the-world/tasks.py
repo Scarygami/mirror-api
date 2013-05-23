@@ -26,14 +26,17 @@ import logging
 import random
 import webapp2
 from apiclient.errors import HttpError
+from google.appengine.api import files
 from google.appengine.api import taskqueue
+from google.appengine.api.images import get_serving_url
+from google.appengine.ext import blobstore
 from google.appengine.ext import ndb
 from oauth2client.client import AccessTokenRefreshError
 
 COLORS = {
     "red": {"name": "Red", "hue": 0, "min": -15, "max": 15},
     "orange": {"name": "Orange", "hue": 30, "min": 15, "max": 45},
-    "yellow": {"name": "Yellow", "hue": 60, "min": 45, "max": 90},
+    "yellow": {"name": "Yellow", "hue": 60, "min": 40, "max": 90},
     "green": {"name": "Green", "hue": 120, "min": 90, "max": 180},
     "blue": {"name": "Blue", "hue": 240, "min": 180, "max": 260},
     "indigo": {"name": "Indigo", "hue": 280, "min": 250, "max": 310},
@@ -51,7 +54,7 @@ class CreateTaskWorker(webapp2.RequestHandler):
 
         gplus_id = self.request.get("user")
         test = self.request.get("test")
-        if test == "":
+        if test == "" or test == "None":
             test = None
 
         service = get_auth_service(gplus_id, test)
@@ -122,7 +125,7 @@ class EvaluateWorker(webapp2.RequestHandler):
 
         gplus_id = self.request.get("user")
         test = self.request.get("test")
-        if test == "":
+        if test == "" or test == "None":
             test = None
 
         item_id = self.request.get("item")
@@ -158,6 +161,7 @@ class EvaluateWorker(webapp2.RequestHandler):
         attachment_metadata = service.timeline().attachments().get(
             itemId=item["id"], attachmentId=imageId).execute()
         content_url = attachment_metadata.get("contentUrl")
+        content_type = attachment_metadata.get("contentType")
         resp, content = service._http.request(content_url)
 
         if resp.status != 200:
@@ -221,10 +225,11 @@ class EvaluateWorker(webapp2.RequestHandler):
 
         recognized = []
         correct = False
+        task = user.currentTask
         for col in count:
             count[col] = count[col] * 100 / sum
             if count[col] > 40:
-                if col == user.currentTask:
+                if col == task:
                     correct = True
                     break
                 recognized.append(col)
@@ -232,9 +237,27 @@ class EvaluateWorker(webapp2.RequestHandler):
         if correct:
             item["text"] = "Congratulations!"
             service.timeline().update(id=item_id, body=item).execute()
-            # TODO: Insert submission and update scores/achievements
             user.currentTask = None
             user.put()
+            
+            # Insert submission
+            file_name = files.blobstore.create(mime_type=content_type)
+            with files.open(file_name, 'a') as f:
+                f.write(content)
+            files.finalize(file_name)
+            blob_key = files.blobstore.get_blob_key(file_name)
+            url = get_serving_url(blob_key, secure_url=True, size=640)
+
+            submission = Submission(colour=task,
+                                    hue=COLORS[task]["hue"],
+                                    blobkey=blob_key,
+                                    url=url,
+                                    parent=user.key)
+            submission.put()
+            
+            # TODO: Update scores/achievements
+            
+            # Create next task
             taskqueue.add(url="/tasks/createtask",
                           params={"user": gplus_id, "test": test},
                           method="POST")

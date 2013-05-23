@@ -53,8 +53,11 @@ class TimelineNotifyHandler(utils.BaseHandler):
             user = ndb.Key("TestUser", gplus_id).get()
         else:
             user = ndb.Key("User", gplus_id).get()
-        if user is None or user.verifyToken != verifyToken:
+        if user is None:
             logging.info("Wrong user")
+            return
+        if user.verifyToken != verifyToken:
+            logging.info("verifyToken mismatch")
             return
 
         if data["collection"] != "timeline":

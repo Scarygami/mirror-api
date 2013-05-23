@@ -85,6 +85,19 @@ body {
   font-size: 10pt;
 }
 
+.colour {
+  display: inline-block;
+  width: 14%;
+  min-width: 14%;
+  max-width: 14%;
+  float: left;
+  padding: 2px;
+}
+
+.colour img {
+  max-width: 100%;
+}
+
 #loading {
   position: absolute;
   width: 128px;
