@@ -5,3 +5,9 @@ indexes:
   - name: colour
   - name: date
     direction: desc
+    
+- kind: Submission
+  ancestor: yes
+  properties:
+  - name: date
+    direction: desc

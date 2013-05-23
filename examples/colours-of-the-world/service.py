@@ -64,7 +64,7 @@ class UserHandler(utils.BaseHandler):
         else:
             user = ndb.Key("User", gplus_id).get()
 
-        if user.get() is None:
+        if user is None:
             self.response.status = 401
             self.response.out.write(utils.createError(401, "Current user not connected."))
             return

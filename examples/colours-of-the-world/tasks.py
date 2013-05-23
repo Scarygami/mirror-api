@@ -26,6 +26,7 @@ import logging
 import random
 import webapp2
 from apiclient.errors import HttpError
+from google.appengine.api import taskqueue
 from google.appengine.ext import ndb
 from oauth2client.client import AccessTokenRefreshError
 
@@ -39,6 +40,7 @@ COLORS = {
     "violet": {"name": "Violet", "hue": 320, "min": 300, "max": 345}
 }
 
+SOURCE_ITEM_ID = "colours_of_the_world_task"
 
 class CreateTaskWorker(webapp2.RequestHandler):
     """
@@ -91,11 +93,18 @@ class CreateTaskWorker(webapp2.RequestHandler):
                 {
                     "action": "TOGGLE_PINNED"
                 }
-            ]
+            ],
+            "sourceItemId": SOURCE_ITEM_ID
         }
 
+        result = service.timeline().list(sourceItemId=SOURCE_ITEM_ID).execute()
+        if "items" in result and len(result["items"]) > 0:
+            request = service.timeline().update(id=result["items"][0]["id"], body=card)
+        else:
+            request = service.timeline().insert(body=card)
+
         try:
-            service.timeline().insert(body=card).execute()
+            request.execute()
         except AccessTokenRefreshError:
             logging.error("Failed to refresh access token.")
             return
@@ -124,6 +133,15 @@ class EvaluateWorker(webapp2.RequestHandler):
             logging.error("No valid credentials")
             return
 
+        if test is not None:
+            user = ndb.Key("TestUser", gplus_id).get()
+        else:
+            user = ndb.Key("User", gplus_id).get()            
+
+        if user.currentTask is None:
+            logging.info("User has no current task")
+            return
+            
         item = service.timeline().get(id=item_id).execute()
 
         imageId = None
@@ -189,12 +207,45 @@ class EvaluateWorker(webapp2.RequestHandler):
             Col[col_mask] = numpy.ones(R.shape, int)[col_mask]
             count[col] = numpy.count_nonzero(Col)
 
-        logging.info(count)
-        #new_item = {}
-        #new_item["menuItems"] = [{"action": "SHARE"}]
+        sum = 0
+        for col in count:
+            if count[col] < 1000:
+                count[col] = 0
+            else:
+                sum = sum + count[col]
+        
+        if sum == 0:
+            item["text"] = "No colours recognized."
+            service.timeline().update(id=item_id, body=item).execute()
+            return
 
-        #result = upload.multipart_insert(new_item, content, "image/png", service, test)
-        #logging.info(result)
+        recognized = []
+        correct = False
+        for col in count:
+            count[col] = count[col] * 100 / sum
+            if count[col] > 40:
+                if col == user.currentTask:
+                    correct = True
+                    break
+                recognized.append(col)
+
+        if correct:
+            item["text"] = "Congratulations!"
+            service.timeline().update(id=item_id, body=item).execute()
+            # TODO: Insert submission and update scores/achievements
+            user.currentTask = None
+            user.put()
+            taskqueue.add(url="/tasks/createtask",
+                          params={"user": gplus_id, "test": test},
+                          method="POST")
+        
+        else:
+            if len(recognized) == 0:
+                item["text"] = "No colours recognized."
+            else:
+                item["text"] = "Recognized " + ", ".join(recognized) + " but your current task is " + user.currentTask
+
+            service.timeline().update(id=item_id, body=item).execute()
 
 
 TASK_ROUTES = [
