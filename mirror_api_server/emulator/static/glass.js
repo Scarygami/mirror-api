@@ -1869,6 +1869,7 @@
 
   global.connectService = new ConnectService();
   global.onSignInCallback = global.connectService.connectCallback;
+  global.disconnectCallback = global.connectService.disconnectCallback;
 
   global.onload = function () {
     if (global.glassDemoMode) {
