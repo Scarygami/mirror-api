@@ -50,7 +50,12 @@ body {
   top: 4px; left: 5px;
 }
 
-#signout_button {
+#menue {
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+button {
   display: inline-block;
   padding: 1px 5px;
   cursor: pointer;
@@ -61,7 +66,7 @@ body {
   color: #333;
 }
 
-#signout_button:hover {
+button:hover, button.selected {
   background: rgba(255, 255, 255, 0.8);
 }
 
@@ -91,14 +96,16 @@ body {
 
 .colour {
   display: inline-block;
-  width: 14%;
-  min-width: 14%;
-  max-width: 14%;
+  width: 14.2%;
+  min-width: 14.2%;
+  max-width: 14.2%;
   float: left;
   padding: 2px;
 }
 
 .colour img {
+  width: 100%;
+  min-width: 100%;
   max-width: 100%;
 }
 
