@@ -159,7 +159,7 @@ the same UI as the test UI, but with the difference that the real web app
 will use calls directly to the Mirror API while the test web app uses the
 self-hosted Mirror API clone.)
 
-You can then use the API Explorer at `https://yourapp.appspot.com/_ah/api/explorer`
+You can then use the API Explorer at `https://yourapp.appspot.com/_ah/api/explorer#p/mirror/v1/`
 to directly send requests to the API.
 You will have to turn on OAuth (in the upper right corner of the Explorer) with
 the `https://www.googleapis.com/auth/userinfo.email` scope.
