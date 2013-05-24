@@ -22,7 +22,7 @@ body {
   font-weight: 300;
 }
 
-#signin, #signout, #main, #footer {
+#signin, #main, #footer {
   padding: 5px;
 }
 
@@ -41,19 +41,23 @@ body {
   left: 235px;
 }
 
+#footer {
+  height: 26px;
+}
+
 #signout {
   position: absolute;
-  top: -2px; left: ;
+  top: 4px; left: 5px;
 }
 
 #signout_button {
   display: inline-block;
-  padding: 2px 5px;
+  padding: 1px 5px;
   cursor: pointer;
   border-radius: 4px;
   text-align: center;
   background: rgba(255, 255, 255, 0.5);
-  border: 1px solid #999;
+  border: 0;
   color: #333;
 }
 
