@@ -132,7 +132,7 @@ This includes all dependencies, but won't always be the newest available version
 
 6.  Edit `mirror_api_server/client_secrets.json` and change `YOUR_CLIENT_ID`,
     `YOUR_CLIENT_SECRET` and `YOUR_API_KEY` to the information from the
-    APIs Console. Also enter a random long string as `RANDOM_SESSION_SECRET`.
+    APIs Console. Also enter a random long string as `RANDOM_SESSION_SECRET` (Click [here](http://www.random.org/strings/?num=1&len=20&digits=on&upperalpha=on&loweralpha=on&unique=on&rnd=new) to get a string with 20 random characters).
 
     If you have additional Client IDs you want to access the Mirror API with
     add them in `additional_client_ids`
