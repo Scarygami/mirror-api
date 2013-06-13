@@ -16,8 +16,6 @@
 
 """Mirror API implemented using Google Cloud Endpoints."""
 
-import monkey_patch
-
 import json
 import os
 import logging

@@ -16,8 +16,6 @@
 
 """Model definition for the Mirror API."""
 
-import monkey_patch
-
 from google.appengine.ext import ndb
 from google.appengine.ext.ndb import msgprop
 from protorpc import messages
