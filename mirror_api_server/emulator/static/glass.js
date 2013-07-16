@@ -182,7 +182,7 @@
               "contentUrl": "https://lh5.googleusercontent.com/-L7PvYS3WeJQ/TvqB-VcRklI/AAAAAAAAP9U/eEBCbBNS9bY/s1012/IMG_0135-2.jpg"
             }
           ],
-          "menuItems": [{"action": "SHARE"}, {"action": "REPLY"}],
+          "menuItems": [{"action": "SHARE"}, {"action": "REPLY"}, {"action": "TOGGLE_PINNED"}],
           "created": "2013-04-12T15:31:41.000000",
           "updated": "2013-04-12T15:31:41.000000",
           "id": 1
@@ -257,7 +257,7 @@
         "values": [{
           "state": "DEFAULT",
           "displayName": "Pin/Unpin card",
-          "iconUrl": "images/success.png"
+          "iconUrl": "images/pin.png"
         }]
       }
     };
@@ -306,6 +306,12 @@
       || global.navigator.mozGetUserMedia || global.navigator.msGetUserMedia;
 
     function cardSort(a, b) {
+      if (a.isPinned || b.isPinned) {
+        if (!b.isPinned) { return -1; }
+        if (!a.isPinned) { return 1; }
+        if (!(b.date && a.date)) { return 1; }
+        return a.date.getTime() - b.date.getTime();
+      }
       if (a.type === cardType.CLOCK_CARD) { return -1; }
       if (b.type === cardType.CLOCK_CARD) { return 1; }
       if (!(b.date && a.date)) { return 1; }
@@ -379,6 +385,7 @@
       this.active = false;
       this.parent = parent;
       this.bundleId = data.bundleId;
+      this.isPinned = !!data.isPinned;
       this.isBundleCover = !!data.isBundleCover;
       tmpDate = data.displayDate || data.updated || data.created;
       if (tmpDate) {
@@ -637,6 +644,7 @@
      * @param {boolean=} action
      */
     Card.prototype.tap = function (action) {
+      var i;
       if (this.type === cardType.SHARE_CARD) {
         this.shareCard();
         return;
@@ -657,7 +665,16 @@
       // "power on"
       if (this.cards && this.cards.length > 0) {
         if (this.type !== cardType.HTML_BUNDLE_CARD) { this.cards.sort(cardSort); }
-        emulator.switchToCard(this.cards[0]);
+        i = 0;
+        if (this.type === cardType.START_CARD) {
+          for (i = 0; i < this.cards.length; i++) {
+            if (this.cards[i].type === cardType.CLOCK_CARD) {
+              break;
+            }
+          }
+          if (i >= this.cards.length) { i = 0; }
+        }
+        emulator.switchToCard(this.cards[i]);
         return;
       }
     };
@@ -1052,7 +1069,11 @@
       this.cardDiv.style.opacity = 1;
       this.actionDiv.style.paddingTop = "0%";
       if (!!actions[this.action]) {
-        this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
+        if (this.action == "TOGGLE_PINNED") {
+          this.textDiv.appendChild(doc.createTextNode((this.parent.isPinned ? "Unpin" : "Pin")));
+        } else {
+          this.textDiv.appendChild(doc.createTextNode(actions[this.action].values[0].displayName));
+        }
         this.iconDiv.src = actions[this.action].values[0].iconUrl;
       } else {
         this.textDiv.appendChild(doc.createTextNode(this.data.values[0].displayName));
@@ -1157,7 +1178,6 @@
 
       function showMap(lat1, long1, lat2, long2) {
         var url;
-        // https://maps.googleapis.com/maps/api/staticmap?
         url = "https://maps.googleapis.com/maps/api/staticmap?sensor=false&size=640x360&style=feature:all|element:all|saturation:-100|lightness:-25|gamma:0.5|visibility:simplified&style=feature:roads|element:geometry&style=feature:landscape|element:geometry|lightness:-25";
         if (!!lat2 && !!long2) {
           url += "&markers=color:0xF7594A%7C" + lat2 + "," + long2;
@@ -1175,7 +1195,6 @@
 
       if (global.navigator.geolocation) {
         global.navigator.geolocation.getCurrentPosition(function (loc) {
-          var data = {};
           if (!global.glassDemoMode) {
             if (loc.coords && loc.coords.longitude && loc.coords.latitude) {
               showMap(loc.coords.latitude, loc.coords.longitude, me.parent.data.location.latitude, me.parent.data.location.longitude);
@@ -1214,6 +1233,15 @@
       case "NAVIGATE":
         this.startNavigation();
         break;
+      case "TOGGLE_PINNED":
+        this.parent.isPinned = !this.parent.isPinned;
+        if (!global.glassDemoMode) {
+          mirror.timeline.patch({"id": this.parent.id, "resource": {"isPinned": true}}).execute(function (resp) {
+            console.log(resp);
+          });
+        }
+        this.down();
+        break;
       }
     };
 
@@ -1249,7 +1277,7 @@
         recognition.onerror = function (e) {
           console.log(e);
         };
-        recognition.onend = function (e) {
+        recognition.onend = function () {
           if (photo) {
             emulator.switchToCard(me.cards[0]);
           }
@@ -1467,7 +1495,7 @@
         mouseY = e.changedTouches[0].pageY - activeCard.cardDiv.offsetTop;
       }
     }
-    
+
     function onMouseDown(e) {
       e.changedTouches = [{pageX: e.pageX, pageY: e.pageY}];
       onTouchStart(e);
@@ -1510,7 +1538,6 @@
     }
 
     function onMouseUp(e) {
-      var x, y;
       if (e.which !== 2 && e.button !== 2) {
         e.changedTouches = [{pageX: e.pageX, pageY: e.pageY}];
         onTouchEnd(e);
@@ -1562,7 +1589,7 @@
     }
 
     function handleCards(result) {
-      var i, l, card, updatedBundles = [], bundleId, bundleCard;
+      var i, l, card, updatedBundles = [], bundleId;
       if (result && result.items) {
         l = result.items.length;
         for (i = 0; i < l; i++) {
@@ -1713,12 +1740,22 @@
     function onKeyDown(e) {
       if (activeCard) {
         switch (e.keyCode) {
-        case 37: activeCard.right(); break;
-        case 38: activeCard.up(); break;
-        case 39: activeCard.left(); break;
-        case 40: activeCard.down(); break;
+        case 37:
+          activeCard.right();
+          break;
+        case 38:
+          activeCard.up();
+          break;
+        case 39:
+          activeCard.left();
+          break;
+        case 40:
+          activeCard.down();
+          break;
         case 13:
-        case 32: activeCard.tap(); break;
+        case 32:
+          activeCard.tap();
+          break;
         }
       }
     }
@@ -1734,7 +1771,6 @@
       mainDiv.onmousedown = onMouseDown;
       mainDiv.onmouseup = onMouseUp;
       doc.onkeydown = onKeyDown;
-      //TODO
       mainDiv.onselectstart = function () { return false; };
     };
 
@@ -1773,7 +1809,7 @@
       var channel, socket;
       channel = new global.goog.appengine.Channel(token);
       socket = channel.open();
-      socket.onopen = function (e) {
+      socket.onopen = function () {
         console.log("Channel connected");
         fetchCards();
       };
