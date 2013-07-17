@@ -117,10 +117,10 @@ button:hover, button.selected {
 #loading {
   display: block;
   position: fixed;
-  width: 200px;
-  height: 200px;
-  top: 300px;
+  width: 150px;
+  height: 150px;
+  top: 250px;
   left: 50%;
-  margin-left: -100px;
+  margin-left: -75px;
   opacity: 0.5;
 }
