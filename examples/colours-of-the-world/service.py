@@ -27,6 +27,7 @@ import random
 import string
 
 from google.appengine.ext import ndb
+from google.appengine.datastore.datastore_query import Cursor
 from oauth2client.client import AccessTokenRefreshError
 
 class IndexHandler(utils.BaseHandler):
@@ -46,65 +47,49 @@ class IndexHandler(utils.BaseHandler):
         self.response.out.write(template.render({"client_id": utils.CLIENT_ID, "state": state, "scopes": scopes, "reconnect": reconnect}))
 
 
-class UserHandler(utils.BaseHandler):
-
-    def get(self, test):
-        """Retrieve submissions for the current user."""
-        
-        self.response.content_type = "application/json"
-
-        gplus_id = self.session.get("gplus_id")
-        if gplus_id is None:
-            self.response.status = 401
-            self.response.out.write(utils.createError(401, "Current user not connected."))
-            return
-
-        if test is not None:
-            user = ndb.Key("TestUser", gplus_id).get()
-        else:
-            user = ndb.Key("User", gplus_id).get()
-
-        if user is None:
-            self.response.status = 401
-            self.response.out.write(utils.createError(401, "Current user not connected."))
-            return
-
-        items = []
-        submissions = Submission.query(ancestor=user.key).order(-Submission.date).fetch(50)
-        for submission in submissions:
-            items.append({
-              "id": submission.key.id(),
-              "colour": submission.colour,
-              "url": submission.url,
-              "date": submission.date.strftime("%Y-%m-%dT%H:%M:%S.%f")
-            })
-        
-        self.response.out.write(json.dumps({"items": items}))        
-        
-
 class ListHandler(utils.BaseHandler):
 
-    def get(self, test, colour):
-        """Retrieve recent submission, limited to a certain colour."""
+    def get(self, test):
+        """Retrieve recent submissions"""
 
         self.response.content_type = "application/json"
 
         qry = Submission.query()
-        if colour is not None:
-            qry = qry.filter(Submission.colour == colour)
         qry = qry.order(-Submission.date)
 
         items = []
-        submissions = qry.fetch(50)
+        users = set()
+        curs = Cursor(urlsafe=self.request.get('cursor'))
+        submissions, next_curs, more = qry.fetch_page(10, start_cursor=curs)
         for submission in submissions:
             items.append({
               "id": submission.key.id(),
+              "user": submission.key.parent().id(),
               "colour": submission.colour,
               "url": submission.url,
               "date": submission.date.strftime("%Y-%m-%dT%H:%M:%S.%f")
             })
-            
-        self.response.out.write(json.dumps({"items": items}))        
+            users.add(submission.key.parent().id())
+
+        user_data = dict()
+        for user_id in users:
+          user = ndb.Key("User", user_id).get()
+          if user is None:
+              user = ndb.Key("TestUser", user_id).get()
+
+          if user is not None:
+            user_data[user_id] = {
+              "displayName": user.displayName,
+              "imageUrl": user.imageUrl
+            }
+
+        response = {}
+        response["items"] = items
+        response["users"] = user_data
+        if more and next_curs:
+          response["next"] = next_curs.urlsafe()
+
+        self.response.out.write(json.dumps(response))
 
             
 class RemoveHandler(utils.BaseHandler):
@@ -130,7 +115,6 @@ class RemoveHandler(utils.BaseHandler):
 
 SERVICE_ROUTES = [
     (r"(/test)?/", IndexHandler),
-    (r"(/test)?/list/?(red|orange|yellow|green|blue|indigo|violet)?", ListHandler),
-    (r"(/test)?/user", UserHandler),
+    (r"(/test)?/list", ListHandler),
     (r"(/test)?/remove/(.+)", RemoveHandler)
 ]
