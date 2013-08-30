@@ -478,7 +478,7 @@ class MirrorApi(remote.Service):
                       path="timeline/{itemId}/attachments/{attachmentId}", http_method="DELETE",
                       name="timeline.attachments.delete")
     def attachments_delete(self, request):
-        """Retrieve metainfo for a single attachments for a timeline card"""
+        """Remove metainfo for a single attachments for a timeline card"""
 
         current_user = endpoints.get_current_user()
         if current_user is None:
