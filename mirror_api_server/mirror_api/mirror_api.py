@@ -31,6 +31,7 @@ from protorpc import remote
 
 from models import TimelineItem
 from models import MenuAction
+from models import UserAction
 from models import Operation
 from models import Contact
 from models import Subscription
@@ -105,9 +106,6 @@ class MirrorApi(remote.Service):
                         if value.displayName is None or value.iconUrl is None:
                             raise endpoints.BadRequestException("Each value needs to contain displayName and iconUrl.")
 
-        if card.htmlPages is not None and len(card.htmlPages) > 0 and card.bundleId is not None:
-            raise endpoints.BadRequestException("Can't mix HTML and Card bundle.")
-
         card.isDeleted = False
 
         card.put()
@@ -137,9 +135,6 @@ class MirrorApi(remote.Service):
                         if value.displayName is None or value.iconUrl is None:
                             raise endpoints.BadRequestException("Each value needs to contain displayName and iconUrl.")
 
-        if card.htmlPages is not None and len(card.htmlPages) > 0 and card.bundleId is not None:
-            raise endpoints.BadRequestException("Can't mix HTML and Card bundle.")
-
         card.isDeleted = False
 
         card.put()
@@ -157,9 +152,6 @@ class MirrorApi(remote.Service):
 
         if card.isDeleted:
             raise endpoints.NotFoundException("Card has been deleted")
-
-        if card.htmlPages is not None and len(card.htmlPages) > 0 and card.bundleId is not None:
-            raise endpoints.BadRequestException("Can't mix HTML and Card bundle.")
 
         card.put()
 
@@ -180,9 +172,6 @@ class MirrorApi(remote.Service):
 
         if card.isDeleted:
             raise endpoints.NotFoundException("Card has been deleted")
-
-        if card.htmlPages is not None and len(card.htmlPages) > 0 and card.bundleId is not None:
-            raise endpoints.BadRequestException("Can't mix HTML and Card bundle.")
 
         card.put()
 
@@ -221,7 +210,6 @@ class MirrorApi(remote.Service):
         card.creator = None
         card.displayTime = None
         card.html = None
-        card.htmlPages = []
         card.inReplyTo = None
         card.isBundleCover = None
         card.isPinned = None
@@ -229,6 +217,7 @@ class MirrorApi(remote.Service):
         card.notification = None
         card.recipients = []
         card.sourceItemId = None
+        card.speakableType = None
         card.speakableText = None
         card.text = None
         card.title = None
@@ -529,37 +518,45 @@ class MirrorApi(remote.Service):
         data = None
         operation = None
 
-        if action.action == MenuAction.SHARE:
+        if action.action == UserAction.SHARE:
             operation = Operation.UPDATE
             data = {}
             data["collection"] = "timeline"
             data["itemId"] = action.itemId
             data["operation"] = operation.name
-            data["userActions"] = [{"type": MenuAction.SHARE.name}]
+            data["userActions"] = [{"type": UserAction.SHARE.name}]
 
-        if action.action == MenuAction.REPLY or action.action == MenuAction.REPLY_ALL:
+        if action.action == UserAction.REPLY or action.action == UserAction.REPLY_ALL:
             operation = Operation.INSERT
             data = {}
             data["collection"] = "timeline"
             data["itemId"] = action.itemId
             data["operation"] = operation.name
-            data["userActions"] = [{"type": MenuAction.REPLY.name}]
+            data["userActions"] = [{"type": UserAction.REPLY.name}]
 
-        if action.action == MenuAction.DELETE:
+        if action.action == UserAction.DELETE:
             operation = Operation.DELETE
             data = {}
             data["collection"] = "timeline"
             data["itemId"] = action.itemId
             data["operation"] = operation.name
-            data["userActions"] = [{"type": MenuAction.DELETE.name}]
+            data["userActions"] = [{"type": UserAction.DELETE.name}]
 
-        if action.action == MenuAction.CUSTOM:
+        if action.action == UserAction.CUSTOM:
             operation = Operation.UPDATE
             data = {}
             data["collection"] = "timeline"
             data["itemId"] = action.itemId
             data["operation"] = operation.name
-            data["userActions"] = [{"type": MenuAction.CUSTOM.name, "payload": action.value}]
+            data["userActions"] = [{"type": UserAction.CUSTOM.name, "payload": action.value}]
+
+        if action.action == UserAction.LAUNCH:
+            operation = Operation.UPDATE
+            data = {}
+            data["collection"] = "timeline"
+            data["itemId"] = action.itemId
+            data["operation"] = operation.name
+            data["userActions"] = [{"type": UserAction.LAUNCH.name}]
 
         if data is not None and operation is not None:
             header = {"Content-type": "application/json"}

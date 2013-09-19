@@ -36,6 +36,8 @@ class MenuAction(messages.Enum):
     NAVIGATE = 7
     TOGGLE_PINNED = 8
     CUSTOM = 9
+    VIEW_WEBSITE = 10
+    PLAY_VIDEO  = 11
 
 
 class MenuValue(EndpointsModel):
@@ -53,6 +55,7 @@ class MenuValue(EndpointsModel):
 class MenuItem(EndpointsModel):
     action = msgprop.EnumProperty(MenuAction, required=True)
     id = ndb.StringProperty()
+    payload = ndb.StringProperty()
     removeWhenSelected = ndb.BooleanProperty(default=False)
     values = ndb.LocalStructuredProperty(MenuValue, repeated=True)
 
@@ -112,22 +115,15 @@ class TimelineItem(EndpointsModel):
     """
 
     class Attachment(EndpointsModel):
-        """Attachment to a timeline card
-
-        Due to limitations in Cloud Endpoints this works a bit differently than
-        the attachments in the official API. Normally you would add attachments
-        by uploading the media data (as image/audio/video). Attachments in this
-        implementation can only by of type image and are represented either as
-        URL or Data-URI and can be added/retrieved/updated directly by filling
-        the attachments field in the timeline.insert method.
-        """
+        """Represents media content, such as a photo, that can be attached to a timeline item."""
         id = ndb.StringProperty()
         contentType = ndb.StringProperty()
         contentUrl = ndb.StringProperty()
         isProcessingContent = ndb.BooleanProperty(default=False)
 
     class TimelineContact(EndpointsModel):
-
+        """A person or group that can be used as a creator or a contact."""
+    
         class ContactType(messages.Enum):
             INDIVIDUAL = 1
             GROUP = 2
@@ -154,7 +150,6 @@ class TimelineItem(EndpointsModel):
         "creator",
         "displayTime",
         "html",
-        "htmlPages",
         "inReplyTo",
         "isBundleCover",
         "isDeleted",
@@ -166,6 +161,7 @@ class TimelineItem(EndpointsModel):
         "recipients",
         "sourceItemId",
         "speakableText",
+        "speakableType",
         "text",
         "title",
         "updated"
@@ -180,7 +176,6 @@ class TimelineItem(EndpointsModel):
     creator = ndb.LocalStructuredProperty(TimelineContact)
     displayTime = EndpointsDateTimeProperty()
     html = ndb.TextProperty()
-    htmlPages = ndb.TextProperty(repeated=True)
     inReplyTo = ndb.IntegerProperty()
     isBundleCover = ndb.BooleanProperty()
     isDeleted = ndb.BooleanProperty()
@@ -192,6 +187,7 @@ class TimelineItem(EndpointsModel):
     recipients = ndb.LocalStructuredProperty(TimelineContact, repeated=True)
     sourceItemId = ndb.StringProperty()
     speakableText = ndb.TextProperty()
+    speakableType = ndb.TextProperty()
     text = ndb.StringProperty()
     title = ndb.StringProperty()
     updated = EndpointsDateTimeProperty(auto_now=True)
@@ -254,12 +250,22 @@ class TimelineItem(EndpointsModel):
 class Contact(EndpointsModel):
     """A person or group that can be used as a creator or a contact."""
 
+    class Command(EndpointsModel):
+    
+        class CommandType(messages.Enum):
+            TAKE_A_NOTE = 1
+            POST_AN_UPDATE = 2
+
+        """A single menu command that is part of a Contact."""
+        type = msgprop.EnumProperty(CommandType, required=True)
+    
     class ContactType(messages.Enum):
         INDIVIDUAL = 1
         GROUP = 2
 
     _message_fields_schema = (
         "id",
+        "acceptCommands",
         "acceptTypes",
         "displayName",
         "imageUrls",
@@ -271,12 +277,14 @@ class Contact(EndpointsModel):
 
     user = EndpointsUserProperty(required=True, raise_unauthorized=True)
 
+    acceptCommands = ndb.LocalStructuredProperty(Command, repeated=True)
     acceptTypes = ndb.StringProperty(repeated=True)
     displayName = ndb.StringProperty(required=True)
     imageUrls = ndb.StringProperty(repeated=True)
     phoneNumber = ndb.StringProperty()
     priority = ndb.IntegerProperty()
     source = ndb.StringProperty()
+    speakableName = ndb.StringProperty()
     type = msgprop.EnumProperty(ContactType)
 
     def IdSet(self, value):
@@ -309,7 +317,18 @@ class Subscription(EndpointsModel):
     operation = msgprop.EnumProperty(Operation, repeated=True)
     callbackUrl = ndb.StringProperty(required=True)
 
+    
+class UserAction(messages.Enum):
+    """Represents an action taken by the user that triggers a notification."""
+    REPLY = 1
+    REPLY_ALL = 2
+    DELETE = 3
+    SHARE = 4
+    PIN = 5
+    UNPIN = 6
+    LAUNCH = 7
 
+    
 class Action(messages.Message):
     """ProtoRPC Message Class for actions performed on timeline cards
 
@@ -319,7 +338,7 @@ class Action(messages.Message):
 
     collection = messages.StringField(1, default="timeline")
     itemId = messages.IntegerField(2, required=True)
-    action = messages.EnumField(MenuAction, 3, required=True)
+    action = messages.EnumField(UserAction, 3, required=True)
     value = messages.StringField(4)
 
 
