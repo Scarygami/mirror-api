@@ -247,6 +247,19 @@ body {
   margin-right: 10px;
 }
 
+.card_type_command .commands {
+  margin-top: 3px;
+  width: auto !important;
+  max-width: 400px;
+}
+
+.card_type_command .card_text {
+  position: relative;
+  width: auto !important;
+  border: 0;
+  font-size: 40px;
+}
+
 .card_type_clock > .card_text {
   text-align: center;
   width: 100%;

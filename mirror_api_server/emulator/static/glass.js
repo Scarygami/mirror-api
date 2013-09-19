@@ -269,7 +269,14 @@
       "<div class=\"card_date\"></div>" +
       "<div class=\"card_text\"></div>";
     templates[cardType.COMMAND_CARD] =
-      "<div class=\"card_text\"></div>";
+      "<article>" +
+      "  <section>" +
+      "    <div class=\"layout-figure\">" +
+      "      <div class=\"align-center card_text\"><p>ok glass,</p></div>" +
+      "      <div class=\"text-normal commands\"></div>" +
+      "    </div>" +
+      "  </section>" +
+      "</article>";
     templates[cardType.CONTENT_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
       "<img class=\"card_icon\" src=\"images/corner.png\"></div>" +
@@ -744,6 +751,9 @@
         break;
       case cardType.CLOCK_CARD:
         this.cardDiv.classList.add("card_type_clock");
+        break;
+      case cardType.COMMAND_CARD:
+        this.cardDiv.classList.add("card_type_command");
         break;
       case cardType.ACTION_CARD:
         this.cardDiv.classList.add("card_type_action");
@@ -1307,7 +1317,15 @@
     };
 
     ClockCard.prototype.tap = function () {
-      emulator.switchToCard(this.cards[0]);
+      var me = this;
+      if (!!recognition) {
+        recognition.onend = function () {
+          emulator.switchToCard(me.cards[0]);
+        }
+        recognition.stop();
+      } else {
+        emulator.switchToCard(this.cards[0]);
+      }
     };
 
     /** @constructor */
@@ -1353,8 +1371,15 @@
     };
 
     CommandCard.prototype.createCardElements = function () {
+      var p;
       this.createDiv();
-      this.textDiv.appendChild(doc.createTextNode("ok glass... take a picture"));
+      this.commandsDiv = this.cardDiv.querySelector(".commands");
+      if (!!global.navigator.getUserMedia) {
+        this.addCard(new CameraCard("camera", this));
+        p = doc.createElement("p");
+        p.appendChild(doc.createTextNode("take a picture"));
+        this.commandsDiv.appendChild(p);
+      }
     };
 
     CommandCard.prototype.updateDisplayDate = function () {
@@ -1362,6 +1387,7 @@
     };
 
     CommandCard.prototype.tap = function () {
+      recognition.stop();
       emulator.switchToCard(this.cards[0]);
     };    
 
@@ -1776,8 +1802,8 @@
     this.slideToCard = function (newcard) {
       var oldcard = activeCard;
       activeCard = newcard;
-      newcard.show();
       oldcard.hide();
+      newcard.show();
     };
 
     /** Go straight to a card without fancy effects */
@@ -1836,7 +1862,7 @@
     };
 
     this.initialize = function () {
-      var card, card2;
+      var card;
 
       mainDiv.innerHTML = "";
 
@@ -1847,13 +1873,8 @@
       card = new ClockCard("clock", startCard);
       startCard.addCard(card);
 
-      card2 = new CommandCard("command", card);
-      card.addCard(card2);
-      
-      if (!!global.navigator.getUserMedia) {
-        card2.addCard(new CameraCard("camera", card2));
-      }
-
+      card.addCard(new CommandCard("command", card));
+     
       mapCard = new Card(cardType.CONTENT_CARD, "map", undefined, {"id": "map"});
 
       if (global.glassDemoMode) {
