@@ -22,6 +22,7 @@ import logging
 import sys
 import urllib2
 
+from google.appengine.api.app_identity import get_application_id
 from google.appengine.api import channel
 from google.appengine.ext import blobstore
 from google.appengine.ext import endpoints
@@ -58,7 +59,8 @@ API_DESCRIPTION = ("Mirror API implemented using Google Cloud "
 
 @endpoints.api(name="mirror", version="v1",
                description=API_DESCRIPTION,
-               allowed_client_ids=_CLIENT_IDs)
+               allowed_client_ids=_CLIENT_IDs,
+               hostname=get_application_id() + ".appspot.com")
 class MirrorApi(remote.Service):
     """Class which defines the Mirror API v1."""
 

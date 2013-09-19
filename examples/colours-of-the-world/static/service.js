@@ -30,32 +30,37 @@
 
   function Service() {
     var
-      state, gapi;
+      state, gapi, cols = {}, loading, loadmore;
 
-    function showSubmissions(submissions) {
-      var div = doc.getElementById("submissions"), img, i, l, cols;
-      cols = div.querySelectorAll(".colour");
-      l = cols.length;
-      for (i = 0; i < l; i++) {
-        cols[i].innerHTML = "";
-      }
+    function showSubmissions(response) {
+      var img, i, l, submissions = response.items;
       l = submissions.length;
       for (i = 0; i < l; i++) {
         img = doc.createElement("img");
         img.src = submissions[i].url;
-        doc.getElementById(submissions[i].colour).appendChild(img);
+        if (!cols[submissions[i].colour]) {
+          cols[submissions[i].colour] = doc.getElementById(submissions[i].colour);
+        }
+        cols[submissions[i].colour].appendChild(img);
       }
-      doc.getElementById("loading").style.visibility = "hidden";
+      if (!!response.next) {
+        loadmore.style.display = "inline-block";
+        loadmore.setAttribute("data-cursor", response.next);
+      } else {
+        loadmore.style.display = "none";
+      }
+      loading.style.visibility = "hidden";
     }
       
-    function fetchSubmissions() {
-      var xhr = new global.XMLHttpRequest();
+    function fetchSubmissions(cursor) {
+      var xhr = new global.XMLHttpRequest(), url = global.location.pathname + "list";
+      loading.style.visibility = "visible";
       xhr.onreadystatechange = function () {
         var response;
         if (xhr.readyState === 4) {
           if (xhr.status === 200) {
             response = JSON.parse(xhr.responseText);
-            showSubmissions(response.items);
+            showSubmissions(response);
           } else {
             console.log("Error " + xhr.status + ": " + xhr.statusText);
             if (xhr.responseText) {
@@ -65,13 +70,20 @@
           }
         }
       };
-      
-      xhr.open("GET", global.location.pathname + "list", true);
+      if (!!cursor) {
+        url += "?cursor=" + cursor;
+      }
+      xhr.open("GET", url, true);
       xhr.send();
     }
       
     function initialize() {
       gapi = global.gapi.client;
+      loading = doc.getElementById("loading");
+      loadmore = doc.getElementById("loadmore");
+      loadmore.onclick = function () {
+        fetchSubmissions(loadmore.getAttribute("data-cursor"));
+      };
       fetchSubmissions();
     }
 
@@ -170,10 +182,6 @@
         doc.getElementById("colours").style.display = "none";
         doc.getElementById("loading").style.visibility = "hidden";
       }
-    };
-
-    this.getPosts = function () {
-      return sources;
     };
   }
 

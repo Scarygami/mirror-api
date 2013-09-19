@@ -49,7 +49,7 @@
       mainDiv = doc.getElementById("glass"),
       activeCard,
       timer, running = false,
-      recognition, mouseX, mouseY, glassevent, cardType, Card, ActionCard, ClockCard, ReplyCard, CameraCard, timestep,
+      recognition, mouseX, mouseY, glassevent, cardType, Card, ActionCard, ClockCard, CommandCard, ReplyCard, CameraCard, timestep,
       photoCount = 0, lastLocationUpdate = 0, Tween;
 
     /**
@@ -101,7 +101,8 @@
       REPLY_CARD: 6,
       HTML_BUNDLE_CARD: 7,
       CARD_BUNDLE_CARD: 8,
-      CAMERA_CARD: 9
+      CAMERA_CARD: 9,
+      COMMAND_CARD: 10
     };
 
     demoCards = {
@@ -267,6 +268,8 @@
     templates[cardType.CLOCK_CARD] =
       "<div class=\"card_date\"></div>" +
       "<div class=\"card_text\"></div>";
+    templates[cardType.COMMAND_CARD] =
+      "<div class=\"card_text\"></div>";
     templates[cardType.CONTENT_CARD] =
       "<iframe frameborder=\"0\" allowtransparency=\"true\" scrolling=\"no\" src=\"inner.html\" class=\"card_iframe\"></iframe>" +
       "<img class=\"card_icon\" src=\"images/corner.png\"></div>" +
@@ -298,7 +301,6 @@
     if (global.webkitSpeechRecognition) {
       recognition = new global.webkitSpeechRecognition();
       recognition.lang = "en-US";
-      recognition.grammars.addFromUri("grammar.grxml", 10);
     }
 
     global.navigator.getUserMedia =
@@ -770,7 +772,7 @@
       this.active = false;
       this.cardDiv.style.display = "none";
 
-      if (this.type === cardType.CLOCK_CARD && recognition) {
+      if ((this.type === cardType.CLOCK_CARD || this.type === cardType.COMMAND_CARD) && recognition) {
         recognition.stop();
       }
     };
@@ -1026,23 +1028,28 @@
     };
 
     Card.prototype.createActionCards = function () {
-      var i, l;
+      var i, l, chk_skip;
       this.actionCards = this.actionCards || [];
       l = this.data.menuItems.length;
       for (i = 0; i < l; i++) {
         if (this.data.menuItems[i].action) {
+          chk_skip = false;
           // For menuItem NAVIGATE a location has to be attached to the card
           if (this.data.menuItems[i].action == "NAVIGATE" &&
               (!this.data.location || !this.data.location.latitude || !this.data.location.longitude)) {
-            continue;
+            chk_skip = true;
           }
           // For menuItem READ_ALOUD speakableText or text have to be set
           if (this.data.menuItems[i].action == "READ_ALOUD" &&
               !this.data.text &&
               !this.data.speakableText) {
-            continue;
+            chk_skip = true;
           }
-          this.actionCards.push(new ActionCard(this.id + "_" + this.data.menuItems[i].action, this, this.data.menuItems[i]));
+          if (!chk_skip) {
+            this.actionCards.push(
+              new ActionCard(this.id + "_" + this.data.menuItems[i].action, this, this.data.menuItems[i])
+            );
+          }
         }
       }
     };
@@ -1254,6 +1261,63 @@
     ClockCard.prototype = new Card();
 
     ClockCard.prototype.show = function () {
+      var speech_result = "", me = this, commands = false;
+      Card.prototype.show.call(this);
+
+      if (recognition) {
+
+        recognition.onresult = function (e) {
+          var i, interim = "";
+          for (i = e.resultIndex; i < e.results.length; i++) {
+            if (e.results[i].isFinal) {
+              speech_result += e.results[i][0].transcript;
+            } else {
+              interim += e.results[i][0].transcript;
+            }
+          }
+          interim = speech_result + interim;
+          if (interim.indexOf("okay") >= 0 || interim.indexOf("glass") >= 0 || interim.indexOf("plus") >= 0) {
+            commands = true;
+            recognition.stop();
+          }
+        };
+        recognition.onerror = function (e) {
+          console.log(e);
+        };
+        recognition.onend = function () {
+          if (commands) {
+            emulator.switchToCard(me.cards[0]);
+          }
+        };
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.start();
+      }
+    };
+
+    ClockCard.prototype.createCardElements = function () {
+      this.createDiv();
+      this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+      this.textDiv.appendChild(doc.createTextNode("\"ok glass\""));
+    };
+
+    ClockCard.prototype.updateDisplayDate = function () {
+      this.dateDiv.innerHTML = "";
+      this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+    };
+
+    ClockCard.prototype.tap = function () {
+      emulator.switchToCard(this.cards[0]);
+    };
+
+    /** @constructor */
+    CommandCard = function (id, parent) {
+      this.init(cardType.COMMAND_CARD, id, parent);
+    };
+
+    CommandCard.prototype = new Card();
+
+    CommandCard.prototype.show = function () {
       var speech_result = "", me = this, photo = false;
       Card.prototype.show.call(this);
 
@@ -1288,21 +1352,18 @@
       }
     };
 
-    ClockCard.prototype.createCardElements = function () {
+    CommandCard.prototype.createCardElements = function () {
       this.createDiv();
-      this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
-      this.textDiv.appendChild(doc.createTextNode("\"ok glass\""));
+      this.textDiv.appendChild(doc.createTextNode("ok glass... take a picture"));
     };
 
-    ClockCard.prototype.updateDisplayDate = function () {
-      this.dateDiv.innerHTML = "";
-      this.dateDiv.appendChild(doc.createTextNode((new Date()).formatTime()));
+    CommandCard.prototype.updateDisplayDate = function () {
+      // Nothing to do here
     };
 
-    ClockCard.prototype.tap = function () {
+    CommandCard.prototype.tap = function () {
       emulator.switchToCard(this.cards[0]);
-    };
-
+    };    
 
     /** @constructor */
     ReplyCard = function (id, parent) {
@@ -1723,8 +1784,8 @@
     this.switchToCard = function (newcard) {
       var oldcard = activeCard;
       activeCard = newcard;
-      newcard.show();
       oldcard.hide();
+      newcard.show();
     };
 
     /** Only hide style of parent card */
@@ -1775,7 +1836,7 @@
     };
 
     this.initialize = function () {
-      var card;
+      var card, card2;
 
       mainDiv.innerHTML = "";
 
@@ -1786,8 +1847,11 @@
       card = new ClockCard("clock", startCard);
       startCard.addCard(card);
 
+      card2 = new CommandCard("command", card);
+      card.addCard(card2);
+      
       if (!!global.navigator.getUserMedia) {
-        card.addCard(new CameraCard("camera", card));
+        card2.addCard(new CameraCard("camera", card2));
       }
 
       mapCard = new Card(cardType.CONTENT_CARD, "map", undefined, {"id": "map"});
