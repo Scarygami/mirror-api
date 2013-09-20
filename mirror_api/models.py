@@ -16,6 +16,9 @@
 
 """Model definition for the Mirror API."""
 
+import sys
+sys.path.insert(1, 'endpoints-proto-datastore')
+
 from google.appengine.ext import ndb
 from google.appengine.ext.ndb import msgprop
 from protorpc import messages

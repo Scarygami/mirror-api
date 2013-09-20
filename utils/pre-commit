@@ -7,7 +7,7 @@ hooks_dir = os.path.dirname(os.path.abspath(__file__))
 relative_dir = os.path.join(hooks_dir, '../..')
 project_root = os.path.abspath(relative_dir)
 
-paths = ['mirror_api_server/', 'examples/hangout-comment-tracker/', 'examples/colours-of-the-world/']
+paths = ['']
 
 for path in paths:
 

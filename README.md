@@ -29,34 +29,34 @@ for a detailed description of what this does and how it works.
 
 ### Parts
 
-`mirror_api_server`
-is meant to be hosted on Google App Engine and includes several parts.
+This package is meant to be hosted on Google App Engine and includes several parts.
 
 `mirror_api`
 is an implementation of the Mirror API using Google Cloud Endpoints.
 
-`static/glass`
+`emulator`
 contains a browser based emulator for Glass.
 (can be accessed at `yourapp.appspot.com/glass/`)
 
-`service.py`
+`service/service.py`
 is a simple playground implementation for a Web Application that makes use of
 the Mirror API.
 
-`auth.py`
+`service/auth.py`
 handles all authentication and storing of credentials when a user signs up
 for the demo services. Sets up contacts and subscriptions when the user
 first connects. Also handles disconnection by removing all contacts and
 subscriptions and deleting credentials when the user wants to disconnect.
 
-`notify.py`
+`service/notify.py`
 handles subscription post requests coming from the Mirror API and forwards
 the requests to the relevant demo services.
 
 `demos/*.py`
 are demo services that react to incoming notifications.
+You can find more advanced examples in [this repository](https://github.com/Scarygami/mirror-api-examples)
 
-### Getting the code - The proper way
+### Getting and setting up the repository
 
 1.  Clone (or fork and clone) this repository
 
@@ -71,38 +71,6 @@ are demo services that react to incoming notifications.
     git submodule init
     git submodule update
     ```
-
-3.  Create symlink `mirror_api_server/endpoints_proto_datastore` to
-    `endpoints-proto-datastore/endpoints_proto_datastore`
-
-    Linux/Unix-based systems:
-    ```
-    cd mirror_api_server
-    ln -s ../endpoints-proto-datastore/endpoints_proto_datastore/ endpoints_proto_datastore
-    ```
-
-    Windows systems: (run cmd as Administrator)
-    ```
-    cd mirror_api_server
-    mklink /D endpoints_proto_datastore ..\endpoints-proto-datastore\endpoints_proto_datastore\
-    ```
-
-    In case you can't get the symlink to work correctly (meaning the API won't work correctly
-    after deploying because of the missing endpoints_proto_datastore library) you can
-    alternatively copy the folder `endpoints-proto-datastore/endpoints_proto_datastore/`
-    over to `mirror_api_server` manually so that you get this folder structure:
-    ```
-    mirror_api_server/
-    - endpoints_proto_datastore/
-      - ndb/
-    ```
-    You will need to repeat this copy step whenever there are changes in the
-    endpoints_proto_datastore library.
-
-### Getting the code - The easy way
-
-Download the latest zip file from https://www.googledrive.com/host/0B1pwzJXH7GP8Z3VRcnVudERPQ2M/ and extract it.
-This includes all dependencies, but won't always be the newest available version.
 
 ### Setup
 
@@ -177,22 +145,13 @@ this assumes that there is only one application (i.e. one Client ID) that uses t
 Mirror API, so you will have access to all timeline cards of a user, whereas in the
 real Mirror API you would only have access to cards created by or shared with your application.
 
-The real Mirror API supports Multipart-bodies to attach images to cards.
-Since this isn't possible using Google Cloud Endpoints
-(they only support `application/json` as request/response bodies),
-I went for a different solution with filling the contentUrl in attachments directly
-with any URL, which also works with Data-URIs if the image isn't available online.
-
-Not all features of the Mirror API are implemented yet. Location data is missing and not
-all available fields for timeline cards are used yet.
+Not all features of the Mirror API are implemented yet. For example pagination and voice commands are not supported yet.
 
 ### Disclaimer
 
 I'm not part of the Glass Explorer program so there are no guarantees that
 the final Mirror API will work anything like I suppose it will in this demo
-implementation. The information is collected from the various public bits and
-pieces that have been published. Also see
-[my document about the topic](https://docs.google.com/document/d/1XgYDbWNKEDLfm-F44sZy0uSOQKton5ksg5pWdv9XCo0/edit).
+implementation, even though I follow the official documentation as closely as possible.
 
 
 ### Licenses
