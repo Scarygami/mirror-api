@@ -1330,10 +1330,10 @@
 
     /** @constructor */
     CommandCard = function (id, parent) {
-      this.init(cardType.COMMAND_CARD, id, parent);
       this.actions = [];
       this.currentAction = 0;
       this.speechAction = -1;
+      this.init(cardType.COMMAND_CARD, id, parent);
     };
 
     CommandCard.prototype = new Card();
