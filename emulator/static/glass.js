@@ -1321,7 +1321,7 @@
       if (!!recognition) {
         recognition.onend = function () {
           emulator.switchToCard(me.cards[0]);
-        }
+        };
         recognition.stop();
       } else {
         emulator.switchToCard(this.cards[0]);
@@ -1331,18 +1331,21 @@
     /** @constructor */
     CommandCard = function (id, parent) {
       this.init(cardType.COMMAND_CARD, id, parent);
+      this.actions = [];
+      this.currentAction = 0;
+      this.speechAction = -1;
     };
 
     CommandCard.prototype = new Card();
 
     CommandCard.prototype.show = function () {
-      var speech_result = "", me = this, photo = false;
+      var speech_result = "", me = this;
       Card.prototype.show.call(this);
 
       if (recognition) {
 
         recognition.onresult = function (e) {
-          var i, interim = "";
+          var i, j, interim = "", action = -1;
           for (i = e.resultIndex; i < e.results.length; i++) {
             if (e.results[i].isFinal) {
               speech_result += e.results[i][0].transcript;
@@ -1351,8 +1354,17 @@
             }
           }
           interim = speech_result + interim;
-          if (interim.indexOf("take a picture") >= 0 || interim.indexOf("take a photo") >= 0) {
-            photo = true;
+          for (i = 0; i < me.actions.length; i++) {
+            for (j = 0; j < me.actions[i].recognition.length; j++) {
+              if (interim.indexOf(me.actions[i].recognition[j]) >= 0) {
+                action = i;
+                recognition.stop();
+              }
+            }
+            if (action >= 0) { break; }
+          }
+          if (action >= 0) {
+            me.speechAction = action;
             recognition.stop();
           }
         };
@@ -1360,8 +1372,9 @@
           console.log(e);
         };
         recognition.onend = function () {
-          if (photo) {
-            emulator.switchToCard(me.cards[0]);
+          if (me.speechAction >= 0) {
+            me.currentAction = me.speechAction;
+            me.tap();
           }
         };
         recognition.continuous = true;
@@ -1376,6 +1389,9 @@
       this.commandsDiv = this.cardDiv.querySelector(".commands");
       if (!!global.navigator.getUserMedia) {
         this.addCard(new CameraCard("camera", this));
+        this.actions.push({
+          "recognition": ["picture", "photo"]
+        });
         p = doc.createElement("p");
         p.appendChild(doc.createTextNode("take a picture"));
         this.commandsDiv.appendChild(p);
@@ -1388,8 +1404,18 @@
 
     CommandCard.prototype.tap = function () {
       recognition.stop();
-      emulator.switchToCard(this.cards[0]);
-    };    
+      emulator.switchToCard(this.cards[this.currentAction]);
+    };
+    
+    CommandCard.prototype.left = function () {
+      this.currentAction = Math.min(this.currentAction + 1, this.actions.length - 1);
+      this.commandsDiv.style.marginTop = (13 - this.commandsDiv.getElementsByTagName("p")[this.currentAction].offsetTop) + "px";
+    };
+    
+    CommandCard.prototype.right = function () {
+      this.currentAction = Math.max(this.currentAction - 1, 0);
+      this.commandsDiv.style.marginTop = (13 - this.commandsDiv.getElementsByTagName("p")[this.currentAction].offsetTop) + "px";
+    };
 
     /** @constructor */
     ReplyCard = function (id, parent) {

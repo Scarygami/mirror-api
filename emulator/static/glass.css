@@ -251,6 +251,7 @@ body {
   margin-top: 3px;
   width: auto !important;
   max-width: 400px;
+  position: relative;
 }
 
 .card_type_command .card_text {
