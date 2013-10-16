@@ -16,7 +16,7 @@
 import sys
 sys.path.insert(0, 'endpoints-proto-datastore')
 
-from google.appengine.ext import endpoints
+import endpoints
 from mirror_api import MirrorApi
 
 ApiServer = endpoints.api_server([MirrorApi], restricted=False)

@@ -46,3 +46,6 @@ libraries:
 
 - name: PIL
   version: latest
+
+- name: endpoints
+  version: 1.0

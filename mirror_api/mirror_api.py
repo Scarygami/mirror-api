@@ -16,6 +16,7 @@
 
 """Mirror API implemented using Google Cloud Endpoints."""
 
+import endpoints
 import json
 import os
 import logging
@@ -25,7 +26,6 @@ import urllib2
 from google.appengine.api.app_identity import get_application_id
 from google.appengine.api import channel
 from google.appengine.ext import blobstore
-from google.appengine.ext import endpoints
 from google.appengine.ext import ndb
 from protorpc import remote
 

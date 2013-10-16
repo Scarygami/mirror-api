@@ -19,9 +19,12 @@
 import sys
 sys.path.insert(1, 'endpoints-proto-datastore')
 
+import endpoints
+
 from google.appengine.ext import ndb
 from google.appengine.ext.ndb import msgprop
 from protorpc import messages
+from protorpc import message_types
 
 from endpoints_proto_datastore.ndb import EndpointsDateTimeProperty
 from endpoints_proto_datastore.ndb import EndpointsModel
@@ -330,6 +333,7 @@ class UserAction(messages.Enum):
     PIN = 5
     UNPIN = 6
     LAUNCH = 7
+    CUSTOM = 10
 
     
 class Action(messages.Message):
@@ -350,13 +354,15 @@ class ActionResponse(messages.Message):
     success = messages.BooleanField(1, default=True)
 
 
-class AttachmentListRequest(messages.Message):
-    itemId = messages.IntegerField(1, required=True)
+AttachmentListRequest = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    itemId=messages.IntegerField(2, required=True))
 
 
-class AttachmentRequest(messages.Message):
-    itemId = messages.IntegerField(1, required=True)
-    attachmentId = messages.StringField(2, required=True)
+AttachmentRequest = endpoints.ResourceContainer(
+    message_types.VoidMessage,
+    itemId=messages.IntegerField(2, required=True),
+    attachmentId=messages.StringField(3, required=True))
 
 
 class AttachmentResponse(messages.Message):
