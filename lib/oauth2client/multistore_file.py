@@ -1,4 +1,16 @@
-# Copyright 2011 Google Inc. All Rights Reserved.
+# Copyright 2011 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """Multi-credential file store with lock support.
 
@@ -125,6 +137,43 @@ def get_credential_storage_custom_key(
     An object derived from client.Storage for getting/setting the
     credential.
   """
+  multistore = _get_multistore(filename, warn_on_readonly=warn_on_readonly)
+  key = util.dict_to_tuple_key(key_dict)
+  return multistore._get_storage(key)
+
+
+@util.positional(1)
+def get_all_credential_keys(filename, warn_on_readonly=True):
+  """Gets all the registered credential keys in the given Multistore.
+
+  Args:
+    filename: The JSON file storing a set of credentials
+    warn_on_readonly: if True, log a warning if the store is readonly
+
+  Returns:
+    A list of the credential keys present in the file.  They are returned as
+    dictionaries that can be passed into get_credential_storage_custom_key to
+    get the actual credentials.
+  """
+  multistore = _get_multistore(filename, warn_on_readonly=warn_on_readonly)
+  multistore._lock()
+  try:
+    return multistore._get_all_credential_keys()
+  finally:
+    multistore._unlock()
+
+
+@util.positional(1)
+def _get_multistore(filename, warn_on_readonly=True):
+  """A helper method to initialize the multistore with proper locking.
+
+  Args:
+    filename: The JSON file storing a set of credentials
+    warn_on_readonly: if True, log a warning if the store is readonly
+
+  Returns:
+    A multistore object
+  """
   filename = os.path.expanduser(filename)
   _multistores_lock.acquire()
   try:
@@ -132,8 +181,7 @@ def get_credential_storage_custom_key(
         filename, _MultiStore(filename, warn_on_readonly=warn_on_readonly))
   finally:
     _multistores_lock.release()
-  key = util.dict_to_tuple_key(key_dict)
-  return multistore._get_storage(key)
+  return multistore
 
 
 class _MultiStore(object):
@@ -355,6 +403,14 @@ class _MultiStore(object):
       raw_cred = simplejson.loads(cred.to_json())
       raw_creds.append({'key': raw_key, 'credential': raw_cred})
     self._locked_json_write(raw_data)
+
+  def _get_all_credential_keys(self):
+    """Gets all the registered credential keys in the multistore.
+
+    Returns:
+      A list of dictionaries corresponding to all the keys currently registered
+    """
+    return [dict(key) for key in self._data.keys()]
 
   def _get_credential(self, key):
     """Get a credential from the multistore.
