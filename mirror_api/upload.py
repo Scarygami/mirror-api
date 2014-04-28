@@ -21,14 +21,16 @@ __author__ = 'scarygami@gmail.com (Gerwin Sturm)'
 import sys
 sys.path.insert(0, 'lib')
 
+import cloudstorage as gcs
 import email
 import httplib2
-import logging
 import json
+import os
 import utils
+import uuid
 import webapp2
 
-from google.appengine.api import files
+from google.appengine.api import app_identity
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 
@@ -36,6 +38,14 @@ from apiclient.discovery import build
 from apiclient.errors import HttpError
 from oauth2client.client import AccessTokenCredentials
 
+my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
+                                          max_delay=5.0,
+                                          backoff_factor=2,
+                                          max_retry_period=15)
+
+gcs.set_default_retry_params(my_default_retry_params)
+
+bucket = "/" + os.environ.get("BUCKET_NAME", app_identity.get_default_gcs_bucket_name())
 
 class UploadHandler(webapp2.RequestHandler):
 
@@ -119,21 +129,24 @@ class InsertHandler(UploadHandler):
             self.response.out.write(e.content)
             return
 
-        # 2) Insert data into blob store
-        file_name = files.blobstore.create(mime_type=self._content_type)
-        with files.open(file_name, 'a') as f:
-            f.write(self._content)
-        files.finalize(file_name)
-        blob_key = files.blobstore.get_blob_key(file_name)
+        # 2) Insert data into cloud storage
+        write_retry_params = gcs.RetryParams(backoff_factor=1.1)
+        file_name = str(uuid.uuid4())
+        gcs_file = gcs.open(bucket + "/" + file_name,
+                        'w',
+                        content_type=self._content_type,
+                        retry_params=write_retry_params)
+        gcs_file.write(self._content)
+        gcs_file.close()
 
         # 3) Update card with attachment info
         if not "attachments" in card:
             card["attachments"] = []
 
         attachment = {
-            "id": str(blob_key),
+            "id": file_name,
             "contentType": self._content_type,
-            "contentUrl": "%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, card["id"], str(blob_key)),
+            "contentUrl": "%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, card["id"], file_name),
             "isProcessing": False
         }
 
@@ -171,12 +184,15 @@ class UpdateHandler(UploadHandler):
             self.response.out.write(e.content)
             return
 
-        # 2) Insert data into blob store
-        file_name = files.blobstore.create(mime_type=self._content_type)
-        with files.open(file_name, 'a') as f:
-            f.write(self._content)
-        files.finalize(file_name)
-        blob_key = files.blobstore.get_blob_key(file_name)
+        # 2) Insert data into cloud storage
+        write_retry_params = gcs.RetryParams(backoff_factor=1.1)
+        file_name = str(uuid.uuid4())
+        gcs_file = gcs.open(bucket + "/" + file_name,
+                        'w',
+                        content_type=self._content_type,
+                        retry_params=write_retry_params)
+        gcs_file.write(self._content)
+        gcs_file.close()
 
         # 3) Update card with attachment info and new metainfo
         if self._metainfo is None:
@@ -190,9 +206,9 @@ class UpdateHandler(UploadHandler):
             new_card["attachments"] = []
 
         attachment = {
-            "id": str(blob_key),
+            "id": file_name,
             "contentType": self._content_type,
-            "contentUrl": "%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, card["id"], str(blob_key)),
+            "contentUrl": "%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, card["id"], file_name),
             "isProcessing": False
         }
 
@@ -230,21 +246,24 @@ class AttachmentInsertHandler(UploadHandler):
             self.response.out.write(e.content)
             return
 
-        # 2) Insert data into blob store
-        file_name = files.blobstore.create(mime_type=self._content_type)
-        with files.open(file_name, 'a') as f:
-            f.write(self._content)
-        files.finalize(file_name)
-        blob_key = files.blobstore.get_blob_key(file_name)
+        # 2) Insert data into cloud storage
+        write_retry_params = gcs.RetryParams(backoff_factor=1.1)
+        file_name = str(uuid.uuid4())
+        gcs_file = gcs.open(bucket + "/" + file_name,
+                        'w',
+                        content_type=self._content_type,
+                        retry_params=write_retry_params)
+        gcs_file.write(self._content)
+        gcs_file.close()
 
         # 3) Update card with attachment info
         if not "attachments" in card:
             card["attachments"] = []
 
         attachment = {
-            "id": str(blob_key),
+            "id": file_name,
             "contentType": self._content_type,
-            "contentUrl": "%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, card["id"], str(blob_key)),
+            "contentUrl": "%s/upload/mirror/v1/timeline/%s/attachments/%s" % (utils.base_url, card["id"], file_name),
             "isProcessing": False
         }
 
@@ -276,13 +295,8 @@ class DownloadHandler(UploadHandler, blobstore_handlers.BlobstoreDownloadHandler
             self.response.out.write(e.content)
             return
 
-        if not blobstore.get(attachment):
-            self.response.content_type = "application/json"
-            self.response.status = 404
-            self.response.out.write(utils.createError(404, "Attachment not found"))
-            return
-
-        self.send_blob(attachment)
+        blob_key = blobstore.create_gs_key("/gs" + bucket + "/" + attachment)
+        self.send_blob(blob_key)
 
 
 app = webapp2.WSGIApplication(

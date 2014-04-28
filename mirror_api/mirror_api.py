@@ -16,6 +16,11 @@
 
 """Mirror API implemented using Google Cloud Endpoints."""
 
+# Add the library location to the path
+import sys
+sys.path.insert(0, 'lib')
+
+import cloudstorage as gcs
 import endpoints
 import json
 import os
@@ -23,9 +28,8 @@ import logging
 import sys
 import urllib2
 
-from google.appengine.api.app_identity import get_application_id
+from google.appengine.api import app_identity
 from google.appengine.api import channel
-from google.appengine.ext import blobstore
 from google.appengine.ext import ndb
 from protorpc import remote
 
@@ -48,6 +52,15 @@ _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _SECRETS_PATH = os.path.join(_ROOT_DIR, "client_secrets.json")
 _CLIENT_IDs = [endpoints.API_EXPLORER_CLIENT_ID]
 
+my_default_retry_params = gcs.RetryParams(initial_delay=0.2,
+                                          max_delay=5.0,
+                                          backoff_factor=2,
+                                          max_retry_period=15)
+
+gcs.set_default_retry_params(my_default_retry_params)
+
+bucket = "/" + os.environ.get("BUCKET_NAME", app_identity.get_default_gcs_bucket_name())
+
 with open(_SECRETS_PATH, "r") as fh:
     _secrets = json.load(fh)["web"]
     _CLIENT_IDs.append(_secrets["client_id"])
@@ -61,7 +74,7 @@ API_DESCRIPTION = ("Mirror API implemented using Google Cloud "
 @endpoints.api(name="mirror", version="v1",
                description=API_DESCRIPTION,
                allowed_client_ids=_CLIENT_IDs,
-               hostname=get_application_id() + ".appspot.com")
+               hostname=app_identity.get_application_id() + ".appspot.com")
 class MirrorApi(remote.Service):
     """Class which defines the Mirror API v1."""
 
@@ -197,11 +210,12 @@ class MirrorApi(remote.Service):
             raise endpoints.NotFoundException("Card has been deleted")
 
         # Delete attachments
-        keys = []
         if card.attachments is not None:
             for att in card.attachments:
-                keys.append(blobstore.BlobKey(att.id))
-        blobstore.delete_async(keys)
+                try:
+                    gcs.delete(bucket + "/" + att.id)
+                except gcs.NotFoundError:
+                    pass
 
         card.attachments = []
         card.bundleId = None
@@ -469,7 +483,7 @@ class MirrorApi(remote.Service):
                       path="timeline/{itemId}/attachments/{attachmentId}", http_method="DELETE",
                       name="timeline.attachments.delete")
     def attachments_delete(self, request):
-        """Remove metainfo for a single attachments for a timeline card"""
+        """Remove single attachment for a timeline card"""
 
         current_user = endpoints.get_current_user()
         if current_user is None:
@@ -484,8 +498,10 @@ class MirrorApi(remote.Service):
             for att in card.attachments:
                 if att.id == request.attachmentId:
                     # Delete attachment from blobstore
-                    blobkey = blobstore.BlobKey(request.attachmentId)
-                    blobstore.delete(blobkey)
+                    try:
+                        gcs.delete(bucket + "/" + att.id)
+                    except gcs.NotFoundError:
+                        pass
 
                     # Remove attachment from timeline card
                     card.attachments.remove(att)

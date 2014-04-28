@@ -129,7 +129,7 @@ class TimelineItem(EndpointsModel):
 
     class TimelineContact(EndpointsModel):
         """A person or group that can be used as a creator or a contact."""
-    
+
         class ContactType(messages.Enum):
             INDIVIDUAL = 1
             GROUP = 2
@@ -257,14 +257,14 @@ class Contact(EndpointsModel):
     """A person or group that can be used as a creator or a contact."""
 
     class Command(EndpointsModel):
-    
+
         class CommandType(messages.Enum):
             TAKE_A_NOTE = 1
             POST_AN_UPDATE = 2
 
         """A single menu command that is part of a Contact."""
         type = msgprop.EnumProperty(CommandType, required=True)
-    
+
     class ContactType(messages.Enum):
         INDIVIDUAL = 1
         GROUP = 2
@@ -323,7 +323,7 @@ class Subscription(EndpointsModel):
     operation = msgprop.EnumProperty(Operation, repeated=True)
     callbackUrl = ndb.StringProperty(required=True)
 
-    
+
 class UserAction(messages.Enum):
     """Represents an action taken by the user that triggers a notification."""
     REPLY = 1
@@ -335,7 +335,7 @@ class UserAction(messages.Enum):
     LAUNCH = 7
     CUSTOM = 10
 
-    
+
 class Action(messages.Message):
     """ProtoRPC Message Class for actions performed on timeline cards
 
