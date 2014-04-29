@@ -89,7 +89,7 @@ def get_auth_service(gplus_id, test, api="mirror", version="v1"):
 
     return service
 
-    
+
 def _disconnect(gplus_id, test):
     """Delete credentials in case of errors"""
 
@@ -122,7 +122,9 @@ class ConnectHandler(utils.BaseHandler):
             credentials = oauth_flow.step2_exchange(code)
         except FlowExchangeError:
             self.response.status = 401
-            self.response.out.write(utils.createError(401, "Failed to upgrade the authorization code."))
+            self.response.out.write(
+                utils.createError(401, "Failed to upgrade the authorization code.")
+            )
             return
 
         # Check that the access token is valid.
@@ -140,13 +142,17 @@ class ConnectHandler(utils.BaseHandler):
         # Verify that the access token is used for the intended user.
         if result["user_id"] != gplus_id:
             self.response.status = 401
-            self.response.out.write(utils.createError(401, "Token's user ID doesn't match given user ID."))
+            self.response.out.write(
+                utils.createError(401, "Token's user ID doesn't match given user ID.")
+            )
             return
 
         # Verify that the access token is valid for this app.
         if result['issued_to'] != utils.CLIENT_ID:
             self.response.status = 401
-            self.response.out.write(utils.createError(401, "Token's client ID does not match the app's client ID"))
+            self.response.out.write(
+                utils.createError(401, "Token's client ID does not match the app's client ID")
+            )
             return
 
         # Store credentials associated with the User ID for later use
@@ -163,7 +169,9 @@ class ConnectHandler(utils.BaseHandler):
         if credentials.refresh_token is None:
             _disconnect(gplus_id, test)
             self.response.status = 401
-            self.response.out.write(utils.createError(401, "No Refresh token available, need to reauthenticate"))
+            self.response.out.write(
+                utils.createError(401, "No Refresh token available, need to reauthenticate")
+            )
             return
 
         # Create new authorized API clients for the Mirror API and Google+ API

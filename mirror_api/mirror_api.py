@@ -567,7 +567,7 @@ class MirrorApi(remote.Service):
             data["userActions"] = [{"type": UserAction.CUSTOM.name, "payload": action.value}]
 
         if action.action == UserAction.LAUNCH:
-            operation = Operation.UPDATE
+            operation = Operation.INSERT
             data = {}
             data["collection"] = "timeline"
             data["itemId"] = action.itemId

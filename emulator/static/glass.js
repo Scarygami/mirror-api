@@ -43,14 +43,15 @@
   function Glass() {
     var
       startCard, shareCards = [], replyCard, mapCard,
-      demoCards, demoContacts, templates, actions,
+      demoCards, demoContacts, templates, actions, voiceActions,
       mirror,
       emulator = this,
       mainDiv = doc.getElementById("glass"),
       activeCard,
       timer, running = false,
-      recognition, mouseX, mouseY, glassevent, cardType, Card, ActionCard, ClockCard, CommandCard, ReplyCard, CameraCard, timestep,
-      photoCount = 0, lastLocationUpdate = 0, Tween;
+      recognition, mouseX, mouseY, glassevent, cardType,
+      Card, ActionCard, ClockCard, CommandCard, ReplyCard, CameraCard, VoiceActionCard,
+      timestep, photoCount = 0, lastLocationUpdate = 0, Tween;
 
     /**
      * Basic tween object
@@ -65,8 +66,8 @@
       };
 
       raf =
-        global.requestAnimationFrame || global.mozRequestAnimationFrame
-        || global.webkitRequestAnimationFrame || global.msRequestAnimationFrame;
+        global.requestAnimationFrame || global.mozRequestAnimationFrame ||
+        global.webkitRequestAnimationFrame || global.msRequestAnimationFrame;
 
       if (raf) {
         started = new Date();
@@ -102,7 +103,8 @@
       HTML_BUNDLE_CARD: 7,
       CARD_BUNDLE_CARD: 8,
       CAMERA_CARD: 9,
-      COMMAND_CARD: 10
+      COMMAND_CARD: 10,
+      VOICE_ACTION_CARD: 11
     };
 
     demoCards = {
@@ -263,6 +265,17 @@
       }
     };
 
+    voiceActions = {
+      "TAKE_A_NOTE": {
+        "recognition": ["note"],
+        "cards": []
+      },
+      "POST_AN_UPDATE": {
+        "recognition": ["post", "update"],
+        "cards": []
+      }
+    };
+
     templates = [];
     templates[cardType.START_CARD] = "";
     templates[cardType.CLOCK_CARD] =
@@ -298,6 +311,7 @@
       "<video class=\"card_video\"></video>" +
       "<canvas style=\"display: none\" class=\"card_canvas\"></canvas>" +
       "<div class=\"card_text\"></div>";
+    templates[cardType.VOICE_ACTION_CARD] = templates[cardType.SHARE_CARD];
     templates[cardType.HTML_BUNDLE_CARD] = templates[cardType.CONTENT_CARD];
     templates[cardType.CARD_BUNDLE_CARD] = templates[cardType.CONTENT_CARD];
 
@@ -311,8 +325,8 @@
     }
 
     global.navigator.getUserMedia =
-      global.navigator.getUserMedia || global.navigator.webkitGetUserMedia
-      || global.navigator.mozGetUserMedia || global.navigator.msGetUserMedia;
+      global.navigator.getUserMedia || global.navigator.webkitGetUserMedia ||
+      global.navigator.mozGetUserMedia || global.navigator.msGetUserMedia;
 
     function cardSort(a, b) {
       if (a.isPinned || b.isPinned) {
@@ -712,10 +726,10 @@
 
       if (this.active) {
         if (
-          (this.cards && this.cards.length > 0)
-            || this.action === "SHARE"
-            || (this.actionCards && this.actionCards.length > 0)
-            || (this.parent && this.parent.hasActions())
+          (this.cards && this.cards.length > 0) ||
+          this.action === "SHARE" ||
+          (this.actionCards && this.actionCards.length > 0) ||
+          (this.parent && this.parent.hasActions())
         ) {
           shadow += "_down";
         }
@@ -1406,12 +1420,12 @@
       recognition.stop();
       emulator.switchToCard(this.cards[this.currentAction]);
     };
-    
+
     CommandCard.prototype.left = function () {
       this.currentAction = Math.min(this.currentAction + 1, this.actions.length - 1);
       this.commandsDiv.style.marginTop = (13 - this.commandsDiv.getElementsByTagName("p")[this.currentAction].offsetTop) + "px";
     };
-    
+
     CommandCard.prototype.right = function () {
       this.currentAction = Math.max(this.currentAction - 1, 0);
       this.commandsDiv.style.marginTop = (13 - this.commandsDiv.getElementsByTagName("p")[this.currentAction].offsetTop) + "px";
@@ -1793,11 +1807,20 @@
     };
 
     function handleContacts(result) {
-      var i, l;
+      var i, j, l;
       if (result && result.items) {
         l = result.items.length;
         for (i = 0; i < l; i++) {
           shareCards.push(new Card(cardType.SHARE_CARD, result.items[i].id, undefined, result.items[i]));
+          if (!!result.items[i].acceptCommands && result.items[i].acceptCommands.length > 0) {
+            for (j = 0; j < result.items[i].acceptCommands.length; j++) {
+              if (!!voiceActions[result.items[i].acceptCommands[j].type]) {
+                voiceActions[result.items[i].acceptCommands[j].type].cards.push(
+                  new Card(cardType.VOICE_ACTION_CARD, result.items[i].id, undefined, result.items[i])
+                );
+              }
+            }
+          }
         }
       }
     }
@@ -1900,7 +1923,7 @@
       startCard.addCard(card);
 
       card.addCard(new CommandCard("command", card));
-     
+
       mapCard = new Card(cardType.CONTENT_CARD, "map", undefined, {"id": "map"});
 
       if (global.glassDemoMode) {

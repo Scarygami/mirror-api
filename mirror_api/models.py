@@ -43,7 +43,7 @@ class MenuAction(messages.Enum):
     TOGGLE_PINNED = 8
     CUSTOM = 9
     VIEW_WEBSITE = 10
-    PLAY_VIDEO  = 11
+    PLAY_VIDEO = 11
 
 
 class MenuValue(EndpointsModel):
