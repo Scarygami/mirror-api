@@ -43,14 +43,15 @@
   function Glass() {
     var
       startCard, shareCards = [], replyCard, mapCard,
-      demoCards, demoContacts, templates, actions,
+      demoCards, demoContacts, templates, actions, voiceActions,
       mirror,
       emulator = this,
       mainDiv = doc.getElementById("glass"),
       activeCard,
       timer, running = false,
-      recognition, mouseX, mouseY, glassevent, cardType, Card, ActionCard, ClockCard, CommandCard, ReplyCard, CameraCard, timestep,
-      photoCount = 0, lastLocationUpdate = 0, Tween;
+      recognition, mouseX, mouseY, glassevent, cardType,
+      Card, ActionCard, ClockCard, CommandCard, ReplyCard, CameraCard, VoiceCommandCard,
+      timestep, photoCount = 0, lastLocationUpdate = 0, Tween;
 
     /**
      * Basic tween object
@@ -65,8 +66,8 @@
       };
 
       raf =
-        global.requestAnimationFrame || global.mozRequestAnimationFrame
-        || global.webkitRequestAnimationFrame || global.msRequestAnimationFrame;
+        global.requestAnimationFrame || global.mozRequestAnimationFrame ||
+        global.webkitRequestAnimationFrame || global.msRequestAnimationFrame;
 
       if (raf) {
         started = new Date();
@@ -102,7 +103,8 @@
       HTML_BUNDLE_CARD: 7,
       CARD_BUNDLE_CARD: 8,
       CAMERA_CARD: 9,
-      COMMAND_CARD: 10
+      COMMAND_CARD: 10,
+      VOICE_COMMAND_CARD: 11
     };
 
     demoCards = {
@@ -210,7 +212,20 @@
           "displayName": "Android",
           "id": "android",
           "imageUrls": ["https://lh4.googleusercontent.com/-qmJ8gxQYMkc/T0v4Ker0nRI/AAAAAAAATME/CzdYK65ZSuc/s1013/IMG_7706.JPG"]
+        },
+        {
+          "acceptCommands": [{"type": "POST_AN_UPDATE"}],
+          "displayName": "Hodor",
+          "id": "hodor",
+          "imageUrls": ["http://i.lv3.hbo.com/assets/images/series/game-of-thrones/character/s3/hodor-1024.jpg"]
+        },
+        {
+          "acceptCommands": [{"type": "POST_AN_UPDATE"}, {"type": "TAKE_A_NOTE"}],
+          "displayName": "Hodor2",
+          "id": "hodor2",
+          "imageUrls": ["http://i.lv3.hbo.com/assets/images/series/game-of-thrones/character/s3/hodor-1024.jpg"]
         }
+
       ]
     };
 
@@ -263,6 +278,19 @@
       }
     };
 
+    voiceActions = {
+      "TAKE_A_NOTE": {
+        "title": "take a note",
+        "recognition": ["note"],
+        "cards": []
+      },
+      "POST_AN_UPDATE": {
+        "title": "post an update",
+        "recognition": ["post", "update"],
+        "cards": []
+      }
+    };
+
     templates = [];
     templates[cardType.START_CARD] = "";
     templates[cardType.CLOCK_CARD] =
@@ -298,6 +326,7 @@
       "<video class=\"card_video\"></video>" +
       "<canvas style=\"display: none\" class=\"card_canvas\"></canvas>" +
       "<div class=\"card_text\"></div>";
+    templates[cardType.VOICE_COMMAND_CARD] = templates[cardType.SHARE_CARD];
     templates[cardType.HTML_BUNDLE_CARD] = templates[cardType.CONTENT_CARD];
     templates[cardType.CARD_BUNDLE_CARD] = templates[cardType.CONTENT_CARD];
 
@@ -311,8 +340,8 @@
     }
 
     global.navigator.getUserMedia =
-      global.navigator.getUserMedia || global.navigator.webkitGetUserMedia
-      || global.navigator.mozGetUserMedia || global.navigator.msGetUserMedia;
+      global.navigator.getUserMedia || global.navigator.webkitGetUserMedia ||
+      global.navigator.mozGetUserMedia || global.navigator.msGetUserMedia;
 
     function cardSort(a, b) {
       if (a.isPinned || b.isPinned) {
@@ -712,10 +741,10 @@
 
       if (this.active) {
         if (
-          (this.cards && this.cards.length > 0)
-            || this.action === "SHARE"
-            || (this.actionCards && this.actionCards.length > 0)
-            || (this.parent && this.parent.hasActions())
+          (this.cards && this.cards.length > 0) ||
+          this.action === "SHARE" ||
+          (this.actionCards && this.actionCards.length > 0) ||
+          (this.parent && this.parent.hasActions())
         ) {
           shadow += "_down";
         }
@@ -759,6 +788,7 @@
         this.cardDiv.classList.add("card_type_action");
         break;
       case cardType.SHARE_CARD:
+      case cardType.VOICE_COMMAND_CARD:
         this.cardDiv.classList.add("card_type_share");
         break;
       case cardType.CAMERA_CARD:
@@ -994,6 +1024,7 @@
         break;
 
       case cardType.SHARE_CARD:
+      case cardType.VOICE_COMMAND_CARD:
         this.textDiv.appendChild(doc.createTextNode(this.text));
         this.cardDiv.style.backgroundImage = "url(" + this.image + ")";
         break;
@@ -1384,17 +1415,33 @@
     };
 
     CommandCard.prototype.createCardElements = function () {
-      var p;
+      var p, action, i;
       this.createDiv();
       this.commandsDiv = this.cardDiv.querySelector(".commands");
       if (!!global.navigator.getUserMedia) {
-        this.addCard(new CameraCard("camera", this));
         this.actions.push({
-          "recognition": ["picture", "photo"]
+          "recognition": ["picture", "photo"],
+          "cards": [new CameraCard("camera", this)]
         });
         p = doc.createElement("p");
         p.appendChild(doc.createTextNode("take a picture"));
         this.commandsDiv.appendChild(p);
+      }
+      for (action in voiceActions) {
+        if (voiceActions.hasOwnProperty(action)) {
+          if (voiceActions[action].cards.length > 0) {
+            for (i = 0; i < voiceActions[action].cards.length; i++) {
+              voiceActions[action].cards[i].parent = this;
+            }
+            this.actions.push({
+              "recognition": voiceActions[action].recognition,
+              "cards": voiceActions[action].cards
+            });
+            p = doc.createElement("p");
+            p.appendChild(doc.createTextNode(voiceActions[action].title));
+            this.commandsDiv.appendChild(p);
+          }
+        }
       }
     };
 
@@ -1404,17 +1451,44 @@
 
     CommandCard.prototype.tap = function () {
       recognition.stop();
-      emulator.switchToCard(this.cards[this.currentAction]);
+      this.cards = this.actions[this.currentAction].cards;
+      emulator.switchToCard(this.cards[0]);
     };
-    
+
+    CommandCard.prototype.hide = function () {
+      recognition.stop();
+      Card.prototype.hide.call(this);
+    };
+
     CommandCard.prototype.left = function () {
       this.currentAction = Math.min(this.currentAction + 1, this.actions.length - 1);
       this.commandsDiv.style.marginTop = (13 - this.commandsDiv.getElementsByTagName("p")[this.currentAction].offsetTop) + "px";
     };
-    
+
     CommandCard.prototype.right = function () {
       this.currentAction = Math.max(this.currentAction - 1, 0);
       this.commandsDiv.style.marginTop = (13 - this.commandsDiv.getElementsByTagName("p")[this.currentAction].offsetTop) + "px";
+    };
+
+    /** @constructor */
+    VoiceCommandCard = function (action, id, parent, data) {
+      this.action = action;
+      this.contactId = id;
+      id = action + "_" + id;
+      this.init(cardType.VOICE_COMMAND_CARD, id, parent, data);
+    };
+
+    VoiceCommandCard.prototype = new Card();
+
+    VoiceCommandCard.prototype.updateDisplayDate = function () {
+      // Nothing to do here
+    };
+
+    VoiceCommandCard.prototype.tap = function () {
+      // Launch speechrecognition
+      this.hide();
+      replyCard.parent = this;
+      replyCard.show();
     };
 
     /** @constructor */
@@ -1444,7 +1518,12 @@
         me.progressDiv.style.display = "none";
         me.hide();
         me.parent.hide();
-        me.parent.parent.show();
+        if (me.parent.type === cardType.VOICE_COMMAND_CARD) {
+          me.parent.parent.hide();
+          me.parent.parent.parent.show();
+        } else {
+          me.parent.parent.show();
+        }
       }
 
       function onSuccess() {
@@ -1469,7 +1548,6 @@
         };
         recognition.onresult = function (e) {
           var i, interim = "";
-          console.log(e);
           for (i = e.resultIndex; i < e.results.length; i++) {
             if (e.results[i].isFinal) {
               result += e.results[i][0].transcript;
@@ -1483,6 +1561,7 @@
         recognition.onerror = onError;
         recognition.onend = function () {
           var data;
+          console.log("recognition end", result);
           if (result !== "") {
             me.progressIconDiv.src = "images/reply.png";
             me.progressTextDiv.innerHTML = "Sending";
@@ -1491,20 +1570,31 @@
               global.setTimeout(onSuccess, 2000);
             } else {
               // create Timeline Card with reply text
-              data = {};
-              data.text = result;
-              data.inReplyTo = me.parent.parent.id;
+              if (me.parent.type === cardType.VOICE_COMMAND_CARD) {
+                data = {};
+                data.text = result;
+                data.recipients = [{"id": me.parent.contactId}];
+              } else {
+                data = {};
+                data.text = result;
+                data.inReplyTo = me.parent.parent.id;
+                if (me.parent.parent.data && me.parent.parent.data.creator) {
+                  data.recipients = [me.parent.parent.data.creator];
+                }
+              }
               mirror.internal.timeline.insert({"resource": data}).execute(function (resp) {
                 var action;
-                console.log(resp);
                 if (resp.id) {
                   // Send action with reply card id and ID of original card
                   action = {};
                   action.collection = "timeline";
                   action.itemId = resp.id;
-                  action.action = "REPLY";
+                  if (me.parent.type === cardType.VOICE_COMMAND_CARD) {
+                    action.action = "LAUNCH";
+                  } else {
+                    action.action = "REPLY";
+                  }
                   mirror.internal.actions.insert({"resource": action}).execute(function (actionResp) {
-                    console.log(actionResp);
                     if (actionResp.success) {
                       onSuccess();
                     } else {
@@ -1521,6 +1611,12 @@
           }
         };
         recognition.start();
+      }
+    };
+
+    ReplyCard.prototype.tap = function () {
+      if (recognition) {
+        recognition.stop();
       }
     };
 
@@ -1750,14 +1846,12 @@
 
     function fetchCards() {
       mirror.timeline.list().execute(function (result) {
-        console.log(result);
         handleCards(result);
       });
     }
 
     function fetchCard(id) {
       mirror.timeline.get({"id": id}).execute(function (result) {
-        console.log(result);
         if (!result.error) {
           handleCards({"items": [result]});
         }
@@ -1780,9 +1874,7 @@
                 if (loc.coords.accuracy) { data.accuracy = loc.coords.accuracy; }
                 if (loc.coords.longitude) { data.longitude = loc.coords.longitude; }
                 if (loc.coords.latitude) { data.latitude = loc.coords.latitude; }
-                mirror.internal.locations.insert({"resource": data}).execute(function (resp) {
-                  console.log(resp);
-                });
+                mirror.internal.locations.insert({"resource": data}).execute(function (resp) {});
               }
             }
           });
@@ -1793,18 +1885,30 @@
     };
 
     function handleContacts(result) {
-      var i, l;
+      var i, j, l, clockCard;
       if (result && result.items) {
         l = result.items.length;
         for (i = 0; i < l; i++) {
           shareCards.push(new Card(cardType.SHARE_CARD, result.items[i].id, undefined, result.items[i]));
+          if (!!result.items[i].acceptCommands && result.items[i].acceptCommands.length > 0) {
+            for (j = 0; j < result.items[i].acceptCommands.length; j++) {
+              if (!!voiceActions[result.items[i].acceptCommands[j].type]) {
+                voiceActions[result.items[i].acceptCommands[j].type].cards.push(
+                  new VoiceCommandCard(result.items[i].acceptCommands[j].type, result.items[i].id, undefined, result.items[i])
+                );
+              }
+            }
+          }
         }
       }
+      // Update Command Card
+      clockCard = startCard.findCard("clock");
+      clockCard.removeCard("command");
+      clockCard.addCard(new CommandCard("command", clockCard));
     }
 
     function fetchContacts() {
       mirror.contacts.list().execute(function (result) {
-        console.log(result);
         handleContacts(result);
       });
     }
@@ -1900,7 +2004,7 @@
       startCard.addCard(card);
 
       card.addCard(new CommandCard("command", card));
-     
+
       mapCard = new Card(cardType.CONTENT_CARD, "map", undefined, {"id": "map"});
 
       if (global.glassDemoMode) {
