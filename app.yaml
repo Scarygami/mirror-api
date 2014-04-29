@@ -9,33 +9,42 @@ handlers:
 - url: /glass/(.*\.(html|css|js|grxml))
   static_files: emulator/static/\1
   upload: emulator/static/(.*\.(html|css|js|grxml))
+  secure: always
 
 - url: /glass/images/*.png
   static_dir: emulator/static/images
-  mime_type: image/png  
+  mime_type: image/png
+  secure: always
 
 - url: /glass/images
   static_dir: emulator/static/images
+  secure: always
 
 - url: /_ah/spi/.*
   script: mirror_api.api.ApiServer
+  secure: always
 
-- url: /images/*.png  
+- url: /images/*.png
   static_dir: service/static/images
   mime_type: image/png
+  secure: always
 
 - url: /images
   static_dir: service/static/images
+  secure: always
 
 - url: /service/(.*\.(html|css|js))
   static_files: service/static/\1
   upload: service/static/(.*\.(html|css|js))
+  secure: always
 
 - url: /upload/.*
   script: mirror_api.upload.app
+  secure: always
 
 - url: .*
   script: main.app
+  secure: always
 
 libraries:
 - name: pycrypto
