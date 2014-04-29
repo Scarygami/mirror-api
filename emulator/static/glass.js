@@ -1455,6 +1455,11 @@
       emulator.switchToCard(this.cards[0]);
     };
 
+    CommandCard.prototype.hide = function () {
+      recognition.stop();
+      Card.prototype.hide.call(this);
+    };
+
     CommandCard.prototype.left = function () {
       this.currentAction = Math.min(this.currentAction + 1, this.actions.length - 1);
       this.commandsDiv.style.marginTop = (13 - this.commandsDiv.getElementsByTagName("p")[this.currentAction].offsetTop) + "px";
@@ -1468,6 +1473,7 @@
     /** @constructor */
     VoiceCommandCard = function (action, id, parent, data) {
       this.action = action;
+      this.contactId = id;
       id = action + "_" + id;
       this.init(cardType.VOICE_COMMAND_CARD, id, parent, data);
     };
@@ -1479,8 +1485,10 @@
     };
 
     VoiceCommandCard.prototype.tap = function () {
-      // Launch Speechrecognition and wait for response
-
+      // Launch speechrecognition
+      this.hide();
+      replyCard.parent = this;
+      replyCard.show();
     };
 
     /** @constructor */
@@ -1510,7 +1518,12 @@
         me.progressDiv.style.display = "none";
         me.hide();
         me.parent.hide();
-        me.parent.parent.show();
+        if (me.parent.type === cardType.VOICE_COMMAND_CARD) {
+          me.parent.parent.hide();
+          me.parent.parent.parent.show();
+        } else {
+          me.parent.parent.show();
+        }
       }
 
       function onSuccess() {
@@ -1535,7 +1548,6 @@
         };
         recognition.onresult = function (e) {
           var i, interim = "";
-          console.log(e);
           for (i = e.resultIndex; i < e.results.length; i++) {
             if (e.results[i].isFinal) {
               result += e.results[i][0].transcript;
@@ -1549,6 +1561,7 @@
         recognition.onerror = onError;
         recognition.onend = function () {
           var data;
+          console.log("recognition end", result);
           if (result !== "") {
             me.progressIconDiv.src = "images/reply.png";
             me.progressTextDiv.innerHTML = "Sending";
@@ -1557,20 +1570,31 @@
               global.setTimeout(onSuccess, 2000);
             } else {
               // create Timeline Card with reply text
-              data = {};
-              data.text = result;
-              data.inReplyTo = me.parent.parent.id;
+              if (me.parent.type === cardType.VOICE_COMMAND_CARD) {
+                data = {};
+                data.text = result;
+                data.recipients = [{"id": me.parent.contactId}];
+              } else {
+                data = {};
+                data.text = result;
+                data.inReplyTo = me.parent.parent.id;
+                if (me.parent.parent.data && me.parent.parent.data.creator) {
+                  data.recipients = [me.parent.parent.data.creator];
+                }
+              }
               mirror.internal.timeline.insert({"resource": data}).execute(function (resp) {
                 var action;
-                console.log(resp);
                 if (resp.id) {
                   // Send action with reply card id and ID of original card
                   action = {};
                   action.collection = "timeline";
                   action.itemId = resp.id;
-                  action.action = "REPLY";
+                  if (me.parent.type === cardType.VOICE_COMMAND_CARD) {
+                    action.action = "LAUNCH";
+                  } else {
+                    action.action = "REPLY";
+                  }
                   mirror.internal.actions.insert({"resource": action}).execute(function (actionResp) {
-                    console.log(actionResp);
                     if (actionResp.success) {
                       onSuccess();
                     } else {
@@ -1587,6 +1611,12 @@
           }
         };
         recognition.start();
+      }
+    };
+
+    ReplyCard.prototype.tap = function () {
+      if (recognition) {
+        recognition.stop();
       }
     };
 
@@ -1816,14 +1846,12 @@
 
     function fetchCards() {
       mirror.timeline.list().execute(function (result) {
-        console.log(result);
         handleCards(result);
       });
     }
 
     function fetchCard(id) {
       mirror.timeline.get({"id": id}).execute(function (result) {
-        console.log(result);
         if (!result.error) {
           handleCards({"items": [result]});
         }
@@ -1846,9 +1874,7 @@
                 if (loc.coords.accuracy) { data.accuracy = loc.coords.accuracy; }
                 if (loc.coords.longitude) { data.longitude = loc.coords.longitude; }
                 if (loc.coords.latitude) { data.latitude = loc.coords.latitude; }
-                mirror.internal.locations.insert({"resource": data}).execute(function (resp) {
-                  console.log(resp);
-                });
+                mirror.internal.locations.insert({"resource": data}).execute(function (resp) {});
               }
             }
           });
@@ -1883,7 +1909,6 @@
 
     function fetchContacts() {
       mirror.contacts.list().execute(function (result) {
-        console.log(result);
         handleContacts(result);
       });
     }

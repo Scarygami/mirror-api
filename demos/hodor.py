@@ -29,7 +29,7 @@ CONTACTS = [
     {
         "id": "hodor",
         "displayName": "Hodor",
-        "imageUrls": [base_url + "/images/hodor.png"],
+        "imageUrls": [base_url + "/images/hodor.jpg"],
         "acceptCommands": [{
             "type": "POST_AN_UPDATE"
         }]
@@ -43,7 +43,7 @@ to this service
 WELCOMES = [
     {
         "html": ("<article class=\"photo\">"
-                 "  <img src=\"" + base_url + "/images/hodor.png\""
+                 "  <img src=\"" + base_url + "/images/hodor.jpg\""
                  "       width=\"100%\" height=\"100%\">"
                  "  <div class=\"photo-overlay\"></div>"
                  "  <section>"
@@ -52,7 +52,10 @@ WELCOMES = [
                  "</article>"),
         "menuItems": [{
             "action": "REPLY"
-        }]
+        }],
+        "creator": {
+            "id": "hodor"
+        }
     }
 ]
 
@@ -62,19 +65,19 @@ Possible responses to messages
 RESPONSES = [
     {
         "text": "Hodor!",
-        "image": "hodor1.png"
+        "image": "hodor1.jpg"
     },
     {
         "text": "Hodor?",
-        "image": "hodor2.png"
+        "image": "hodor2.jpg"
     },
     {
         "text": "Hodor...",
-        "image": "hodor3.png"
+        "image": "hodor3.jpg"
     },
     {
         "text": "Hodor.",
-        "image": "hodor4.png"
+        "image": "hodor4.jpg"
     },
 ]
 
@@ -118,8 +121,17 @@ def handle_item(item, notification, service, test):
                  "</article>"),
         "menuItems": [{
             "action": "REPLY"
-        }]
+        }],
+        "creator": {
+            "id": "hodor"
+        }
     }
 
-    result = service.timeline().insert(body=response).execute()
+    if "inReplyTo" in item:
+        result = service.timeline().update(id=item["inReplyTo"], body=response).execute()
+    else:
+        result = service.timeline().insert(body=response).execute()
     logging.info(result)
+
+    # Delete reply card
+    result = service.timeline().delete(id=item["id"]).execute()

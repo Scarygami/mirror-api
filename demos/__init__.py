@@ -1,5 +1,6 @@
 
-DEMOS = ["add_a_cat", "instaglass", "friend_finder", "check_in", "hodor"]
+# DEMOS = ["add_a_cat", "instaglass", "friend_finder", "check_in", "hodor"]
+DEMOS = ["hodor"]
 
 demo_services = []
 for demo in DEMOS:
