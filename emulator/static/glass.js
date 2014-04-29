@@ -50,7 +50,7 @@
       activeCard,
       timer, running = false,
       recognition, mouseX, mouseY, glassevent, cardType,
-      Card, ActionCard, ClockCard, CommandCard, ReplyCard, CameraCard, VoiceActionCard,
+      Card, ActionCard, ClockCard, CommandCard, ReplyCard, CameraCard, VoiceCommandCard,
       timestep, photoCount = 0, lastLocationUpdate = 0, Tween;
 
     /**
@@ -104,7 +104,7 @@
       CARD_BUNDLE_CARD: 8,
       CAMERA_CARD: 9,
       COMMAND_CARD: 10,
-      VOICE_ACTION_CARD: 11
+      VOICE_COMMAND_CARD: 11
     };
 
     demoCards = {
@@ -212,7 +212,20 @@
           "displayName": "Android",
           "id": "android",
           "imageUrls": ["https://lh4.googleusercontent.com/-qmJ8gxQYMkc/T0v4Ker0nRI/AAAAAAAATME/CzdYK65ZSuc/s1013/IMG_7706.JPG"]
+        },
+        {
+          "acceptCommands": [{"type": "POST_AN_UPDATE"}],
+          "displayName": "Hodor",
+          "id": "hodor",
+          "imageUrls": ["http://i.lv3.hbo.com/assets/images/series/game-of-thrones/character/s3/hodor-1024.jpg"]
+        },
+        {
+          "acceptCommands": [{"type": "POST_AN_UPDATE"}, {"type": "TAKE_A_NOTE"}],
+          "displayName": "Hodor2",
+          "id": "hodor2",
+          "imageUrls": ["http://i.lv3.hbo.com/assets/images/series/game-of-thrones/character/s3/hodor-1024.jpg"]
         }
+
       ]
     };
 
@@ -267,10 +280,12 @@
 
     voiceActions = {
       "TAKE_A_NOTE": {
+        "title": "take a note",
         "recognition": ["note"],
         "cards": []
       },
       "POST_AN_UPDATE": {
+        "title": "post an update",
         "recognition": ["post", "update"],
         "cards": []
       }
@@ -311,7 +326,7 @@
       "<video class=\"card_video\"></video>" +
       "<canvas style=\"display: none\" class=\"card_canvas\"></canvas>" +
       "<div class=\"card_text\"></div>";
-    templates[cardType.VOICE_ACTION_CARD] = templates[cardType.SHARE_CARD];
+    templates[cardType.VOICE_COMMAND_CARD] = templates[cardType.SHARE_CARD];
     templates[cardType.HTML_BUNDLE_CARD] = templates[cardType.CONTENT_CARD];
     templates[cardType.CARD_BUNDLE_CARD] = templates[cardType.CONTENT_CARD];
 
@@ -773,6 +788,7 @@
         this.cardDiv.classList.add("card_type_action");
         break;
       case cardType.SHARE_CARD:
+      case cardType.VOICE_COMMAND_CARD:
         this.cardDiv.classList.add("card_type_share");
         break;
       case cardType.CAMERA_CARD:
@@ -1008,6 +1024,7 @@
         break;
 
       case cardType.SHARE_CARD:
+      case cardType.VOICE_COMMAND_CARD:
         this.textDiv.appendChild(doc.createTextNode(this.text));
         this.cardDiv.style.backgroundImage = "url(" + this.image + ")";
         break;
@@ -1398,17 +1415,33 @@
     };
 
     CommandCard.prototype.createCardElements = function () {
-      var p;
+      var p, action, i;
       this.createDiv();
       this.commandsDiv = this.cardDiv.querySelector(".commands");
       if (!!global.navigator.getUserMedia) {
-        this.addCard(new CameraCard("camera", this));
         this.actions.push({
-          "recognition": ["picture", "photo"]
+          "recognition": ["picture", "photo"],
+          "cards": [new CameraCard("camera", this)]
         });
         p = doc.createElement("p");
         p.appendChild(doc.createTextNode("take a picture"));
         this.commandsDiv.appendChild(p);
+      }
+      for (action in voiceActions) {
+        if (voiceActions.hasOwnProperty(action)) {
+          if (voiceActions[action].cards.length > 0) {
+            for (i = 0; i < voiceActions[action].cards.length; i++) {
+              voiceActions[action].cards[i].parent = this;
+            }
+            this.actions.push({
+              "recognition": voiceActions[action].recognition,
+              "cards": voiceActions[action].cards
+            });
+            p = doc.createElement("p");
+            p.appendChild(doc.createTextNode(voiceActions[action].title));
+            this.commandsDiv.appendChild(p);
+          }
+        }
       }
     };
 
@@ -1418,7 +1451,8 @@
 
     CommandCard.prototype.tap = function () {
       recognition.stop();
-      emulator.switchToCard(this.cards[this.currentAction]);
+      this.cards = this.actions[this.currentAction].cards;
+      emulator.switchToCard(this.cards[0]);
     };
 
     CommandCard.prototype.left = function () {
@@ -1429,6 +1463,24 @@
     CommandCard.prototype.right = function () {
       this.currentAction = Math.max(this.currentAction - 1, 0);
       this.commandsDiv.style.marginTop = (13 - this.commandsDiv.getElementsByTagName("p")[this.currentAction].offsetTop) + "px";
+    };
+
+    /** @constructor */
+    VoiceCommandCard = function (action, id, parent, data) {
+      this.action = action;
+      id = action + "_" + id;
+      this.init(cardType.VOICE_COMMAND_CARD, id, parent, data);
+    };
+
+    VoiceCommandCard.prototype = new Card();
+
+    VoiceCommandCard.prototype.updateDisplayDate = function () {
+      // Nothing to do here
+    };
+
+    VoiceCommandCard.prototype.tap = function () {
+      // Launch Speechrecognition and wait for response
+
     };
 
     /** @constructor */
@@ -1807,7 +1859,7 @@
     };
 
     function handleContacts(result) {
-      var i, j, l;
+      var i, j, l, clockCard;
       if (result && result.items) {
         l = result.items.length;
         for (i = 0; i < l; i++) {
@@ -1816,13 +1868,17 @@
             for (j = 0; j < result.items[i].acceptCommands.length; j++) {
               if (!!voiceActions[result.items[i].acceptCommands[j].type]) {
                 voiceActions[result.items[i].acceptCommands[j].type].cards.push(
-                  new Card(cardType.VOICE_ACTION_CARD, result.items[i].id, undefined, result.items[i])
+                  new VoiceCommandCard(result.items[i].acceptCommands[j].type, result.items[i].id, undefined, result.items[i])
                 );
               }
             }
           }
         }
       }
+      // Update Command Card
+      clockCard = startCard.findCard("clock");
+      clockCard.removeCard("command");
+      clockCard.addCard(new CommandCard("command", clockCard));
     }
 
     function fetchContacts() {
